@@ -1,0 +1,12 @@
+GET /hello.htm HTTP/1.1
+hoi:doei
+ik:wel
+jij:niet
+
+body
+fejlwkfewq
+fejlwkfewqferw
+qferw
+qferwewq
+fejlwkfewqq
+fe

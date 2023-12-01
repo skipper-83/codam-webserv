@@ -10,6 +10,7 @@ set (SRCS_MAIN
 # Sourcefiles without main function (included in testing)
 set (SRCS
 	src/hello-world.cpp
+	src/parse_request.cpp
 )
 set (EXEC_NAME webserv)
 

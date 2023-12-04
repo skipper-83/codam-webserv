@@ -18,10 +18,15 @@ int main(int argc, char **argv) {
 	{
 		httpRequest test(file);
 		std::cout << test;
+		std::cout << test.getHeader("Host");
+		std::cout << test.getHeader("User-Agent") << "\n\n\ncopy:\n";
+		httpRequest copy(test);
+		std::cout << copy;
 	}
 	catch(const std::exception& e)
 	{
 		std::cerr << e.what() << '\n';
 	}
+	
     return 0;
 }

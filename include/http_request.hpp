@@ -20,7 +20,11 @@ class httpRequest {
 
 	public:
 						httpRequest(std::ifstream &fs);
+						httpRequest(const httpRequest &src);
 						~httpRequest();
+
+		httpRequest&	operator=(const httpRequest& rhs);
+
 		std::string		getAdress(void) const;
 		std::string		getRequestType(void) const;
 		std::string		getProtocol(void) const;

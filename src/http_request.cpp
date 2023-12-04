@@ -11,8 +11,25 @@ httpRequest::httpRequest(std::ifstream &fs)
 	_httpRequestBody = body_stream.str();
 }
 
+httpRequest::httpRequest(const httpRequest &src) 
+{
+	*this = src;
+}
+
 httpRequest::~httpRequest()
 {
+}
+
+httpRequest &httpRequest::operator=(const httpRequest &rhs) 
+{
+	if (this == &rhs)
+		return *this;
+	this->_httpRequestType = rhs._httpRequestType;
+	this->_httpAdress = rhs._httpAdress;
+	this->_httpProtocol = rhs._httpProtocol;
+	this->_httpHeaders = std::map<std::string, std::string>(rhs._httpHeaders);
+	this->_httpRequestBody = rhs._httpRequestBody;
+	return *this;
 }
 
 std::string httpRequest::getAdress(void) const {
@@ -60,7 +77,6 @@ void	httpRequest::_getHttpStartLine(std::ifstream &fs)
 		throw std::invalid_argument("Invalid HTTP start line");
 	request_type_pos = line.find(' ');
 	address_pos = line.find(' ', request_type_pos + 1);
-	// protocol_pos = line.find(' ', address_pos + 1);
 	_httpRequestType = line.substr(0, request_type_pos);
 	_httpAdress = line.substr(request_type_pos + 1, address_pos - request_type_pos - 1) ;
 	_httpProtocol = line.substr(address_pos + 1, request_type_pos - address_pos - 1);

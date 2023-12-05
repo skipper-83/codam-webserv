@@ -19,7 +19,10 @@ int main(int argc, char **argv) {
 		httpRequest test(file);
 		std::cout << test;
 		std::cout << test.getHeader("Host");
-		std::cout << test.getHeader("User-Agent") << "\n\n\ncopy:\n";
+		std::cout << test.getHeader("User-Agent");
+		std::cout << test.getHeader("Connnection") << "\n\n\ncopy:\n";
+		httpRequest::httpRequestListT	cookies = test.getHeaderList("Connection");
+		std::cout << cookies.at(0) << "\n" << cookies.at(1) << "\n";
 		httpRequest copy(test);
 		std::cout << copy;
 	}

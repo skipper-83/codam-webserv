@@ -22,7 +22,18 @@ int main(int argc, char **argv) {
 		std::cout << test.getHeader("User-Agent");
 		std::cout << test.getHeader("Connnection") << "\n\n\ncopy:\n";
 		httpRequest::httpRequestListT	cookies = test.getHeaderList("Connection");
+		httpRequest::httpRequestListT	empty = test.getHeaderList("fewfewfewf");
+
 		std::cout << cookies.at(0) << "\n" << cookies.at(1) << "\n";
+		if (empty.empty())
+			std::cout << "\t\tempty\n";
+		else
+			std::cout << "\t\tno empty\n";
+
+	if (cookies.empty())
+			std::cout << "\t\tvooies empty\n";
+		else
+			std::cout << "\t\tcookies no empty\n";
 		httpRequest copy(test);
 		std::cout << copy;
 	}

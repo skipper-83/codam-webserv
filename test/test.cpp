@@ -10,7 +10,7 @@ TEST(hello_world, basic) {
     EXPECT_EQ(hello_world(), "Hello, World!");
 }
 
-TEST(http_request, basic) {
+TEST(http_request_fs, basic) {
     std::stringstream req(R"(GET /path/to/resource?query=123 HTTP/1.0
 Host: 123.124.123.123
 )");
@@ -18,61 +18,93 @@ Host: 123.124.123.123
     EXPECT_NO_THROW(httpRequest test(req));
 }
 
-TEST(http_request, wrong_host) {
+TEST(http_request_str, basic) {
+    std::string req(R"(GET /path/to/resource?query=123 HTTP/1.0
+Host: 123.124.123.123
+)");
+    httpRequest request;
+    EXPECT_NO_THROW(request.parse(req));
+}
+
+TEST(http_request_str_constructor, basic) {
+    std::string req(R"(GET /path/to/resource?query=123 HTTP/1.0
+Host: 123.124.123.123
+)");
+    httpRequest request;
+    EXPECT_NO_THROW(httpRequest test(req));
+}
+
+TEST(http_request_fs, wrong_host) {
     std::stringstream req(R"(GET /path/to/resource?query=123 HTTP/1.0
 	Host: 123.124.12#3.123
 	)");
     EXPECT_THROW(httpRequest test(req), std::invalid_argument);
 }
 
-TEST(http_request, req) {
+TEST(http_request_str_constructor, wrong_host) {
+    std::string req = R"(GET /path/to/resource?query=123 HTTP/1.0
+	Host: 123.124.12#3.123
+	)";
+    EXPECT_THROW(httpRequest test(req), std::invalid_argument);
+}
+
+TEST(http_request_fs, req) {
     std::stringstream req(R"(GET /path/to/resource?query=123 HTTP/1.1
 	Host: 123.124.123.123
 	)");
     EXPECT_THROW(httpRequest test(req), std::invalid_argument);
 }
 
-TEST(http_request, wrong_start_line1) {
+TEST(http_request_fs, wrong_start_line1) {
     std::stringstream req(R"(GT /path/to/resource?query=123 HTTP/1.0
 Host: 123.124.123.123
 )");
     EXPECT_THROW(httpRequest test(req), std::invalid_argument);
 }
 
-TEST(http_request, wrong_start_line2) {
+TEST(http_request_fs, wrong_start_line2) {
     std::stringstream req(R"(GET /path/t o/resource?query=123 HTTP/1.0
 Host: 123.124.123.123
 )");
     EXPECT_THROW(httpRequest test(req), std::invalid_argument);
 }
-TEST(http_request, wrong_start_line3) {
+
+TEST(http_request_fs, wrong_start_line3) {
     std::stringstream req(R"(GET /path/to/resource?query=123 HTT/0.9
 Host: 123.124.123.123
 )");
     EXPECT_THROW(httpRequest test(req), std::invalid_argument);
 }
 
+TEST(http_request_str, wrong_start_line3) {
+    std::string req = R"(GET /path/to/resource?query=123 HTT/0.9
+Host: 123.124.123.123
+)";
+    httpRequest request;
+    EXPECT_THROW(request.parse(req), std::invalid_argument);
+}
+
 TEST_F(httpRequestTest, get_adress) {
-    EXPECT_EQ(req->getAdress(), "/path/to/resource?query=123");
+    EXPECT_EQ(req.getAdress(), "/path/to/resource?query=123");
 }
 
 TEST_F(httpRequestTest, get_request_type) {
-    EXPECT_EQ(req->getRequestType(), "GET");
+    EXPECT_EQ(req.getRequestType(), "GET");
 }
 
 TEST_F(httpRequestTest, get_protocol) {
-    EXPECT_EQ(req->getProtocol(), "HTTP/1.1");
+    EXPECT_EQ(req.getProtocol(), "HTTP/1.1");
 }
 
 TEST_F(httpRequestTest, get_body) {
-    EXPECT_EQ(req->getBody(), "body\nof\nrequest\n\n");
+    EXPECT_EQ(req.getBody(), "body\nof\nrequest\n\n");
 }
 
 TEST_F(httpRequestTest, get_header) {
-    EXPECT_EQ(req->getHeader("Accept-Language"), "en-US,en;q=0.5");
+    EXPECT_EQ(req.getHeader("Accept-Language"), "en-US,en;q=0.5");
 }
 
 TEST_F(httpRequestTest, get_headerlist) {
-    EXPECT_EQ(req->getHeaderList("Cookie").at(0), "session_id=123");
-    EXPECT_EQ(req->getHeaderList("Cookie").at(1), "user_pref=dark_mode");
+    EXPECT_EQ(req.getHeaderList("Cookie").at(0), "session_id=123");
+    EXPECT_EQ(req.getHeaderList("Cookie").at(1), "user_pref=dark_mode");
 }

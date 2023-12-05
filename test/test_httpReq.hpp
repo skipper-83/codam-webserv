@@ -4,12 +4,12 @@
 
 class httpRequestTest : public testing::Test {
    private:
-    std::stringstream request;
+    std::string request;
 
    protected:
-    httpRequest *req;
+    httpRequest req;
     void SetUp() override {
-        this->request = std::stringstream(R"(GET /path/to/resource?query=123 HTTP/1.1
+        this->request = R"(GET /path/to/resource?query=123 HTTP/1.1
 Host: 123.124.123.123
 User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
@@ -24,8 +24,8 @@ body
 of
 request
 
-)");
-        this->req = new httpRequest(request);
+)";
+        req.parse(request);
     }
-    void TearDown() override { delete this->req; }
+    // void TearDown() override { delete this.req; }
 };

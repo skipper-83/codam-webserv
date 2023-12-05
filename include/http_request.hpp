@@ -25,6 +25,8 @@ class httpRequest {
    public:
     using httpRequestListT = std::vector<std::string>;
 
+    httpRequest();
+    httpRequest(std::string input);
     httpRequest(std::istream &fs);
     httpRequest(const httpRequest &src);
     ~httpRequest();
@@ -38,6 +40,8 @@ class httpRequest {
     std::string getBody(void) const;
     httpRequestListT	getHeaderList(std::string const &key) const;
 	void printHeaders(std::ostream &os) const;
+    void parse(std::istream &fs);
+    void parse(std::string const &input);
 };
 
 std::ostream &operator<<(std::ostream &os, httpRequest const &t);

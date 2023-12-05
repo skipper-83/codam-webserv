@@ -1,13 +1,14 @@
 
 #include "http_request.hpp"
 
-httpRequest::httpRequest(std::istream &fs) {
-    std::stringstream body_stream;
+httpRequest::httpRequest() {}
 
-    _getHttpStartLine(fs);
-    _getHttpHeaders(fs);
-    body_stream << fs.rdbuf();
-    _httpRequestBody = &body_stream.str()[1]; //skip the newline
+httpRequest::httpRequest(std::string input) {
+    this->parse(input);
+}
+
+httpRequest::httpRequest(std::istream &fs) {
+    this->parse(fs);
 }
 
 httpRequest::httpRequest(const httpRequest &src) {
@@ -64,6 +65,21 @@ void httpRequest::printHeaders(std::ostream &os) const {
         os << element->first << ": " << element->second << "\n";
 }
 
+void httpRequest::parse(std::istream &fs) 
+{
+    std::stringstream body_stream;
+
+    _getHttpStartLine(fs);
+    _getHttpHeaders(fs);
+    body_stream << fs.rdbuf();
+    _httpRequestBody = &body_stream.str()[1]; //skip the newline
+}
+
+void httpRequest::parse(std::string const &input) {
+    std::stringstream is(input);
+    parse(is);
+}
+
 void httpRequest::_getHttpStartLine(std::istream &fs) {
     std::string line;
 
@@ -96,12 +112,11 @@ void httpRequest::_getHttpHeaders(std::istream &fs) {
             throw std::invalid_argument("Invalid HTTP key/value pair");
         val_start = line.find_first_not_of(' ', key_end + 1);
         if (val_start == std::string::npos)
-            throw std::invalid_argument("Empty HTTP key/value pair");
+            val_start = line.size();
         val_end = line.find(':', val_start);
         if (val_end != std::string::npos)
             throw std::invalid_argument("Invalid HTTP key/value pair: two seperators on single line");
         _httpHeaders.insert(std::make_pair(line.substr(0, key_end), line.substr(val_start, val_end)));
-        // _httpHeaders[line.substr(0, key_end)] = line.substr(val_start, val_end);
     }
     _checkHttpHeaders();
     return;

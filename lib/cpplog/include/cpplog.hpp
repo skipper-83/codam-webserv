@@ -46,8 +46,6 @@ class CPPLog {
 class CPPLog::Instance {
    public:
     Instance(Level level, const std::string &scope, CPPLog &log);
-    Instance(const Instance &other) = default;
-    Instance &operator=(const Instance &other) = default;
 
     template <typename T>
     Stream operator<<(const T &value);

@@ -1,17 +1,55 @@
 #include "cpplog.hpp"
 
-const std::map<CPPLog::Level, const char *> CPPLog::_convertLevel = {
-    {INFO, "INFO"}, {DEBUG, "DEBUG"}, {WARNING, "WARNING"}, {ERROR, "ERROR"}, {FATAL, "FATAL"},
+const CPPLog::End CPPLog::end;
+
+CPPLog::CPPLog(std::ostream &os) : _output(os) {}
+
+CPPLog::Stream CPPLog::stream(Level level, const std::string &scope) {
+    return (Stream(instance(level, scope)));
+}
+
+CPPLog::Instance CPPLog::instance(Level level, const std::string &scope) {
+    return (Instance(level, scope, *this));
+}
+
+void CPPLog::log(Level level, const std::string &scope, const std::string &message) {
+    _printPrefix(level, scope);
+    _output << message << std::endl;
+}
+
+void CPPLog::_log(Level level, const std::string &scope, const std::stringstream &message) {
+    log(level, scope, message.str());
+}
+
+void CPPLog::_printPrefix(Level level, const std::string &scope) {
+    _output << "[" << _levelToString.at(level) << "]<" << scope << "> ";
+}
+
+const std::unordered_map<CPPLog::Level, const char *> CPPLog::_levelToString = {
+    {CPPLog::Level::INFO, "INFO"},   {CPPLog::Level::DEBUG, "DEBUG"}, {CPPLog::Level::WARNING, "WARNING"},
+    {CPPLog::Level::ERROR, "ERROR"}, {CPPLog::Level::FATAL, "FATAL"},
 };
 
-CPPLog::CPPLog(std::ostream &os) : _os(os) {}
+CPPLog::Instance::Instance(Level level, const std::string &scope, CPPLog &log) : _level(level), _scope(scope), _log(log) {}
 
-CPPLogStream CPPLog::log(Level level, const std::string &funcName) {
-    return CPPLogStream(*this, level, funcName);
+CPPLog::Stream CPPLog::Instance::stream() {
+    return (*this);
 }
 
-void CPPLog::_printPrefix(Level level, const std::string &funcName) {
-    _os << "[" << _convertLevel.at(level) << "]<" << funcName << ">: ";
+void CPPLog::Instance::log(const std::string &message) {
+    _log.log(_level, _scope, message);
 }
 
-const CPPLogStreamEnd CPPLog::end = CPPLogStreamEnd();
+CPPLog::Stream::Stream(const Instance &instance) : _instance(instance) {}
+
+CPPLog::Stream::~Stream() {
+    if (_buffer.str().empty())
+        return;
+    _instance.log(_buffer.str());
+}
+
+CPPLog::Stream &CPPLog::Stream::operator<<(const End &) {
+    _instance.log(_buffer.str());
+    _buffer = std::stringstream();
+    return (*this);
+}

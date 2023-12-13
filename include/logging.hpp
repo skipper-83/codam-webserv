@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iostream>
 #include <cpplog.hpp>
+#include <iostream>
 
 extern CPPLog logOut;

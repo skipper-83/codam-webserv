@@ -1,16 +1,13 @@
+#include <functional>
 #include <iostream>
-
-#include "hello-world.hpp"
-
-#include "logging.hpp"
-
 #include <vector>
 
-int main() {
+#include "hello-world.hpp"
+#include "logging.hpp"
 
-    CPPLogStream log = logOut.log(CPPLog::INFO, "main");
-    log << "Running hello_world()" << CPPLog::end;
-    std::string result = hello_world();
-    log << "hello_world() returned " << result << CPPLog::end;
-    return 0;
+CPPLog::Instance mainLogI = logOut.instance(CPPLog::INFO, "main");
+
+int main() {
+    mainLogI << "main() called" << CPPLog::end;
+    mainLogI << "hello_world() returned: " << hello_world() << CPPLog::end;
 }

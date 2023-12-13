@@ -129,6 +129,43 @@ webserv/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/build
 .PHONY : webserv/fast
 
+#=============================================================================
+# Target rules for targets named ava_test
+
+# Build rule for target.
+ava_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ava_test
+.PHONY : ava_test
+
+# fast build rule for target.
+ava_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ava_test.dir/build.make CMakeFiles/ava_test.dir/build
+.PHONY : ava_test/fast
+
+parse_config.o: parse_config.cpp.o
+.PHONY : parse_config.o
+
+# target to build an object file
+parse_config.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ava_test.dir/build.make CMakeFiles/ava_test.dir/parse_config.cpp.o
+.PHONY : parse_config.cpp.o
+
+parse_config.i: parse_config.cpp.i
+.PHONY : parse_config.i
+
+# target to preprocess a source file
+parse_config.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ava_test.dir/build.make CMakeFiles/ava_test.dir/parse_config.cpp.i
+.PHONY : parse_config.cpp.i
+
+parse_config.s: parse_config.cpp.s
+.PHONY : parse_config.s
+
+# target to generate assembly for a file
+parse_config.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ava_test.dir/build.make CMakeFiles/ava_test.dir/parse_config.cpp.s
+.PHONY : parse_config.cpp.s
+
 src/hello-world.o: src/hello-world.cpp.o
 .PHONY : src/hello-world.o
 
@@ -209,7 +246,11 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... ava_test"
 	@echo "... webserv"
+	@echo "... parse_config.o"
+	@echo "... parse_config.i"
+	@echo "... parse_config.s"
 	@echo "... src/hello-world.o"
 	@echo "... src/hello-world.i"
 	@echo "... src/hello-world.s"

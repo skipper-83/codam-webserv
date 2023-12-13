@@ -6,7 +6,7 @@ services:
     image: nginx:latest
     restart: no 
     ports:
-      - "8080:81"
+      - "8080:8080"
     volumes:
       - ./conf:/etc/nginx
       - ./html:/usr/share/nginx/html  

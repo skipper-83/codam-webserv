@@ -23,6 +23,7 @@ set (CMAKE_EXPORT_COMPILE_COMMANDS ON) #vscode include path checking
 
 # Make executable with output name specified under EXEC_NAME and sources specified under SRCS and SRCS_MAIN
 add_executable(${EXEC_NAME} ${SRCS} ${SRCS_MAIN})
+add_executable(ava_test parse_config.cpp)
 target_include_directories(${EXEC_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 #-------------------- TESTING -------------------------------

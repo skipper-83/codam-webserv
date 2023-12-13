@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 class CPPLog {
    public:
@@ -23,7 +24,9 @@ class CPPLog {
 
     static const End end;
 
-    CPPLog(std::ostream &os);
+    CPPLog(std::ostream &os, Level minLevel = INFO, const std::unordered_set<std::string> &scopes = {});
+    CPPLog(const CPPLog &other) = delete;
+    CPPLog &operator=(const CPPLog &other) = delete;
 
     Stream stream(Level level, const std::string &scope);
     Instance instance(Level level, const std::string &scope);
@@ -33,6 +36,9 @@ class CPPLog {
     void _log(Level level, const std::string &scope, const std::stringstream &message);
     void _printPrefix(Level level, const std::string &scope);
     std::ostream &_output;
+
+    const Level _minLevel;
+    const std::unordered_set<std::string> _scopes;
 
     static const std::unordered_map<CPPLog::Level, const char *> _levelToString;
 };

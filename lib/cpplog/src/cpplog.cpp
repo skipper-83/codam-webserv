@@ -2,8 +2,8 @@
 
 const CPPLog::End CPPLog::end;
 
-CPPLog::CPPLog(std::ostream &os) : _output(os) {}
-
+CPPLog::CPPLog(std::ostream &output, Level minLevel, const std::unordered_set<std::string> &scopes)
+    : _output(output), _minLevel(minLevel), _scopes(scopes) {}
 CPPLog::Stream CPPLog::stream(Level level, const std::string &scope) {
     return (Stream(instance(level, scope)));
 }
@@ -13,6 +13,11 @@ CPPLog::Instance CPPLog::instance(Level level, const std::string &scope) {
 }
 
 void CPPLog::log(Level level, const std::string &scope, const std::string &message) {
+    if (level < _minLevel)
+		return;
+	if (!_scopes.empty() && _scopes.find(scope) == _scopes.end())
+		return;
+	
     _printPrefix(level, scope);
     _output << message << std::endl;
 }

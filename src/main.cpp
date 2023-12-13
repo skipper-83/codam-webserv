@@ -2,7 +2,15 @@
 
 #include "hello-world.hpp"
 
+#include "logging.hpp"
+
+#include <vector>
+
 int main() {
-    std::cout << hello_world() << std::endl;
+
+    CPPLogStream log = logOut.log(CPPLog::INFO, "main");
+    log << "Running hello_world()" << CPPLog::end;
+    std::string result = hello_world();
+    log << "hello_world() returned " << result << CPPLog::end;
     return 0;
 }

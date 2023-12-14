@@ -10,7 +10,7 @@ set (SRCS_MAIN
 # Sourcefiles without main function (included in testing)
 set (SRCS
 	src/hello-world.cpp
-	src/http_request.cpp
+	src/logging.cpp
 )
 set (EXEC_NAME webserv)
 
@@ -23,8 +23,13 @@ set (CMAKE_EXPORT_COMPILE_COMMANDS ON) #vscode include path checking
 
 # Make executable with output name specified under EXEC_NAME and sources specified under SRCS and SRCS_MAIN
 add_executable(${EXEC_NAME} ${SRCS} ${SRCS_MAIN})
-add_executable(ava_test parse_config.cpp)
+add_executable(ava_test parse_config.cpp src/logging.cpp)
 target_include_directories(${EXEC_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(ava_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+add_subdirectory(lib/cpplog)
+target_link_libraries(${EXEC_NAME} cpplog)
+target_link_libraries(ava_test cpplog)
 
 #-------------------- TESTING -------------------------------
 

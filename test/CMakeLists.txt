@@ -37,6 +37,8 @@ target_link_libraries(
 	gtest_main
 )
 
+target_link_libraries(${TEST_EXECUTABLE_NAME} cpplog)
+
 # Add tests to CTest
 # Set working directory to the the testing folder so that the test can find their test files
 # --------------------------------------------------

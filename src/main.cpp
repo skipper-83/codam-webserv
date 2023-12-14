@@ -1,8 +1,13 @@
+#include <functional>
 #include <iostream>
+#include <vector>
 
 #include "hello-world.hpp"
+#include "logging.hpp"
+
+CPPLog::Instance mainLogI = logOut.instance(CPPLog::INFO, "main");
 
 int main() {
-    std::cout << hello_world() << std::endl;
-    return 0;
+    mainLogI << "main() called" << CPPLog::end;
+    mainLogI << "hello_world() returned: " << hello_world() << CPPLog::end;
 }

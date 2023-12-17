@@ -6,11 +6,14 @@
 #include <vector>
 #include <string>
 
-#define CLIENT_BODY_SIZE 1000
-#define ALLOWED_METHODS 		{"GET", true}, {"POST", true}, {"PUT", true}, {"DELETE", true}, {"HEAD", true}, {"OPTIONS", true}, {"PATCH", true}
+#define DEFAULT_CLIENT_BODY_SIZE 1000
+#define DEFAULT_PORT 80
+#define DEFAULT_ALLOWED_METHODS 		{"GET", true}, {"POST", true}, {"PUT", true}, {"DELETE", true}, {"HEAD", true}, {"OPTIONS", true}, {"PATCH", true}
+
+using SubParsers = std::map<std::string, std::function<void(std::istream&)> >;
 
 struct BodySize {
-    int value = CLIENT_BODY_SIZE;
+    int value = DEFAULT_CLIENT_BODY_SIZE;
     bool defaultValue = true;
 };
 
@@ -21,7 +24,7 @@ struct ListenPort {
 
 struct AllowedMethods{
 	std::map<std::string, bool> methods = {
-		ALLOWED_METHODS
+		DEFAULT_ALLOWED_METHODS
 	};
 	bool defaultValue = true;
 };
@@ -42,29 +45,47 @@ struct AutoIndex {
     bool defaultValue = true;
 };
 
+struct ErrorPage
+{
+	std::vector<int> errorNumbers;
+	std::string page;
+};
+
+
 struct ServerConfig {
-    BodySize clientMaxBodySize;
     ServerNames names;
-    AutoIndex autoIndex;
 	AllowedMethods allowed;
     std::vector<ListenPort> ports;
     std::vector<Location> locations;
+	std::vector<ErrorPage> errorPages;
+    AutoIndex autoIndex;
+    BodySize clientMaxBodySize;
 };
 
 struct MainConfig {
     std::vector<ServerConfig> servers;
-    bool autoIndex;
-    std::vector<std::string> serverNames;
+	AllowedMethods allowed;
+    AutoIndex autoIndex;
     BodySize clientMaxBodySize;
 };
 
-std::istream& operator>>(std::istream& is, AllowedMethods& lhs);
-std::istream& operator>>(std::istream& is, AutoIndex& lhs);
-std::istream& operator>>(std::istream& is, ServerNames& lhs);
-std::istream& operator>>(std::istream& is, Location& lhs);
-std::istream& operator>>(std::istream& is, BodySize& lhs);
-std::istream& operator>>(std::istream& is, ListenPort& lhs);
-std::istream& operator>>(std::istream& is, ServerConfig& lhs);
-std::istream& operator>>(std::istream& is, MainConfig& lhs);
+std::istream& operator>>(std::istream& is, ErrorPage& rhs);
+std::istream& operator>>(std::istream& is, AllowedMethods& rhs);
+std::istream& operator>>(std::istream& is, AutoIndex& rhs);
+std::istream& operator>>(std::istream& is, ServerNames& rhs);
+std::istream& operator>>(std::istream& is, Location& rhs);
+std::istream& operator>>(std::istream& is, BodySize& rhs);
+std::istream& operator>>(std::istream& is, ListenPort& rhs);
+std::istream& operator>>(std::istream& is, ServerConfig& rhs);
+std::istream& operator>>(std::istream& is, MainConfig& rhs);
+
+std::ostream& operator<<(std::ostream& os, MainConfig& rhs);
+std::ostream& operator<<(std::ostream& os, ServerConfig& rhs);
+std::ostream& operator<<(std::ostream& os, ErrorPage& rhs);
+std::ostream& operator<<(std::ostream& os, Location& rhs);
+std::ostream& operator<<(std::ostream& os, BodySize& rhs);
+std::ostream& operator<<(std::ostream& os, AutoIndex& rhs);
+std::ostream& operator<<(std::ostream& os, AllowedMethods& rhs);
+
 
 #endif

@@ -1,7 +1,4 @@
-// #include <functional>
-// #include <iostream>
 #include <fstream>
-// #include <vector>
 
 #include "hello-world.hpp"
 #include "logging.hpp"
@@ -23,7 +20,16 @@ int main(int argc, char **argv) {
     file.open(argv[1]);
     if (!file)
         return 1;
-    file >> config;
+	try
+	{
+    	file >> config;
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+		return 1;
+	}
+	
 	// config.servers[0].clientMaxBodySize.value = 99;
     std::cout << config;
 }

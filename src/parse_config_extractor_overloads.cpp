@@ -30,6 +30,15 @@ static void checkTerminator(std::istream& is, std::string &line, std::string ref
         throw(std::invalid_argument("Missing terminator ; for " + ref));
 }
 
+/**
+ * @brief Allowed method extractor. Tests for terminator. Then sets all (default) allowed
+ * 		methods to false, and afterward all methods it encounters to true. Throws exception
+ * 		when it encounters a non-existing method. If succesful, it sets the default flag to false;
+ * 
+ * @param is 
+ * @param rhs 
+ * @return std::istream& 
+ */
 std::istream& operator>>(std::istream& is, AllowedMethods& rhs) {
 	std::string line, word;
 	std::stringstream lineStream;
@@ -57,6 +66,15 @@ std::istream& operator>>(std::istream& is, AllowedMethods& rhs) {
 	return is;
 }
 
+/**
+ * @brief Autoindex extractor. Checks for terminator and wheter the word afer
+ * 		autoindex is 'on' or 'off'. Sets the state of the autoindex struct accordingly
+ * 		and sets the default flag to false.
+ * 
+ * @param is 
+ * @param rhs 
+ * @return std::istream& 
+ */
 std::istream& operator>>(std::istream& is, AutoIndex& rhs) {
     std::string line, word;
 	std::stringstream lineStream;
@@ -81,6 +99,14 @@ std::istream& operator>>(std::istream& is, AutoIndex& rhs) {
     throw(std::invalid_argument("Unexpected input for autoindex: " + word));
 }
 
+/**
+ * @brief ServerNames extractor. Checks for terminator, then adds every word in 
+ * 		the line as a servername for the calling server struct.
+ * 
+ * @param is 
+ * @param rhs 
+ * @return std::istream& 
+ */
 std::istream& operator>>(std::istream& is, ServerNames& rhs) {
     std::string line, word;
     std::stringstream lineStream;
@@ -102,10 +128,19 @@ std::istream& operator>>(std::istream& is, ServerNames& rhs) {
     return is;
 };
 
+/**
+ * @brief Helper for Server extraction operator. Called when [root] is encountered by 
+ * 		the location extraction operator. Currently only checks for terminator and 
+ * 		extraction error.
+ * 			
+ * 
+ * @param is 
+ * @param rhs 
+ */
 static void setLocationRoot(std::istream& is, Location& rhs) {
     std::string word;
 
-    is >> rhs.root;  // todo: check this stuff
+    is >> rhs.root;  // todo: check this stuff ?
     if (!is)
         throw(std::invalid_argument("Incorrect input for location root"));
     if (rhs.root[rhs.root.size() - 1] == ';')
@@ -120,6 +155,13 @@ static void setLocationRoot(std::istream& is, Location& rhs) {
     debugLog << "root set to " << rhs.root << CPPLog::end;
 }
 
+/**
+ * @brief Sets the indices for a location. Currently only checks for terminator and 
+ * 			extractor error.
+ * 
+ * @param is 
+ * @param rhs 
+ */
 static void setLocationIndex(std::istream& is, Location& rhs) {
     std::string word, line;
     std::stringstream lineStream;
@@ -142,12 +184,20 @@ static void setLocationIndex(std::istream& is, Location& rhs) {
     }
 }
 
+/**
+ * @brief Location extractor overload. Extracts the referrer (the URI after the location keyword)
+ * 		and calls setLocationIndex() and/or setLocationRoot() for indices and root respectively
+ * 
+ * @param is 
+ * @param rhs 
+ * @return std::istream& 
+ */
 std::istream& operator>>(std::istream& is, Location& rhs) {
     std::string word;
 
     is >> rhs.ref >> word;
     if (!is || rhs.ref.find('{') != std::string::npos)
-        throw(std::invalid_argument("Wrong referrer for location"));  // todo check referrer mor thoroughly
+        throw(std::invalid_argument("Wrong referrer for location"));  // todo check referrer more thoroughly
     if (word.find('{') == std::string::npos)
         throw(std::invalid_argument("Missing opening { in location"));
     debugLog << "Referrer: " << rhs.ref << CPPLog::end;
@@ -167,6 +217,13 @@ std::istream& operator>>(std::istream& is, Location& rhs) {
     return is;
 }
 
+/**
+ * @brief Extractor for client_max_body_size
+ * 
+ * @param is 
+ * @param rhs 
+ * @return std::istream& 
+ */
 std::istream& operator>>(std::istream& is, BodySize& rhs) {
     float num;
     std::stringstream lineStream;
@@ -186,6 +243,13 @@ std::istream& operator>>(std::istream& is, BodySize& rhs) {
     return is;
 }
 
+/**
+ * @brief Extractor for listenport
+ * 
+ * @param is 
+ * @param rhs 
+ * @return std::istream& 
+ */
 std::istream& operator>>(std::istream& is, ListenPort& rhs) {
     int num;
     std::stringstream lineStream;
@@ -204,6 +268,13 @@ std::istream& operator>>(std::istream& is, ListenPort& rhs) {
     return is;
 }
 
+/**
+ * @brief Extractor for Errorpage
+ * 
+ * @param is 
+ * @param rhs 
+ * @return std::istream& 
+ */
 std::istream& operator>>(std::istream& is, ErrorPage& rhs)
 {
 	std::string line, word;
@@ -230,13 +301,20 @@ std::istream& operator>>(std::istream& is, ErrorPage& rhs)
 	return is;
 }
 
+/**
+ * @brief Helper for Server extractor operator: sets the array of lambda function to be called when 
+ * 			a keyword is encountered
+ * 
+ * @param subParsers 
+ * @param rhs 
+ */
 static void	setServerSubparsers(SubParsers &subParsers, ServerConfig& rhs){
 	 subParsers = {
         {"listen",
          [&rhs](std::istream& is) {
              ListenPort new_port;
              is >> new_port;
-			for (auto it : rhs.ports)
+			for (auto it : rhs.ports) // check for duplicate ports, we could also put this in the maine extractor function
 				if (it.value == new_port.value)
 					throw(std::invalid_argument("Duplicate listening port in server"));
              rhs.ports.push_back(new_port);
@@ -255,6 +333,13 @@ static void	setServerSubparsers(SubParsers &subParsers, ServerConfig& rhs){
 	};
 }
 
+/**
+ * @brief Server extractor operator. 
+ * 
+ * @param is 
+ * @param rhs 
+ * @return std::istream& 
+ */
 std::istream& operator>>(std::istream& is, ServerConfig& rhs) {
     std::string word;
     bool done = false;
@@ -274,7 +359,7 @@ std::istream& operator>>(std::istream& is, ServerConfig& rhs) {
         debugLog << "Server parse complete" << CPPLog::end;
 	else
 		throw(std::invalid_argument("Unexpected input for server: [" + word + "] Missing closing brace '}' ?"));
-	if (rhs.ports.size() < 1)
+	if (rhs.ports.size() < 1) // set default port if no port is set
 	{
 		ListenPort new_port;
 		new_port.value = DEFAULT_PORT;
@@ -283,6 +368,12 @@ std::istream& operator>>(std::istream& is, ServerConfig& rhs) {
     return is;
 }
 
+/**
+ * @brief Helper for MainConfig extractor, sets the lambda function for each keyword
+ * 
+ * @param subParsers 
+ * @param rhs 
+ */
 static void	setMainSubParsers(SubParsers &subParsers, MainConfig &rhs)
 {
 	subParsers = {
@@ -298,6 +389,12 @@ static void	setMainSubParsers(SubParsers &subParsers, MainConfig &rhs)
     };
 }
 
+/**
+ * @brief Called after all servers are passed, overrides defaults when a global value is set,
+ * 		and the server has no specific 'own' setting.
+ * 
+ * @param rhs 
+ */
 static void	overrideDefaults(MainConfig& rhs)
 {
 	for (auto &it : rhs.servers)
@@ -320,6 +417,13 @@ static void	overrideDefaults(MainConfig& rhs)
 	}
 }
 
+/**
+ * @brief MainConfig extractor operator
+ * 
+ * @param is 
+ * @param rhs 
+ * @return std::istream& 
+ */
 std::istream& operator>>(std::istream& is, MainConfig& rhs) {
     std::string word, line;
 	std::string::size_type pos;

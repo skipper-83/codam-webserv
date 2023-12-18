@@ -22,12 +22,11 @@ std::ostream& operator<<(std::ostream& os, BodySize& rhs) {
 }
 
 std::ostream& operator<<(std::ostream& os, Location& rhs) {
-    os << "\tlocation " << rhs.ref << " {\n\t\troot " << rhs.root << ";\n\t\tindex ";
-    if (!rhs.index_vec.size())
-        os << "n/a";
-    else {
+    os << "\tlocation" << rhs.ref << " {\n\t\troot " << rhs.root << ";\n";
+    if (rhs.index_vec.size()){
+		os << "\t\tindex";
         for (auto it : rhs.index_vec)
-            os << it;
+            os << " " << it ;
     }
 	os << ";\n\t}";
     return os;

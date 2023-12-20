@@ -14,6 +14,7 @@ class CPPLog {
         WARNING,
         ERROR,
         FATAL,
+        NONE,
     };
 
     using enum Level;

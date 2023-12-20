@@ -5,6 +5,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <functional>
 
 #define DEFAULT_CLIENT_BODY_SIZE 1000
 #define DEFAULT_PORT 80

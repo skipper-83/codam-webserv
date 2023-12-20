@@ -10,8 +10,8 @@
 #include "logging.hpp"
 #include "parse_config.hpp"
 
-CPPLog::Instance debugLog = logOut.instance(CPPLog::DEBUG, "parse config");
-CPPLog::Instance infoLog = logOut.instance(CPPLog::INFO, "parse config");
+CPPLog::Instance debugLog = logOut.instance(CPPLog::Level::DEBUG, "parse config");
+CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "parse config");
 
 /**
  * @brief  Used if input is expected on single line (ie: [listen 8080;\n])

@@ -2,7 +2,7 @@
 
 #include "logging.hpp"
 
-CPPLog::Instance hwLogI = logOut.instance(CPPLog::INFO, "hello-world");
+CPPLog::Instance hwLogI = logOut.instance(CPPLog::Level::INFO, "hello-world");
 
 std::string hello_world() {
     hwLogI << "hello_world() called" << CPPLog::end;

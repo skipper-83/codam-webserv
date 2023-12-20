@@ -16,7 +16,7 @@ class CPPLog {
         FATAL,
     };
 
-    using enum Level;
+    // using enum Level;
 
     class Instance;
     class Stream;
@@ -24,7 +24,7 @@ class CPPLog {
 
     static const End end;
 
-    CPPLog(std::ostream &os, Level minLevel = INFO, const std::unordered_set<std::string> &scopes = {});
+    CPPLog(std::ostream &os, Level minLevel = Level::INFO, const std::unordered_set<std::string> &scopes = {});
     CPPLog(const CPPLog &other) = delete;
     CPPLog &operator=(const CPPLog &other) = delete;
 

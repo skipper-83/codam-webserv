@@ -32,7 +32,7 @@ void CPPLog::_printPrefix(Level level, const std::string &scope) {
 
 const std::unordered_map<CPPLog::Level, const char *> CPPLog::_levelToString = {
     {CPPLog::Level::INFO, "INFO"},   {CPPLog::Level::DEBUG, "DEBUG"}, {CPPLog::Level::WARNING, "WARNING"},
-    {CPPLog::Level::ERROR, "ERROR"}, {CPPLog::Level::FATAL, "FATAL"},
+    {CPPLog::Level::ERROR, "ERROR"}, {CPPLog::Level::FATAL, "FATAL"}, {CPPLog::Level::NONE, "NONE"},
 };
 
 CPPLog::Instance::Instance(Level level, const std::string &scope, CPPLog &log) : _level(level), _scope(scope), _log(log) {}

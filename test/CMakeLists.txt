@@ -2,6 +2,7 @@ set(TEST_EXECUTABLE_NAME webserv_unit_tests)
 
 set(TEST_SRCS
 	test.cpp
+	# ../src/http_request.cpp
 )
 
 # Download GoogleTest

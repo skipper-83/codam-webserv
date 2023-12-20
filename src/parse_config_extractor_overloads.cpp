@@ -10,8 +10,8 @@
 #include "logging.hpp"
 #include "parse_config.hpp"
 
-CPPLog::Instance debugLog = logOut.instance(CPPLog::Level::DEBUG, "parse config");
-CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "parse config");
+// CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::DEBUG, "parse config");
+static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "parse config");
 
 /**
  * @brief  Used if input is expected on single line (ie: [listen 8080;\n])
@@ -60,7 +60,7 @@ std::istream& operator>>(std::istream& is, AllowedMethods& rhs) {
 		if (rhs.methods.find(word) == rhs.methods.end())
 			throw(std::invalid_argument("Invalid method in allowed_methods: [" + word + "]"));
 		rhs.methods[word] = true;
-		debugLog << word << " method allowed";
+		infoLog << word << " method allowed";
 	}
 	rhs.defaultValue = false;
 	return is;
@@ -87,13 +87,13 @@ std::istream& operator>>(std::istream& is, AutoIndex& rhs) {
     if (word.find("on") != std::string::npos && word.length() < 4) {
         rhs.on = true;
         rhs.defaultValue = false;
-		debugLog << "autoindex set to true" << CPPLog::end;
+		infoLog << "autoindex set to true" << CPPLog::end;
         return is;
     }
     if (word.find("off") != std::string::npos && word.length() < 5) {
         rhs.on = false;
         rhs.defaultValue = false;
-		debugLog << "autoindex set to false" << CPPLog::end;
+		infoLog << "autoindex set to false" << CPPLog::end;
         return is;
     }
     throw(std::invalid_argument("Unexpected input for autoindex: " + word));
@@ -121,9 +121,9 @@ std::istream& operator>>(std::istream& is, ServerNames& rhs) {
         rhs.name_vec.push_back(word);
     }
     if (rhs.name_vec.size()) {
-        debugLog << "names: ";
+        infoLog << "names: ";
         for (auto it : rhs.name_vec)
-            debugLog << it;
+            infoLog << it;
     }
     return is;
 };
@@ -152,7 +152,7 @@ static void setLocationRoot(std::istream& is, Location& rhs) {
         if (word.find(';') == std::string::npos)
             throw(std::invalid_argument("Missing terminating ; after root"));
     }
-    debugLog << "root set to " << rhs.root << CPPLog::end;
+    infoLog << "root set to " << rhs.root << CPPLog::end;
 }
 
 /**
@@ -178,9 +178,9 @@ static void setLocationIndex(std::istream& is, Location& rhs) {
         }
     }
     if (rhs.index_vec.size()) {
-        debugLog << "indices: " << CPPLog::end;
+        infoLog << "indices: " << CPPLog::end;
         for (auto it : rhs.index_vec)
-            debugLog << it << CPPLog::end;
+            infoLog << it << CPPLog::end;
     }
 }
 
@@ -200,7 +200,7 @@ std::istream& operator>>(std::istream& is, Location& rhs) {
         throw(std::invalid_argument("Wrong referrer for location"));  // todo check referrer more thoroughly
     if (word.find('{') == std::string::npos)
         throw(std::invalid_argument("Missing opening { in location"));
-    debugLog << "Referrer: " << rhs.ref << CPPLog::end;
+    infoLog << "Referrer: " << rhs.ref << CPPLog::end;
     while (is >> word) {
         if (!is)
             throw(std::invalid_argument("Wrong input for location"));
@@ -264,7 +264,7 @@ std::istream& operator>>(std::istream& is, ListenPort& rhs) {
     if (word.find_first_not_of(";") != std::string::npos)
         throw(std::invalid_argument("Invalid value for port"));
     rhs.value = num;
-    debugLog << "ListenPort set for " << num << CPPLog::end;
+    infoLog << "ListenPort set for " << num << CPPLog::end;
     return is;
 }
 
@@ -356,7 +356,7 @@ std::istream& operator>>(std::istream& is, ServerConfig& rhs) {
 			break ;
     }
     if (done)
-        debugLog << "Server parse complete" << CPPLog::end;
+        infoLog << "Server parse complete" << CPPLog::end;
 	else
 		throw(std::invalid_argument("Unexpected input for server: [" + word + "] Missing closing brace '}' ?"));
 	if (rhs.ports.size() < 1) // set default port if no port is set

@@ -97,14 +97,47 @@ TEST_F(httpRequestTest, get_protocol) {
 }
 
 TEST_F(httpRequestTest, get_body) {
-    EXPECT_EQ(req.getBody(), "body\nof\nrequest\n\n");
+    EXPECT_EQ(req.getBody(), "body\nof\nrequest\n\nmore\n");
 }
 
 TEST_F(httpRequestTest, get_header) {
     EXPECT_EQ(req.getHeader("Accept-Language"), "en-US,en;q=0.5");
 }
 
+TEST(http_request_fs, add_to_body){
+//    req.addToBody(this->request);
+    httpRequest request;
+
+    std::stringstream piet(R"(GET /path/to/resource?query=123 HTTP/1.1
+Host: 123.124.123.123
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate, br
+Connection: keep-alive
+Cookie: session_id=123
+Cookie: user_pref=dark_mode
+Content-Length: 27
+
+body
+of
+request
+more
+)", std::ios_base::ate | std::ios_base::in | std::ios_base::out);
+    // request.parse(req);
+    // std::cerr << "PIET1\n" << piet.str();
+    request.parse(piet);
+    //  std::cerr << "PIET2\n" << piet.str();
+    request.addToBody(piet);
+    piet << "MOOOORE";
+    request.addToBody(piet);
+    // std::cerr << request;
+    // std::cerr << "\n\n\n" << req << "\n\n\nyoyoyo\n\n";
+}
+
+
 TEST_F(httpRequestTest, get_headerlist) {
     EXPECT_EQ(req.getHeaderList("Cookie").at(0), "session_id=123");
     EXPECT_EQ(req.getHeaderList("Cookie").at(1), "user_pref=dark_mode");
+    // std::cout "BOOH"\n
 }

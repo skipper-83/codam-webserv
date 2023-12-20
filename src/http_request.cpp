@@ -1,6 +1,11 @@
 
 #include "http_request.hpp"
 
+#include "logging.hpp"
+
+static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest parser");
+static CPPLog::Instance warningLog = logOut.instance(CPPLog::Level::WARNING, "httpRequest parser");
+
 httpRequest::httpRequest() {}
 
 httpRequest::httpRequest(std::string input) {
@@ -50,6 +55,10 @@ std::string httpRequest::getBody(void) const {
     return _httpRequestBody;
 }
 
+bool httpRequest::isDone(void) const {
+    return _requestDone;
+}
+
 httpRequest::httpRequestListT httpRequest::getHeaderList(std::string const &key) const {
     std::pair<httpRequestT::const_iterator, httpRequestT::const_iterator> range;
     httpRequestListT ret;
@@ -65,14 +74,72 @@ void httpRequest::printHeaders(std::ostream &os) const {
         os << element->first << ": " << element->second << "\n";
 }
 
-void httpRequest::parse(std::istream &fs) 
-{
-    std::stringstream body_stream;
+std::streampos remainingLength(std::istream &fs) {
+    std::streampos curPos, endPos;
 
+    curPos = fs.tellg();
+    fs.seekg(0, std::ios::end);
+    endPos = fs.tellg();
+    fs.seekg(curPos);
+    return (endPos - curPos);
+}
+
+// void httpRequest::_parseRequestBody(std::istream &fs) {
+//     // int limit = 0;
+//     std::stringstream body_stream;
+//     std::string len;
+
+//     (void)fs;
+
+//     infoLog << "called";
+//     if ((len = getHeader("Content-Length")) != "")
+//         infoLog << len;
+//     body_stream << fs.rdbuf();
+//     _httpRequestBody = &body_stream.str()[1];  // skip the newline
+// }
+
+void httpRequest::addToBody(std::istream &fs) {
+    int addedLength;
+    std::stringstream contents;
+    
+    addedLength = remainingLength(fs);
+    infoLog << "ADD TO BODY: " << remainingLength(fs);
+    if (_contentLength > 0)
+    {
+        if (addedLength + _bodyLength >= _contentLength){
+            // read up until the _contentLength size;
+            // char buffer[]
+
+            // read into buffer the remaining bytes of contentLength
+            _requestDone = true;
+        }
+        else{
+            contents << fs.rdbuf();
+            _httpRequestBody += contents.str();
+            _bodyLength += addedLength;
+        }
+        infoLog << _httpRequestBody << " " << _bodyLength;
+    }
+    // case no content size:
+    // go through it line by line until line.empty()
+
+    // case chunked
+    // got throug it line by line until line is 0\r\n  and then \r\n
+    // which would be the same thing?
+
+    // infoLog << fs.rdbuf();
+
+}
+
+void httpRequest::parse(std::istream &fs) {
+    // std::stringstream body_stream;
+    infoLog << "size before header: " << remainingLength(fs);
     _getHttpStartLine(fs);
     _getHttpHeaders(fs);
-    body_stream << fs.rdbuf();
-    _httpRequestBody = &body_stream.str()[1]; //skip the newline
+    infoLog << "size after header: " << remainingLength(fs);
+    // body_stream << fs.rdbuf();
+    // _parseRequestBody(fs);
+    // _httpRequestBody = &body_stream.str()[1]; //skip the newline
 }
 
 void httpRequest::parse(std::string const &input) {
@@ -86,7 +153,7 @@ void httpRequest::_getHttpStartLine(std::istream &fs) {
     std::getline(fs, line);
     std::string::size_type request_type_pos, address_pos;
 
-    std::regex http_startline_pattern(
+    static const std::regex http_startline_pattern(
         "^(GET|POST|PUT|DELETE|HEAD|OPTIONS|PATCH) "
         "((https?://[\\w-]+(\\.[\\w-]+)*/?)?/[^ ]*?(\\?[^ ]+?)?) "
         "HTTP/\\d\\.\\d$");
@@ -119,13 +186,14 @@ void httpRequest::_getHttpHeaders(std::istream &fs) {
         _httpHeaders.insert(std::make_pair(line.substr(0, key_end), line.substr(val_start, val_end)));
     }
     _checkHttpHeaders();
+    _setVars();
     return;
 }
 
 void httpRequest::_checkHttpHeaders(void) {
     httpRequestT::iterator host_it;
 
-    std::regex http_host_header_pattern(
+    const static std::regex http_host_header_pattern(
         "(^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*"
         "([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])"
         "(:[0-9]{1,5})?$)|"
@@ -146,4 +214,22 @@ std::ostream &operator<<(std::ostream &os, httpRequest const &t) {
     t.printHeaders(os);
     os << "\n" << t.getBody() << "\n";
     return os;
+}
+
+void httpRequest::_setVars(void) {
+    std::string var;
+
+    if ((var = getHeader("Content-Length")) != "") {
+        try {
+            _contentLength = stoi(var);
+        } catch (const std::exception &e) {
+            warningLog << e.what() << ": wrong argument for Content-Length";
+            _contentLength = 0;
+        }
+    }
+
+    if ((var = getHeader("Transfer-Encoding")) != "" && var == "chunked") {
+        _chunkedRequest = true;
+        _contentLength = 0;
+    }
 }

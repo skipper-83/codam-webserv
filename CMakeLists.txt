@@ -13,6 +13,7 @@ set (SRCS
 	src/logging.cpp
 	src/parse_config_extractor_overloads.cpp
 	src/parse_config_insertion_overloads.cpp
+	src/http_request.cpp
 )
 set (EXEC_NAME webserv)
 

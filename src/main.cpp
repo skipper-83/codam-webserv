@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
     try {
         file >> config;
     } catch (const std::exception& e) {
-        std::cerr << e.what() << '\n';
+		logOut.stream(CPPLog::Level::FATAL, "main") << e.what();
         return 1;
     }
 

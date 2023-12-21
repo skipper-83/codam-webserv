@@ -17,17 +17,17 @@ class httpRequest {
     void _getHttpHeaders(std::istream &fs);
     void _getHttpStartLine(std::istream &fs);
     void _checkHttpHeaders(void);
-    void _parseRequestBody(std::istream &fs);
     void _setVars(void);
     std::string _httpRequestType;
     std::string _httpAdress;
     std::string _httpProtocol;
     httpRequestT _httpHeaders;
     std::string _httpRequestBody;
-    int _contentLength = 0;
-    int _bodyLength = 0;
-    bool _requestDone = false;
+    size_t _contentLength = 0;
+    size_t _bodyLength = 0;
+    bool _requestComplete = false;
     bool _chunkedRequest = false;
+	void _popLastNewLine(void);
 
    public:
     using httpRequestListT = std::vector<std::string>;
@@ -45,12 +45,13 @@ class httpRequest {
     std::string getProtocol(void) const;
     std::string getHeader(const std::string &key) const;
     std::string getBody(void) const;
-    bool isDone(void) const;
+    bool isComplete(void) const;
     httpRequestListT	getHeaderList(std::string const &key) const;
 	void printHeaders(std::ostream &os) const;
     void parse(std::istream &fs);
     void parse(std::string const &input);
-    void addToBody(std::istream &fs);
+    bool addToBody(std::istream &fs);
+	size_t getBodyLength(void) const;
 };
 
 std::ostream &operator<<(std::ostream &os, httpRequest const &t);

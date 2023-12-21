@@ -55,8 +55,8 @@ std::string httpRequest::getBody(void) const {
     return _httpRequestBody;
 }
 
-bool httpRequest::isDone(void) const {
-    return _requestDone;
+bool httpRequest::isComplete(void) const {
+    return _requestComplete;
 }
 
 httpRequest::httpRequestListT httpRequest::getHeaderList(std::string const &key) const {
@@ -74,6 +74,13 @@ void httpRequest::printHeaders(std::ostream &os) const {
         os << element->first << ": " << element->second << "\n";
 }
 
+/**
+ * @brief Returns the remaining amount of bytes from the current pos of the read pointer
+ * 		untill the end. Resets the readpointer to its current position after this operation.
+ *
+ * @param fs
+ * @return std::streampos
+ */
 std::streampos remainingLength(std::istream &fs) {
     std::streampos curPos, endPos;
 
@@ -84,62 +91,90 @@ std::streampos remainingLength(std::istream &fs) {
     return (endPos - curPos);
 }
 
-// void httpRequest::_parseRequestBody(std::istream &fs) {
-//     // int limit = 0;
-//     std::stringstream body_stream;
-//     std::string len;
+static std::string readNumberOfBytesFromFileStream(std::istream &fs, size_t amountOfBytes) {
+	std::vector<char> buffer(amountOfBytes);
 
-//     (void)fs;
+    if (!fs.read(buffer.data(), amountOfBytes)) {
+        throw(std::runtime_error("Failed to read chunk from http request"));
+    }
+    std::string ret(buffer.begin(), buffer.end());
+    return (ret);
+}
 
-//     infoLog << "called";
-//     if ((len = getHeader("Content-Length")) != "")
-//         infoLog << len;
-//     body_stream << fs.rdbuf();
-//     _httpRequestBody = &body_stream.str()[1];  // skip the newline
-// }
+void httpRequest::_popLastNewLine(void)
+{
+	if (_httpRequestBody[_httpRequestBody.size() - 1] == '\n')
+	{
+		_httpRequestBody.pop_back();
+		_bodyLength--;
+	}
+}
 
-void httpRequest::addToBody(std::istream &fs) {
-    int addedLength;
+bool httpRequest::addToBody(std::istream &fs) {
+    size_t addedLength;
     std::stringstream contents;
-    
-    addedLength = remainingLength(fs);
-    infoLog << "ADD TO BODY: " << remainingLength(fs);
-    if (_contentLength > 0)
-    {
-        if (addedLength + _bodyLength >= _contentLength){
-            // read up until the _contentLength size;
-            // char buffer[]
+	std::string line;
 
-            // read into buffer the remaining bytes of contentLength
-            _requestDone = true;
-        }
-        else{
+    addedLength = remainingLength(fs);
+    infoLog << "ADD TO BODY: " << addedLength;
+	if (_requestComplete)
+		return true;
+    if (_contentLength > 0) {
+        if (addedLength + _bodyLength >= _contentLength) {
+            try {
+                _httpRequestBody += readNumberOfBytesFromFileStream(fs, _contentLength - _bodyLength);
+            } catch (const std::exception &e) {
+                warningLog << e.what();
+                return false;
+            }
+            _bodyLength = _contentLength;
+            _requestComplete = true;
+        } else {
             contents << fs.rdbuf();
             _httpRequestBody += contents.str();
             _bodyLength += addedLength;
         }
         infoLog << _httpRequestBody << " " << _bodyLength;
+		return true;
     }
-    // case no content size:
-    // go through it line by line until line.empty()
 
-    // case chunked
-    // got throug it line by line until line is 0\r\n  and then \r\n
-    // which would be the same thing?
+	if (_chunkedRequest)
+	{
+		// chunked request code
+		infoLog << "chunked request";
+		return true;
+	}
 
-    // infoLog << fs.rdbuf();
+	while (std::getline(fs, line))
+	{
+		if (line.empty())
+		{
+			fs.clear();
+			_popLastNewLine();
+			// _httpRequestBody.pop_back(); // remove last newline
+			// _bodyLength--; // remove count from last newline
+			_requestComplete = true;
+			infoLog <<"found double newline: " << _httpRequestBody << " size:" << _bodyLength;
+			return true;
+		}
+		_httpRequestBody += line + "\n";
+		_bodyLength += line.size() + 1;
+	}
+	_popLastNewLine();
+	// _httpRequestBody.pop_back(); // remove last newline
+	// _bodyLength--; // remove count from last newline
+	infoLog <<"found EOF: " << _httpRequestBody << " size:" << _bodyLength;
+	fs.clear();
+    return true;
+}
 
+size_t httpRequest::getBodyLength(void) const {
+    return _bodyLength;
 }
 
 void httpRequest::parse(std::istream &fs) {
-    // std::stringstream body_stream;
-    infoLog << "size before header: " << remainingLength(fs);
     _getHttpStartLine(fs);
     _getHttpHeaders(fs);
-    infoLog << "size after header: " << remainingLength(fs);
-    // body_stream << fs.rdbuf();
-    // _parseRequestBody(fs);
-    // _httpRequestBody = &body_stream.str()[1]; //skip the newline
 }
 
 void httpRequest::parse(std::string const &input) {
@@ -219,7 +254,7 @@ std::ostream &operator<<(std::ostream &os, httpRequest const &t) {
 void httpRequest::_setVars(void) {
     std::string var;
 
-    if ((var = getHeader("Content-Length")) != "") {
+    if (!(var = getHeader("Content-Length")).empty()) {
         try {
             _contentLength = stoi(var);
         } catch (const std::exception &e) {
@@ -228,7 +263,7 @@ void httpRequest::_setVars(void) {
         }
     }
 
-    if ((var = getHeader("Transfer-Encoding")) != "" && var == "chunked") {
+    if (!(var = getHeader("Transfer-Encoding")).empty() && var == "chunked") {
         _chunkedRequest = true;
         _contentLength = 0;
     }

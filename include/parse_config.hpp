@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <functional>
+#include <unordered_map>
 
 #define DEFAULT_CLIENT_BODY_SIZE 1000
 #define DEFAULT_PORT 80
@@ -61,13 +62,21 @@ struct ServerConfig {
 	std::vector<ErrorPage> errorPages;
     AutoIndex autoIndex;
     BodySize clientMaxBodySize;
+	int	rank;
 };
 
-struct MainConfig {
-    std::vector<ServerConfig> servers;
-	AllowedMethods allowed;
-    AutoIndex autoIndex;
-    BodySize clientMaxBodySize;
+class MainConfig {
+	public:
+		std::vector<ServerConfig> servers;
+		AllowedMethods allowed;
+		AutoIndex autoIndex;
+		BodySize clientMaxBodySize;
+		std::unordered_map<int, ServerConfig*> ports;
+		std::map<std::pair<int, std::string>, ServerConfig*> portsNames;
+		ServerConfig* getServerFromPort(int port);
+		ServerConfig* getServerFromPortAndName(int port, std::string name);
+		ServerConfig* getServer(int pot, std::string name);
+		// bool hasPort
 };
 
 std::istream& operator>>(std::istream& is, ErrorPage& rhs);

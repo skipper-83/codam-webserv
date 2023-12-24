@@ -344,6 +344,7 @@ std::istream& operator>>(std::istream& is, ServerConfig& rhs) {
     std::string word;
     bool done = false;
     SubParsers subParsers;
+	static int rank;
 	
 	setServerSubparsers(subParsers, rhs);
     is >> word;
@@ -365,6 +366,7 @@ std::istream& operator>>(std::istream& is, ServerConfig& rhs) {
 		new_port.value = DEFAULT_PORT;
 		rhs.ports.push_back(new_port);
 	}
+	rhs.rank = rank++;
     return is;
 }
 
@@ -417,6 +419,7 @@ static void	overrideDefaults(MainConfig& rhs)
 	}
 }
 
+
 /**
  * @brief MainConfig extractor operator
  * 
@@ -447,5 +450,41 @@ std::istream& operator>>(std::istream& is, MainConfig& rhs) {
 			throw (std::invalid_argument("Unexpected input in config file: " + word));
     }
 	overrideDefaults(rhs);
+	for (size_t i = 0; i < rhs.servers.size(); ++i)
+	{
+		for (auto it_ports : rhs.servers[i].ports)
+		{
+			rhs.ports.insert({it_ports.value, &rhs.servers[i]});
+			for (auto it_names : rhs.servers[i].names.name_vec)
+			{
+				rhs.portsNames.insert({{it_ports.value, it_names}, &rhs.servers[i]});
+			}
+		}
+	}
     return is;
+}
+
+ServerConfig* MainConfig::getServerFromPort(int port) {
+	auto pos = this->ports.find(port);
+    if (pos != this->ports.end())
+		return  pos->second;
+	return nullptr;
+}
+
+ServerConfig * MainConfig::getServerFromPortAndName(int port, std::string name)
+{
+	auto pos = this->portsNames.find({port, name});
+	if (pos != this->portsNames.end())
+		return pos->second;
+	return nullptr;
+}
+
+ServerConfig * MainConfig::getServer(int port, std::string name)
+{
+	ServerConfig *ret;
+	if ((ret = getServerFromPortAndName(port, name)))
+		return ret;
+	if ((ret = getServerFromPort(port)))
+		return ret;
+	return nullptr;
 }

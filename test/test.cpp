@@ -5,6 +5,7 @@
 #include "hello-world.hpp"
 #include "http_request.hpp"
 #include "test_httpReq.hpp"
+#include "parse_config.hpp"
 
 TEST(hello_world, basic) {
     EXPECT_EQ(hello_world(), "Hello, World!");
@@ -97,7 +98,7 @@ TEST_F(httpRequestTest, get_protocol) {
 }
 
 TEST_F(httpRequestTest, get_body) {
-    EXPECT_EQ(req.getBody(), "body\nof\nrequest\nmore\n");
+    EXPECT_EQ(req.getBody(), "body\nof\nrequest\nmore");
 }
 
 TEST_F(httpRequestTest, get_header) {
@@ -114,7 +115,7 @@ TEST_F(httpBodyParseTest, with_content_length)
 {
 	
 	request << "Content-Length: 9\n\n0123456789";
-	test.parse(request);
+	test.parseHeader(request);
 	test.addToBody(request);
 	EXPECT_EQ(test.getBodyLength(), 9);
 	EXPECT_EQ(test.getBody(), "012345678");
@@ -124,7 +125,7 @@ TEST_F(httpBodyParseTest, with_content_length_two_chunks)
 {
 	
 	request << "Content-Length: 9\n\n012345";
-	test.parse(request);
+	test.parseHeader(request);
 	test.addToBody(request);
 	EXPECT_EQ(test.getBodyLength(), 6);
 	EXPECT_EQ(test.getBody(), "012345");
@@ -140,7 +141,7 @@ TEST_F(httpBodyParseTest, double_newline)
 	
 	request << "\n012345\n\n6789";
 	std::cerr << request.str();
-	test.parse(request);
+	test.parseHeader(request);
 	test.addToBody(request);
 	EXPECT_EQ(test.getBodyLength(), 6);
 	EXPECT_EQ(test.getBody(), "012345");
@@ -157,7 +158,7 @@ TEST_F(httpBodyParseTest, double_newline_in_second_chunk)
 	
 	request << "\n0123456789";
 	std::cerr << request.str();
-	test.parse(request);
+	test.parseHeader(request);
 	test.addToBody(request);
 	EXPECT_EQ(test.getBodyLength(), 10);
 	EXPECT_EQ(test.getBody(), "0123456789");
@@ -173,7 +174,7 @@ TEST_F(httpBodyParseTest, double_newline_is_second_chunk)
 	
 	request << "\n0123456789";
 	std::cerr << request.str();
-	test.parse(request);
+	test.parseHeader(request);
 	test.addToBody(request);
 	EXPECT_EQ(test.getBodyLength(), 10);
 	EXPECT_EQ(test.getBody(), "0123456789");
@@ -186,8 +187,62 @@ TEST_F(httpBodyParseTest, double_newline_is_second_chunk)
 
 TEST_F(httpBodyParseTest, chunked_happy)
 {
-	request << "Transfer-Encoding: chunked\n\n012345";
-	test.parse(request);
+	request << R"(Transfer-Encoding: chunked
+
+5
+01234
+6
+012345
+0
+
+GET etc)";
+	test.parseHeader(request);
+	test.addToBody(request);
+	EXPECT_EQ(test.getBody(), "01234012345");
+	EXPECT_EQ(test.getBodyLength(), 11);
+}
+
+TEST_F(httpBodyParseTest, chunked_in_three_parts)
+{
+	request << R"(Transfer-Encoding: chunked
+
+5
+01234)";
+	test.parseHeader(request);
+	test.addToBody(request);
+	EXPECT_EQ(test.getBody(), "01234");
+	EXPECT_EQ(test.getBodyLength(), 5);
+	request << R"(6
+012345)";
+	test.addToBody(request);
+	EXPECT_EQ(test.getBody(), "01234012345");
+	EXPECT_EQ(test.getBodyLength(), 11);
+	EXPECT_EQ(test.isComplete(), false);
+	request << R"(0
+
+and some)";
+	test.addToBody(request);
+	EXPECT_EQ(test.getBody(), "01234012345");
+	EXPECT_EQ(test.getBodyLength(), 11);
+	EXPECT_EQ(test.isComplete(), true);
+
+}
+
+TEST(config, first_test)
+{
+	// std::cout << argv[1];
+	std::fstream file;
+	std::cerr << "testig conf";
+	MainConfig config;
+
+	file.open("../../test/test.conf");
+	file >> config;
+	std::cerr << config 
+	<< "\ntest 8080: " << config.getServerFromPort(8080)->rank << " test 1111: " << config.getServerFromPort(1111)
+	<< "\ntest 8080 iets.localhost: " << config.getServerFromPortAndName(8080, "iets.localhost")->rank
+	<< "\ntest 8080 blabla: " << config.getServerFromPortAndName(8080, "blabla")
+	<< "\ntest 8080 blabla: " << config.getServer(8080, "blabla")->rank << "\n";
+	// std::cerr << file.rdbuf();
 }
 
 // TEST(http_request_body_parse, add_to_body){

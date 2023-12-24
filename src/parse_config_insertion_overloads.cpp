@@ -74,7 +74,7 @@ std::ostream& operator<<(std::ostream& os, ServerConfig& rhs) {
 std::ostream& operator<<(std::ostream& os, MainConfig& rhs) {
     os << rhs.autoIndex << "\n" << rhs.clientMaxBodySize << "\n" << rhs.allowed << "\n";
     for (auto it : rhs.servers)
-        os << "\nserver {\n" << it << "}\n";
+        os << "\nserver { #" << "rank: " << it.rank << "\n" << it << "}\n";
     os << std::endl;
     return os;
 }

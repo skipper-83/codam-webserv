@@ -48,7 +48,7 @@ class httpRequest {
     bool isComplete(void) const;
     httpRequestListT	getHeaderList(std::string const &key) const;
 	void printHeaders(std::ostream &os) const;
-    void parse(std::istream &fs);
+    void parseHeader(std::istream &fs);
     void parse(std::string const &input);
     bool addToBody(std::istream &fs);
 	size_t getBodyLength(void) const;

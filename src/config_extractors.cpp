@@ -1,14 +1,15 @@
-#include <algorithm>
-#include <fstream>
-#include <functional>
-#include <iostream>
-#include <istream>
-#include <map>
-#include <sstream>
-#include <vector>
+// #include <algorithm>
+// #include <fstream>
+// #include <functional>
+// #include <iostream>
+// #include <istream>
+
+// #include <map>
+// #include <sstream>
+// #include <vector>
 
 #include "logging.hpp"
-#include "parse_config.hpp"
+#include "config.hpp"
 
 // CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::DEBUG, "parse config");
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "parse config");
@@ -225,19 +226,22 @@ std::istream& operator>>(std::istream& is, Location& rhs) {
  * @return std::istream& 
  */
 std::istream& operator>>(std::istream& is, BodySize& rhs) {
-    float num;
+    double num;
+	// int	multiplier = 1;
     std::stringstream lineStream;
     std::string line, size, sizeNames = "kmg";
-    std::map<char, int> sizes = {{'k', 1}, {'m', 1000}, {'g', 1000000}};
+    std::map<char, int> sizes = {{'b', 1}, {'k', 1000}, {'m', 1000000}, {'g', 1000000000}};
 
     checkTerminator(is, line, "client_max_body_size");
     lineStream.str(line);
     lineStream >> num >> size;
+	infoLog << "num: " << num;
     if (!lineStream)
         throw(std::invalid_argument("Invalid value for client_max_body_size"));
-    if (!sizes[size[0]])
-        throw(std::invalid_argument("Invalid size character for client_max_body_size"));
-    num *= sizes[size[0]];
+    if (size[0] != ';' && !sizes[size[0]])
+        throw(std::invalid_argument("Invalid size type for client_max_body_size. Allowed: g, m, k, b or no identifier"));
+	if (size[0] != ';')
+    	num *= sizes[size[0]];
     rhs.value = num;
     rhs.defaultValue = false;
     return is;
@@ -371,56 +375,6 @@ std::istream& operator>>(std::istream& is, ServerConfig& rhs) {
 }
 
 /**
- * @brief Helper for MainConfig extractor, sets the lambda function for each keyword
- * 
- * @param subParsers 
- * @param rhs 
- */
-static void	setMainSubParsers(SubParsers &subParsers, MainConfig &rhs)
-{
-	subParsers = {
-        {"server",
-         [&rhs](std::istream& is) {
-             ServerConfig newServer;
-             is >> newServer;
-             rhs.servers.push_back(newServer);
-         }},
-		{"allowed_methods", [&rhs](std::istream& is) { is >> rhs.allowed; }},
-        {"client_max_body_size", [&rhs](std::istream& is) { is >> rhs.clientMaxBodySize; }},
-        {"autoindex", [&rhs](std::istream& is) { is >> rhs.autoIndex; }}
-    };
-}
-
-/**
- * @brief Called after all servers are passed, overrides defaults when a global value is set,
- * 		and the server has no specific 'own' setting.
- * 
- * @param rhs 
- */
-static void	overrideDefaults(MainConfig& rhs)
-{
-	for (auto &it : rhs.servers)
-	{
-		if (!rhs.autoIndex.defaultValue && it.autoIndex.defaultValue)
-		{
-			it.autoIndex.on = rhs.autoIndex.on;
-			it.autoIndex.defaultValue = false;
-		}
-		if (!rhs.clientMaxBodySize.defaultValue && it.clientMaxBodySize.defaultValue)
-		{
-			it.clientMaxBodySize.value = rhs.clientMaxBodySize.value;
-			it.clientMaxBodySize.defaultValue = false;
-		}
-		if (!rhs.allowed.defaultValue && it.allowed.defaultValue)
-		{
-			it.allowed.methods = rhs.allowed.methods;
-			it.allowed.defaultValue = false;
-		}
-	}
-}
-
-
-/**
  * @brief MainConfig extractor operator
  * 
  * @param is 
@@ -432,9 +386,18 @@ std::istream& operator>>(std::istream& is, MainConfig& rhs) {
 	std::string::size_type pos;
     std::cout << word;
 	std::stringstream ss;
-   	SubParsers subParsers;
+   	SubParsers 	subParsers = {
+        {"server",
+         [&rhs](std::istream& is) {
+             ServerConfig newServer;
+             is >> newServer;
+             rhs._servers.push_back(newServer);
+         }},
+		{"allowed_methods", [&rhs](std::istream& is) { is >> rhs._allowed; }},
+        {"client_max_body_size", [&rhs](std::istream& is) { is >> rhs.clientMaxBodySize; }},
+        {"autoindex", [&rhs](std::istream& is) { is >> rhs._autoIndex; }}
+    };
 
-	setMainSubParsers(subParsers, rhs);
  	while (getline(is, line)) {
         if ((pos = line.find('#')) != std::string::npos)
             line.erase(pos);
@@ -449,42 +412,8 @@ std::istream& operator>>(std::istream& is, MainConfig& rhs) {
 		else
 			throw (std::invalid_argument("Unexpected input in config file: " + word));
     }
-	overrideDefaults(rhs);
-	for (size_t i = 0; i < rhs.servers.size(); ++i)
-	{
-		for (auto it_ports : rhs.servers[i].ports)
-		{
-			rhs.ports.insert({it_ports.value, &rhs.servers[i]});
-			for (auto it_names : rhs.servers[i].names.name_vec)
-			{
-				rhs.portsNames.insert({{it_ports.value, it_names}, &rhs.servers[i]});
-			}
-		}
-	}
+	rhs._overrideDefaults();
+	rhs._setServerNameAndPortArrays();
     return is;
 }
 
-ServerConfig* MainConfig::getServerFromPort(int port) {
-	auto pos = this->ports.find(port);
-    if (pos != this->ports.end())
-		return  pos->second;
-	return nullptr;
-}
-
-ServerConfig * MainConfig::getServerFromPortAndName(int port, std::string name)
-{
-	auto pos = this->portsNames.find({port, name});
-	if (pos != this->portsNames.end())
-		return pos->second;
-	return nullptr;
-}
-
-ServerConfig * MainConfig::getServer(int port, std::string name)
-{
-	ServerConfig *ret;
-	if ((ret = getServerFromPortAndName(port, name)))
-		return ret;
-	if ((ret = getServerFromPort(port)))
-		return ret;
-	return nullptr;
-}

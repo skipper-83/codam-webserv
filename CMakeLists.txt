@@ -11,8 +11,9 @@ set (SRCS_MAIN
 set (SRCS
 	src/hello-world.cpp
 	src/logging.cpp
-	src/parse_config_extractor_overloads.cpp
-	src/parse_config_insertion_overloads.cpp
+	src/config_extractors.cpp
+	src/config_insertions.cpp
+	src/config.cpp
 	src/http_request.cpp
 )
 set (EXEC_NAME webserv)

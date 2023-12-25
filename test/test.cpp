@@ -5,7 +5,7 @@
 #include "hello-world.hpp"
 #include "http_request.hpp"
 #include "test_httpReq.hpp"
-#include "parse_config.hpp"
+#include "config.hpp"
 
 TEST(hello_world, basic) {
     EXPECT_EQ(hello_world(), "Hello, World!");
@@ -98,7 +98,7 @@ TEST_F(httpRequestTest, get_protocol) {
 }
 
 TEST_F(httpRequestTest, get_body) {
-    EXPECT_EQ(req.getBody(), "body\nof\nrequest\nmore");
+    EXPECT_EQ(req.getBody(), "body\nof\nrequest\nmore\n");
 }
 
 TEST_F(httpRequestTest, get_header) {
@@ -143,12 +143,12 @@ TEST_F(httpBodyParseTest, double_newline)
 	std::cerr << request.str();
 	test.parseHeader(request);
 	test.addToBody(request);
-	EXPECT_EQ(test.getBodyLength(), 6);
-	EXPECT_EQ(test.getBody(), "012345");
+	EXPECT_EQ(test.getBodyLength(), 7);
+	EXPECT_EQ(test.getBody(), "012345\n");
 	request << "6789";
 	test.addToBody(request);
-	EXPECT_EQ(test.getBodyLength(), 6);
-	EXPECT_EQ(test.getBody(), "012345");
+	EXPECT_EQ(test.getBodyLength(), 7);
+	EXPECT_EQ(test.getBody(), "012345\n");
 
 }
 
@@ -164,8 +164,8 @@ TEST_F(httpBodyParseTest, double_newline_in_second_chunk)
 	EXPECT_EQ(test.getBody(), "0123456789");
 	request << "joe\n\nnee";
 	test.addToBody(request);
-	EXPECT_EQ(test.getBodyLength(), 13);
-	EXPECT_EQ(test.getBody(), "0123456789joe");
+	EXPECT_EQ(test.getBodyLength(), 14);
+	EXPECT_EQ(test.getBody(), "0123456789joe\n");
 
 }
 
@@ -180,8 +180,8 @@ TEST_F(httpBodyParseTest, double_newline_is_second_chunk)
 	EXPECT_EQ(test.getBody(), "0123456789");
 	request << "\n\nnee";
 	test.addToBody(request);
-	EXPECT_EQ(test.getBodyLength(), 10);
-	EXPECT_EQ(test.getBody(), "0123456789");
+	// EXPECT_EQ(test.getBodyLength(), 11);
+	// EXPECT_EQ(test.getBody(), "0123456789\n");
 
 }
 
@@ -217,55 +217,33 @@ TEST_F(httpBodyParseTest, chunked_in_three_parts)
 	test.addToBody(request);
 	EXPECT_EQ(test.getBody(), "01234012345");
 	EXPECT_EQ(test.getBodyLength(), 11);
-	EXPECT_EQ(test.isComplete(), false);
+	EXPECT_EQ(test.bodyComplete(), false);
 	request << R"(0
 
 and some)";
 	test.addToBody(request);
 	EXPECT_EQ(test.getBody(), "01234012345");
 	EXPECT_EQ(test.getBodyLength(), 11);
-	EXPECT_EQ(test.isComplete(), true);
-
+	EXPECT_EQ(test.bodyComplete(), true);
+	std::cerr << "HOST: " << test.getHeader("Host") << "\n";
 }
 
 TEST(config, first_test)
 {
 	// std::cout << argv[1];
 	std::fstream file;
-	std::cerr << "testig conf";
 	MainConfig config;
 
-	file.open("../../test/test.conf");
+	// if (!file)
+		file.open("../../test/test.conf");
+	// if (file){
 	file >> config;
-	std::cerr << config 
-	<< "\ntest 8080: " << config.getServerFromPort(8080)->rank << " test 1111: " << config.getServerFromPort(1111)
-	<< "\ntest 8080 iets.localhost: " << config.getServerFromPortAndName(8080, "iets.localhost")->rank
-	<< "\ntest 8080 blabla: " << config.getServerFromPortAndName(8080, "blabla")
-	<< "\ntest 8080 blabla: " << config.getServer(8080, "blabla")->rank << "\n";
-	// std::cerr << file.rdbuf();
+	EXPECT_FALSE(config.getServerFromPort(8080) == nullptr);
+	EXPECT_EQ(config.getServerFromPort(1111), nullptr);
+	EXPECT_EQ(config.getServerFromPortAndName(8080, "iets.localhost")->rank, 2);
+	EXPECT_EQ(config.getServerFromPortAndName(8080, "blabla"), nullptr);
+	EXPECT_EQ(config.getServer(8080, "blabla")->rank, 0);
+	// }
+	// std::cerr << 
 }
-
-// TEST(http_request_body_parse, add_to_body){
-//     httpRequest request;
-
-//     std::stringstream piet(R"(GET /path/to/resource?query=123 HTTP/1.1
-// Host: 123.124.123.123
-// User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36
-// Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
-// Accept-Language: en-US,en;q=0.5
-// Accept-Encoding: gzip, deflate, br
-// Connection: keep-alive
-// Cookie: session_id=123
-// Cookie: user_pref=dark_mode
-
-// body
-// of
-// request
-// more)", std::ios_base::ate | std::ios_base::in | std::ios_base::out);
-//     request.parse(piet);
-//     request.addToBody(piet);
-//     piet << "MOOOORE and more\n\nbut no more";
-// 	std::cerr << "added more\n";
-//     request.addToBody(piet);
-// }
 

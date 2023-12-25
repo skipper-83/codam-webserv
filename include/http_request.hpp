@@ -2,7 +2,6 @@
 #ifndef HTTP_REQUEST_HPP
 #define HTTP_REQUEST_HPP
 
-// # include <map>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -10,10 +9,12 @@
 #include <sstream>
 #include <algorithm>
 
+#include "config.hpp"
+
+
 class httpRequest {
    private:
-    using httpRequestT = std::multimap<std::string, std::string>;
-
+	using httpRequestT = std::multimap<std::string, std::string>;
     void _getHttpHeaders(std::istream &fs);
     void _getHttpStartLine(std::istream &fs);
     void _checkHttpHeaders(void);
@@ -25,9 +26,14 @@ class httpRequest {
     std::string _httpRequestBody;
     size_t _contentLength = 0;
     size_t _bodyLength = 0;
-    bool _requestComplete = false;
+	bool _headerParseComplete = false;
+    bool _bodyComplete = false;
     bool _chunkedRequest = false;
+	bool _contentSizetSet = false;
 	void _popLastNewLine(void);
+	const ServerConfig* _server = nullptr;
+	int _port = -1;
+	size_t _clientMaxBodySize = DEFAULT_CLIENT_BODY_SIZE;
 
    public:
     using httpRequestListT = std::vector<std::string>;
@@ -45,13 +51,32 @@ class httpRequest {
     std::string getProtocol(void) const;
     std::string getHeader(const std::string &key) const;
     std::string getBody(void) const;
-    bool isComplete(void) const;
+    bool bodyComplete(void) const;
+	bool headerComplete(void) const;
     httpRequestListT	getHeaderList(std::string const &key) const;
 	void printHeaders(std::ostream &os) const;
     void parseHeader(std::istream &fs);
     void parse(std::string const &input);
-    bool addToBody(std::istream &fs);
+    void addToBody(std::istream &fs);
 	size_t getBodyLength(void) const;
+	void setServer(MainConfig &config, int port);
+
+	class httpRequestException : public std::exception
+	{
+		private:
+			const std::string _msg;
+			const int _errorNo;
+
+		public:
+			httpRequestException(int errorNo, std::string msg) :  _msg(msg), _errorNo(errorNo) {};
+			virtual const char* what(void) const noexcept override{
+				return _msg.c_str();
+			}
+			int errorNo(void) const noexcept{
+				return _errorNo;
+			}
+		
+	};
 };
 
 std::ostream &operator<<(std::ostream &os, httpRequest const &t);

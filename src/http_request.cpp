@@ -1,6 +1,7 @@
 
-#include "http_request.hpp"
+#include <map>
 
+#include "http_request.hpp"
 #include "logging.hpp"
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest parser");
@@ -55,8 +56,12 @@ std::string httpRequest::getBody(void) const {
     return _httpRequestBody;
 }
 
-bool httpRequest::isComplete(void) const {
-    return _requestComplete;
+bool httpRequest::bodyComplete(void) const {
+    return _bodyComplete;
+}
+
+bool httpRequest::headerComplete(void) const {
+    return _headerParseComplete;
 }
 
 httpRequest::httpRequestListT httpRequest::getHeaderList(std::string const &key) const {
@@ -101,39 +106,31 @@ static std::string readNumberOfBytesFromFileStream(std::istream &fs, size_t amou
     return (ret);
 }
 
-void httpRequest::_popLastNewLine(void) {
-    if (_httpRequestBody[_httpRequestBody.size() - 1] == '\n') {
-        _httpRequestBody.pop_back();
-        _bodyLength--;
-    }
-}
-
-bool httpRequest::addToBody(std::istream &fs) {
+void httpRequest::addToBody(std::istream &fs) {
     std::streampos addedLength, nextChunkSize;
     std::stringstream contents;
     std::string line;
 
     addedLength = remainingLength(fs);
     infoLog << "ADD TO BODY: " << addedLength;
-    if (_requestComplete)
-        return true;
-    if (_contentLength > 0) {
+    if (_bodyComplete)
+        return ;
+    if (_contentSizetSet) {
         if ((size_t)addedLength + _bodyLength >= _contentLength) {
             try {
                 _httpRequestBody += readNumberOfBytesFromFileStream(fs, _contentLength - _bodyLength);
             } catch (const std::exception &e) {
-                warningLog << "Error reading http request: " << e.what();
-                return false;
+				throw httpRequestException(400, "Error reading http request: " + std::string(e.what()));
             }
             _bodyLength = _contentLength;
-            _requestComplete = true;
+            _bodyComplete = true;
         } else {
             contents << fs.rdbuf();
             _httpRequestBody += contents.str();
             _bodyLength += addedLength;
         }
         infoLog << _httpRequestBody << " " << _bodyLength;
-        return true;
+        return ;
     }
 
     if (_chunkedRequest) {
@@ -141,58 +138,86 @@ bool httpRequest::addToBody(std::istream &fs) {
             try {
                 nextChunkSize = stoi(line);
             } catch (std::exception &e) {
-                warningLog << e.what() << "Incorrect chunk size in chunked http request";
-                return false;
+				throw httpRequestException(400, "Incorrect chunk size in chunked http request: "  + std::string(e.what()));
             }
             if (remainingLength(fs) < nextChunkSize) {
-                warningLog << "Chunk size smaller than announced size in chunked http request";
-                return false;
+				throw httpRequestException(400, "Chunk size smaller than announced size in chunked http request");
             }
+			if (_bodyLength + nextChunkSize > _clientMaxBodySize)
+				throw httpRequestException(413, "Request body larger than max body size");
             if (!nextChunkSize)
 			{
 				std::getline(fs, line);
 				if (line.empty())
-            		return (_requestComplete = true);
-				warningLog << "Terminating line of chunked http request non-empty";
-				return false;
+				{
+					_bodyComplete = true;
+            		return ;
+				}
+				throw httpRequestException(400, "Terminating line of chunked http request non-empty");
 			}
             try {
                 _httpRequestBody += readNumberOfBytesFromFileStream(fs, nextChunkSize);
             } catch (const std::exception &e) {
-                warningLog << "Error reading chunked http request: " << e.what();
-                return false;
+				throw httpRequestException(400, "Error reading chunked http request: " + std::string(e.what()));
             }
 			_bodyLength += (size_t)nextChunkSize;
 			std::getline(fs, line); // skip terminating newline
         }
 		fs.clear();
-        return true;
+        return ;
     }
 
     while (std::getline(fs, line)) {
         if (line.empty()) {
             fs.clear();
-            _popLastNewLine();
-            _requestComplete = true;
+            _bodyComplete = true;
             infoLog << "found double newline: " << _httpRequestBody << " size:" << _bodyLength;
-            return true;
+			if (_httpRequestBody[_httpRequestBody.size() - 1] != '\n')
+			{
+				_httpRequestBody += 'n';
+				++_bodyLength;
+			}
+            return ;
         }
-        _httpRequestBody += line + "\n";
-        _bodyLength += line.size() + 1;
+		if (line.size() + _bodyLength + static_cast<int>(fs.eof()) > _clientMaxBodySize)
+			throw httpRequestException(413, "Request body larger than max body size");
+        _httpRequestBody += line;
+        _bodyLength += line.size();
+		infoLog << "eof bit: " << fs.eof();
+		if (!fs.eof())
+		{
+			_httpRequestBody += '\n';
+			_bodyLength++;
+		}
     }
-    _popLastNewLine();
     infoLog << "found EOF: " << _httpRequestBody << " size:" << _bodyLength;
     fs.clear();
-    return true;
+    return ;
 }
 
 size_t httpRequest::getBodyLength(void) const {
     return _bodyLength;
 }
 
+void httpRequest::setServer(MainConfig &config, int port) {
+	
+	
+	if (!_headerParseComplete)
+		return ; // might handle this differently, this is here now to avoid segfaults.
+	if (_port > -1 && _port != port)
+		throw httpRequestException(400, "Transmission port does not match port in Host header");
+	this->_server = config.getServer(port, this->getHeader("Host"));
+	if (this->_server == nullptr)
+		throw std::runtime_error("No server match found");
+	_clientMaxBodySize = _server->clientMaxBodySize.value;
+	// return ;
+	// if (config.getServerFromPortAndName(port, this->getHeader("Host")) != nullptr)
+}
+
 void httpRequest::parseHeader(std::istream &fs) {
     _getHttpStartLine(fs);
     _getHttpHeaders(fs);
+	_headerParseComplete = true;
     // addToBody(fs);
 }
 
@@ -223,7 +248,7 @@ void httpRequest::_getHttpStartLine(std::istream &fs) {
 
 void httpRequest::_getHttpHeaders(std::istream &fs) {
     std::string line;
-    std::string::size_type key_end, val_start, val_end;
+    std::string::size_type key_end, val_start;
 
     while (std::getline(fs, line)) {
         if (line.empty())
@@ -234,10 +259,7 @@ void httpRequest::_getHttpHeaders(std::istream &fs) {
         val_start = line.find_first_not_of(' ', key_end + 1);
         if (val_start == std::string::npos)
             val_start = line.size();
-        val_end = line.find(':', val_start);
-        if (val_end != std::string::npos)
-            throw std::invalid_argument("Invalid HTTP key/value pair: two seperators on single line");
-        _httpHeaders.insert(std::make_pair(line.substr(0, key_end), line.substr(val_start, val_end)));
+        _httpHeaders.insert(std::make_pair(line.substr(0, key_end), line.substr(val_start, line.size() - 1)));
     }
     _checkHttpHeaders();
     _setVars();
@@ -247,7 +269,7 @@ void httpRequest::_getHttpHeaders(std::istream &fs) {
 void httpRequest::_checkHttpHeaders(void) {
     httpRequestT::iterator host_it;
 
-    const static std::regex http_host_header_pattern(
+    static const std::regex http_host_header_pattern(
         "(^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*"
         "([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])"
         "(:[0-9]{1,5})?$)|"
@@ -255,9 +277,9 @@ void httpRequest::_checkHttpHeaders(void) {
         "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(:[0-9]{1,5})?$)");
     host_it = _httpHeaders.find("Host");
     if (host_it == _httpHeaders.end() && _httpProtocol == "HTTP/1.1")
-        throw std::invalid_argument("No Host specified");
+        throw httpRequestException(400, "No host specified");
     if (host_it != _httpHeaders.end() && !std::regex_match(host_it->second, http_host_header_pattern))
-        throw std::invalid_argument("Invalid Host specified");
+        throw httpRequestException(400, "Invalid host specified");
     return;
 }
 
@@ -272,6 +294,8 @@ std::ostream &operator<<(std::ostream &os, httpRequest const &t) {
 
 void httpRequest::_setVars(void) {
     std::string var;
+	std::string::size_type pos;
+	httpRequestT::iterator it;
 
     if (!(var = getHeader("Content-Length")).empty()) {
         try {
@@ -279,11 +303,22 @@ void httpRequest::_setVars(void) {
         } catch (const std::exception &e) {
             warningLog << e.what() << ": wrong argument for Content-Length";
             _contentLength = 0;
+			// we could throw a 400 here
         }
+		_contentSizetSet = true;
     }
 
     if (!(var = getHeader("Transfer-Encoding")).empty() && var == "chunked") {
         _chunkedRequest = true;
         _contentLength = 0;
     }
+
+	if ((it = _httpHeaders.find("Host")) != _httpHeaders.end() && (pos = it->second.find(':')) != std::string::npos)
+	{
+		var = it->second;
+		_httpHeaders.erase(it);
+		_httpHeaders.insert({"Host", var.substr(0, pos)});
+		infoLog << var.substr(pos + 1, var.size() - pos - 1);
+		_port = stoi(var.substr(pos + 1, var.size() - pos - 1));
+	}	
 }

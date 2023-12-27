@@ -17,3 +17,6 @@ Thumbs.db
 .vscode/*
 !.vscode/c_cpp_properties.json.default
 !.vscode/settings.json.default
+
+archive
+_deps

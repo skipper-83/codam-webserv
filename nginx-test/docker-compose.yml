@@ -1,0 +1,12 @@
+version: "2.4"
+
+services:
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    restart: no 
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./conf:/etc/nginx
+      - ./html:/usr/share/nginx/html  

@@ -117,9 +117,9 @@ std::istream& operator>>(std::istream& is, ServerNames& rhs) {
     while (lineStream >> word) {
         if (!lineStream)
             throw(std::invalid_argument("Incorrect arguments for server_name"));
-		if (word[word.size() - 1] == ';')
-			word = word.substr(0, word.size() - 1);
-        rhs.name_vec.push_back(word);
+		if (word[word.size() - 1] == ';') // don't add the terminator
+			word = word.substr(0, word.size() - 1); 
+        rhs.name_vec.push_back(word); // right now this doesn't test if the name is in a valid format
     }
     if (rhs.name_vec.size()) {
         infoLog << "names: ";

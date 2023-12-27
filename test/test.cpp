@@ -5,6 +5,7 @@
 #include "hello-world.hpp"
 #include "http_request.hpp"
 #include "test_httpReq.hpp"
+#include "test_config.hpp"
 #include "config.hpp"
 
 TEST(hello_world, basic) {
@@ -117,8 +118,17 @@ TEST_F(httpBodyParseTest, with_content_length)
 	request << "Content-Length: 9\n\n0123456789";
 	test.parseHeader(request);
 	test.addToBody(request);
+	EXPECT_TRUE(test.bodyComplete());
 	EXPECT_EQ(test.getBodyLength(), 9);
 	EXPECT_EQ(test.getBody(), "012345678");
+}
+
+TEST_F(httpBodyParseTest, empty_body)
+{	
+	test.parseHeader(request);
+	test.addToBody(request);
+	EXPECT_TRUE(test.headerComplete());
+	EXPECT_EQ(test.getBodyLength(), 0);
 }
 
 TEST_F(httpBodyParseTest, with_content_length_two_chunks)
@@ -126,11 +136,14 @@ TEST_F(httpBodyParseTest, with_content_length_two_chunks)
 	
 	request << "Content-Length: 9\n\n012345";
 	test.parseHeader(request);
+	EXPECT_TRUE(test.headerComplete());
 	test.addToBody(request);
+	EXPECT_FALSE(test.bodyComplete());
 	EXPECT_EQ(test.getBodyLength(), 6);
 	EXPECT_EQ(test.getBody(), "012345");
 	request << "6789";
 	test.addToBody(request);
+	EXPECT_TRUE(test.bodyComplete());
 	EXPECT_EQ(test.getBodyLength(), 9);
 	EXPECT_EQ(test.getBody(), "012345678");
 
@@ -140,15 +153,17 @@ TEST_F(httpBodyParseTest, double_newline)
 {
 	
 	request << "\n012345\n\n6789";
-	std::cerr << request.str();
 	test.parseHeader(request);
+	EXPECT_TRUE(test.headerComplete());
 	test.addToBody(request);
+	EXPECT_TRUE(test.bodyComplete());
 	EXPECT_EQ(test.getBodyLength(), 7);
 	EXPECT_EQ(test.getBody(), "012345\n");
 	request << "6789";
 	test.addToBody(request);
 	EXPECT_EQ(test.getBodyLength(), 7);
 	EXPECT_EQ(test.getBody(), "012345\n");
+	EXPECT_TRUE(test.bodyComplete());
 
 }
 
@@ -157,15 +172,17 @@ TEST_F(httpBodyParseTest, double_newline_in_second_chunk)
 {
 	
 	request << "\n0123456789";
-	std::cerr << request.str();
 	test.parseHeader(request);
+	EXPECT_TRUE(test.headerComplete());
 	test.addToBody(request);
 	EXPECT_EQ(test.getBodyLength(), 10);
 	EXPECT_EQ(test.getBody(), "0123456789");
+	EXPECT_FALSE(test.bodyComplete());
 	request << "joe\n\nnee";
 	test.addToBody(request);
 	EXPECT_EQ(test.getBodyLength(), 14);
 	EXPECT_EQ(test.getBody(), "0123456789joe\n");
+	EXPECT_TRUE(test.bodyComplete());
 
 }
 
@@ -173,15 +190,17 @@ TEST_F(httpBodyParseTest, double_newline_is_second_chunk)
 {
 	
 	request << "\n0123456789";
-	std::cerr << request.str();
 	test.parseHeader(request);
+	EXPECT_TRUE(test.headerComplete());
 	test.addToBody(request);
 	EXPECT_EQ(test.getBodyLength(), 10);
 	EXPECT_EQ(test.getBody(), "0123456789");
+	EXPECT_FALSE(test.bodyComplete());
 	request << "\n\nnee";
 	test.addToBody(request);
-	// EXPECT_EQ(test.getBodyLength(), 11);
-	// EXPECT_EQ(test.getBody(), "0123456789\n");
+	EXPECT_EQ(test.getBodyLength(), 11);
+	EXPECT_EQ(test.getBody(), "0123456789\n");
+	EXPECT_TRUE(test.bodyComplete());
 
 }
 
@@ -197,9 +216,11 @@ TEST_F(httpBodyParseTest, chunked_happy)
 
 GET etc)";
 	test.parseHeader(request);
+	EXPECT_TRUE(test.headerComplete());
 	test.addToBody(request);
 	EXPECT_EQ(test.getBody(), "01234012345");
 	EXPECT_EQ(test.getBodyLength(), 11);
+	EXPECT_TRUE(test.bodyComplete());
 }
 
 TEST_F(httpBodyParseTest, chunked_in_three_parts)
@@ -209,6 +230,7 @@ TEST_F(httpBodyParseTest, chunked_in_three_parts)
 5
 01234)";
 	test.parseHeader(request);
+	EXPECT_TRUE(test.headerComplete());
 	test.addToBody(request);
 	EXPECT_EQ(test.getBody(), "01234");
 	EXPECT_EQ(test.getBodyLength(), 5);
@@ -218,6 +240,7 @@ TEST_F(httpBodyParseTest, chunked_in_three_parts)
 	EXPECT_EQ(test.getBody(), "01234012345");
 	EXPECT_EQ(test.getBodyLength(), 11);
 	EXPECT_EQ(test.bodyComplete(), false);
+	// EXPECT_TRUE(test.bodyComplete());
 	request << R"(0
 
 and some)";
@@ -225,25 +248,115 @@ and some)";
 	EXPECT_EQ(test.getBody(), "01234012345");
 	EXPECT_EQ(test.getBodyLength(), 11);
 	EXPECT_EQ(test.bodyComplete(), true);
-	std::cerr << "HOST: " << test.getHeader("Host") << "\n";
 }
 
-TEST(config, first_test)
+TEST_F(configTest, config_happy)
 {
-	// std::cout << argv[1];
-	std::fstream file;
-	MainConfig config;
-
-	// if (!file)
-		file.open("../../test/test.conf");
-	// if (file){
-	file >> config;
+	config_input >> config;
 	EXPECT_FALSE(config.getServerFromPort(8080) == nullptr);
 	EXPECT_EQ(config.getServerFromPort(1111), nullptr);
 	EXPECT_EQ(config.getServerFromPortAndName(8080, "iets.localhost")->rank, 2);
 	EXPECT_EQ(config.getServerFromPortAndName(8080, "blabla"), nullptr);
 	EXPECT_EQ(config.getServer(8080, "blabla")->rank, 0);
-	// }
-	// std::cerr << 
 }
+
+TEST_F(configTestStub, test_defaults)
+{
+	const ServerConfig* server;
+	AllowedMethods default_methods;
+	
+	config_input >> config;
+	EXPECT_FALSE(config.getServerFromPort(80) == nullptr);
+	server = config.getServerFromPort(80);
+	EXPECT_EQ(server->clientMaxBodySize.value, DEFAULT_CLIENT_BODY_SIZE);
+	EXPECT_EQ(default_methods.methods, server->allowed.methods);
+	EXPECT_EQ(server->clientMaxBodySize.value, 1000000);
+}
+
+TEST_F(configTestStub, test_bracket_error)
+{
+	config_input << "server {";
+	EXPECT_THROW(config_input >> config, std::invalid_argument);
+}
+
+TEST_F(configTestStub, test_client_max_size_error)
+{
+	config_input << "client_max_body_size: 10c;";
+	EXPECT_THROW(config_input >> config, std::invalid_argument);
+}
+
+TEST_F(configTestStub, test_client_max_size_terminator)
+{
+	config_input << "client_max_body_size: 10b";
+	EXPECT_THROW(config_input >> config, std::invalid_argument);
+}
+
+TEST_F(configTestStub, test_port_wrong_value)
+{
+	config_input << R"(server{
+		listen: 70000;
+})";
+	EXPECT_THROW(config_input >> config, std::invalid_argument);
+}
+
+TEST_F(configTestStub, test_port_value_with_letters)
+{
+	config_input << R"(server{
+		listen: 700aaa;
+})";
+	EXPECT_THROW(config_input >> config, std::invalid_argument);
+}
+
+TEST_F(configTestStub, test_error_with_no_number)
+{
+	config_input << R"(server{
+		listen: 700;
+		error_page: 404.html;
+})";
+	EXPECT_THROW(config_input >> config, std::invalid_argument);
+}
+
+TEST_F(configTestStub, test_duplicate_listening_port)
+{
+	config_input << R"(server{
+		listen: 700;
+		listen: 700;
+})";
+	EXPECT_THROW(config_input >> config, std::invalid_argument);
+}
+TEST_F(configWithRequest, happy_path)
+{
+	request_input << "Host: 123.123.123.123\n\n123456789";
+	
+	config_input >> config;
+	request.parseHeader(request_input);
+	EXPECT_TRUE(request.headerComplete());
+	request.setServer(config, 8080);
+	request.addToBody(request_input);
+	EXPECT_EQ(request.getBody(), "123456789");
+}
+
+TEST_F(configWithRequest, request_larger_than_client_max_body_size)
+{
+	request_input << "Host: myname:8080\n\n123456789";
+	
+	config_input >> config;
+	request.parseHeader(request_input);
+	EXPECT_TRUE(request.headerComplete());
+	request.setServer(config, 8080);
+	EXPECT_THROW(request.addToBody(request_input), httpRequest::httpRequestException);
+}
+
+TEST_F(configWithRequest, request_with_wrong_port)
+{
+	request_input << "Host: 123.123.123.123:8081\n\n123456789";
+	
+	config_input >> config;
+	request.parseHeader(request_input);
+	EXPECT_TRUE(request.headerComplete());
+	request.printHeaders(std::cerr);
+	EXPECT_THROW(request.setServer(config, 8080), httpRequest::httpRequestException);
+}
+
+
 

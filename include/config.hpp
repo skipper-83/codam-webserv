@@ -8,7 +8,7 @@
 #include <functional>
 #include <unordered_map>
 
-#define DEFAULT_CLIENT_BODY_SIZE 1000
+#define DEFAULT_CLIENT_BODY_SIZE 1000000
 #define DEFAULT_PORT 80
 #define DEFAULT_ALLOWED_METHODS 		{"GET", true}, {"POST", true}, {"PUT", true}, {"DELETE", true}, {"HEAD", true}, {"OPTIONS", true}, {"PATCH", true}
 
@@ -92,13 +92,13 @@ class MainConfig {
 		friend std::istream& operator>>(std::istream& is, ServerConfig& rhs);
 		friend std::istream& operator>>(std::istream& is, MainConfig& rhs);
 	
-		friend std::ostream& operator<<(std::ostream& os, MainConfig& rhs);
-		friend std::ostream& operator<<(std::ostream& os, ServerConfig& rhs);
-		friend std::ostream& operator<<(std::ostream& os, ErrorPage& rhs);
-		friend std::ostream& operator<<(std::ostream& os, Location& rhs);
-		friend std::ostream& operator<<(std::ostream& os, BodySize& rhs);
-		friend std::ostream& operator<<(std::ostream& os, AutoIndex& rhs);
-		friend std::ostream& operator<<(std::ostream& os, AllowedMethods& rhs);
+		friend std::ostream& operator<<(std::ostream& os, const MainConfig& rhs);
+		friend std::ostream& operator<<(std::ostream& os, const ServerConfig& rhs);
+		friend std::ostream& operator<<(std::ostream& os, const ErrorPage& rhs);
+		friend std::ostream& operator<<(std::ostream& os, const Location& rhs);
+		friend std::ostream& operator<<(std::ostream& os, const BodySize& rhs);
+		friend std::ostream& operator<<(std::ostream& os, const AutoIndex& rhs);
+		friend std::ostream& operator<<(std::ostream& os, const AllowedMethods& rhs);
 };
 
 // std::istream& operator>>(std::istream& is, ErrorPage& rhs);

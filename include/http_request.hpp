@@ -19,6 +19,9 @@ class httpRequest {
     void _getHttpStartLine(std::istream &fs);
     void _checkHttpHeaders(void);
     void _setVars(void);
+	void _addToFixedContentSize(std::istream &fs);
+	void _addChunkedContent(std::istream &fs);
+	void _addUntilNewline(std::istream &fs);
     std::string _httpRequestType;
     std::string _httpAdress;
     std::string _httpProtocol;
@@ -29,8 +32,7 @@ class httpRequest {
 	bool _headerParseComplete = false;
     bool _bodyComplete = false;
     bool _chunkedRequest = false;
-	bool _contentSizetSet = false;
-	void _popLastNewLine(void);
+	bool _contentSizeSet = false;
 	const ServerConfig* _server = nullptr;
 	int _port = -1;
 	size_t _clientMaxBodySize = DEFAULT_CLIENT_BODY_SIZE;

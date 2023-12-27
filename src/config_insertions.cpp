@@ -3,12 +3,12 @@
 
 #include "config.hpp"
 
-std::ostream& operator<<(std::ostream& os, AutoIndex& rhs) {
+std::ostream& operator<<(std::ostream& os, const AutoIndex& rhs) {
     os << "autoindex " << (rhs.on ? "on" : "off") << ";";
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, BodySize& rhs) {
+std::ostream& operator<<(std::ostream& os, const BodySize& rhs) {
     os << "client_max_body_size " << std::fixed << std::setprecision(2);
     if (rhs.value >= 1000000000)
         os  << static_cast<float>(rhs.value) / 1000000000 << "g";
@@ -22,7 +22,7 @@ std::ostream& operator<<(std::ostream& os, BodySize& rhs) {
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, Location& rhs) {
+std::ostream& operator<<(std::ostream& os, const Location& rhs) {
     os << "\tlocation" << rhs.ref << " {\n\t\troot " << rhs.root << ";\n";
     if (rhs.index_vec.size()) {
         os << "\t\tindex";
@@ -33,7 +33,7 @@ std::ostream& operator<<(std::ostream& os, Location& rhs) {
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, ErrorPage& rhs) {
+std::ostream& operator<<(std::ostream& os, const ErrorPage& rhs) {
     os << "\terror_page";
     for (auto it : rhs.errorNumbers)
         os << " " << it;
@@ -41,7 +41,7 @@ std::ostream& operator<<(std::ostream& os, ErrorPage& rhs) {
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, AllowedMethods& rhs) {
+std::ostream& operator<<(std::ostream& os, const AllowedMethods& rhs) {
     os << "allowed_methods";
     for (auto it : rhs.methods) {
         if (it.second)
@@ -51,7 +51,7 @@ std::ostream& operator<<(std::ostream& os, AllowedMethods& rhs) {
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, ServerConfig& rhs) {
+std::ostream& operator<<(std::ostream& os, const ServerConfig& rhs) {
     if (rhs.names.name_vec.size() > 0) {
         os << "\tserver_name";
         for (auto it : rhs.names.name_vec)
@@ -74,7 +74,7 @@ std::ostream& operator<<(std::ostream& os, ServerConfig& rhs) {
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, MainConfig& rhs) {
+std::ostream& operator<<(std::ostream& os, const MainConfig& rhs) {
     os << rhs._autoIndex << "\n" << rhs.clientMaxBodySize << "\n" << rhs._allowed << "\n";
     for (auto it : rhs._servers)
         os << "\nserver { #" << "rank: " << it.rank << "\n" << it << "}\n";

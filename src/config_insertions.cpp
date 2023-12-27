@@ -1,5 +1,5 @@
-#include <ostream>
 #include <iomanip>
+#include <ostream>
 
 #include "config.hpp"
 
@@ -11,13 +11,13 @@ std::ostream& operator<<(std::ostream& os, const AutoIndex& rhs) {
 std::ostream& operator<<(std::ostream& os, const BodySize& rhs) {
     os << "client_max_body_size " << std::fixed << std::setprecision(2);
     if (rhs.value >= 1000000000)
-        os  << static_cast<float>(rhs.value) / 1000000000 << "g";
+        os << static_cast<float>(rhs.value) / 1000000000 << "g";
     else if (rhs.value >= 1000000)
         os << static_cast<float>(rhs.value) / 1000000 << "m";
     else if (rhs.value >= 1000)
-        os << static_cast<float>(rhs.value)  / 1000 << "k";
-	else
-		os << static_cast<float>(rhs.value) << "b";
+        os << static_cast<float>(rhs.value) / 1000 << "k";
+    else
+        os << static_cast<float>(rhs.value) << "b";
     os << ";";
     return os;
 }
@@ -77,7 +77,9 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& rhs) {
 std::ostream& operator<<(std::ostream& os, const MainConfig& rhs) {
     os << rhs._autoIndex << "\n" << rhs.clientMaxBodySize << "\n" << rhs._allowed << "\n";
     for (auto it : rhs._servers)
-        os << "\nserver { #" << "rank: " << it.rank << "\n" << it << "}\n";
+        os << "\nserver { #"
+           << "rank: " << it.rank << "\n"
+           << it << "}\n";
     os << std::endl;
     return os;
 }

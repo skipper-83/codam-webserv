@@ -2,7 +2,7 @@
 
 #include "hello-world.hpp"
 #include "logging.hpp"
-#include "parse_config.hpp"
+#include "config.hpp"
 
 CPPLog::Instance mainLogI = logOut.instance(CPPLog::Level::INFO, "main");
 

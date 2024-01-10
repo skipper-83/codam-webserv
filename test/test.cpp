@@ -358,5 +358,14 @@ TEST_F(configWithRequest, request_with_wrong_port)
 	EXPECT_THROW(request.setServer(config, 8080), httpRequest::httpRequestException);
 }
 
+TEST_F(configTest, ports_getter)
+{
+	std::stringstream ports_list;
+
+	config_input >> config;
+	for(auto it: config.getPorts())
+		ports_list << it;
+	EXPECT_EQ(ports_list.str(), "8080808180880");
+}
 
 

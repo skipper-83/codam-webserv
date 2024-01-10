@@ -20,7 +20,7 @@ struct BodySize {
 };
 
 struct ListenPort {
-    int value;
+    uint16_t value;
 };
 
 
@@ -71,8 +71,9 @@ class MainConfig {
 		AllowedMethods _allowed;
 		AutoIndex _autoIndex;
 		BodySize clientMaxBodySize;
-		std::unordered_map<int, ServerConfig*> _ports;
-		std::map<std::pair<int, std::string>, ServerConfig*> _portsNames;
+		std::unordered_map<uint16_t, ServerConfig*> _portsToServers;
+		std::map<std::pair<uint16_t, std::string>, ServerConfig*> _portsNamesToServers;
+		std::vector<uint16_t> _ports;
 		void _overrideDefaults(void);
 		void _setServerNameAndPortArrays(void);
 		// void _setServer
@@ -81,6 +82,7 @@ class MainConfig {
 		const ServerConfig* getServerFromPort(int port);
 		const ServerConfig* getServerFromPortAndName(int port, std::string name);
 		const ServerConfig* getServer(int port, std::string name);
+		const std::vector<uint16_t>& getPorts(void);
 
 		friend std::istream& operator>>(std::istream& is, ErrorPage& rhs);
 		friend std::istream& operator>>(std::istream& is, AllowedMethods& rhs);

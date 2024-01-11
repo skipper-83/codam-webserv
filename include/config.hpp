@@ -11,6 +11,7 @@
 #define DEFAULT_CLIENT_BODY_SIZE 1000000
 #define DEFAULT_PORT 80
 #define DEFAULT_ALLOWED_METHODS 		{"GET", true}, {"POST", true}, {"PUT", true}, {"DELETE", true}, {"HEAD", true}, {"OPTIONS", true}, {"PATCH", true}
+#define DEFAULT_RESPONSE_PROTOCOL "HTTP/1.1"
 
 using SubParsers = std::map<std::string, std::function<void(std::istream&)> >;
 

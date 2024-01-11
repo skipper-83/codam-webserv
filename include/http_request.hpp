@@ -2,19 +2,18 @@
 #ifndef HTTP_REQUEST_HPP
 #define HTTP_REQUEST_HPP
 
-#include <fstream>
+// #include <fstream>
 #include <iostream>
 #include <map>
 #include <regex>
-#include <sstream>
-#include <algorithm>
+// #include <sstream>
+// #include <algorithm>
+#include "http_message.hpp"
 #include "config.hpp"
 #include "util.hpp"
 
-
-class httpRequest {
+class httpRequest : public httpMessage{
    private:
-	using httpRequestT = std::multimap<std::string, std::string>;
     void _getHttpHeaders(std::istream &fs);
     void _getHttpStartLine(std::istream &fs);
     void _checkHttpHeaders(void);
@@ -22,13 +21,9 @@ class httpRequest {
 	void _addToFixedContentSize(std::istream &fs);
 	void _addChunkedContent(std::istream &fs);
 	void _addUntilNewline(std::istream &fs);
+	std::string _httpAdress;
     std::string _httpRequestType;
-    std::string _httpAdress;
-    std::string _httpProtocol;
-    httpRequestT _httpHeaders;
-    std::string _httpRequestBody;
     size_t _contentLength = 0;
-    size_t _bodyLength = 0;
 	bool _headerParseComplete = false;
     bool _bodyComplete = false;
     bool _chunkedRequest = false;
@@ -38,8 +33,6 @@ class httpRequest {
 	size_t _clientMaxBodySize = DEFAULT_CLIENT_BODY_SIZE;
 
    public:
-    using httpRequestListT = std::vector<std::string>;
-
     httpRequest();
     httpRequest(std::string input);
     explicit httpRequest(std::istream &fs);
@@ -49,18 +42,12 @@ class httpRequest {
     httpRequest &operator=(const httpRequest &rhs);
 
     std::string getAdress(void) const;
-    std::string getRequestType(void) const;
-    std::string getProtocol(void) const;
-    std::string getHeader(const std::string &key) const;
-    std::string getBody(void) const;
+	std::string getRequestType(void) const;
     bool bodyComplete(void) const;
 	bool headerComplete(void) const;
-    httpRequestListT	getHeaderList(std::string const &key) const;
-	void printHeaders(std::ostream &os) const;
     void parseHeader(std::istream &fs);
     void parse(std::string &input);
     void addToBody(std::istream &fs);
-	size_t getBodyLength(void) const;
 	void setServer(MainConfig &config, int port);
 
 	class httpRequestException : public std::exception
@@ -76,9 +63,9 @@ class httpRequest {
 			int errorNo(void) const noexcept{
 				return _errorNo;
 			}
-			std::string errorStatus() const noexcept
+			std::string codeDescription() const noexcept
 			{
-				return WebServUtil::errorStatus(_errorNo);
+				return WebServUtil::codeDescription(_errorNo);
 			}
 		
 	};

@@ -4,6 +4,7 @@
 
 #include "hello-world.hpp"
 #include "http_request.hpp"
+#include "http_response.hpp"
 #include "test_httpReq.hpp"
 #include "test_config.hpp"
 #include "config.hpp"
@@ -365,7 +366,7 @@ TEST_F(configWithRequest, request_with_wrong_port)
 	config_input >> config;
 	request.parseHeader(request_input);
 	EXPECT_TRUE(request.headerComplete());
-	request.printHeaders(std::cerr);
+	std::cerr << request.getHeaderListAsString();
 	EXPECT_THROW(request.setServer(config, 8080), httpRequest::httpRequestException);
 }
 
@@ -401,5 +402,21 @@ Content-Length: 9
 	EXPECT_TRUE(req.bodyComplete());
 	EXPECT_EQ(input, "abcd");
 }
+TEST(response, basic)
+{
+	httpResponse resp;
+	std::string exp_eq = R"(HTTP/1.1 200 OK
+Content-Length: 4
+Content-Type: text/html; charset=UTF-8
+Date: )" + WebServUtil::timeStamp() + "\n" + 
+R"(Server: Jelle en Albert's webserv
 
+test)";
+
+	resp.setCode(200);
+	resp.setBody("test");
+	// std::cerr
+	std::cerr << "Response: \n" <<  resp.getRequestAsString() << "\n";
+	EXPECT_EQ(resp.getRequestAsString(), exp_eq);
+}
 

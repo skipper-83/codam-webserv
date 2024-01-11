@@ -60,7 +60,7 @@ httpRequest &httpRequest::operator=(const httpRequest &rhs) {
     this->_httpAdress = rhs._httpAdress;
     this->_httpProtocol = rhs._httpProtocol;
     this->_httpHeaders = httpRequestT(rhs._httpHeaders);
-    this->_httpRequestBody = rhs._httpRequestBody;
+    this->_httpBody = rhs._httpBody;
     this->_headerParseComplete = rhs._headerParseComplete;
     this->_contentLength = rhs._contentLength;
     this->_chunkedRequest = rhs._chunkedRequest;
@@ -90,36 +90,6 @@ std::string httpRequest::getRequestType(void) const {
 }
 
 /**
- * @brief Returns protocol of request (ie HTTP1.1)
- *
- * @return std::string
- */
-std::string httpRequest::getProtocol(void) const {
-    return _httpProtocol;
-}
-
-/**
- * @brief Returns the header with key supplied. If not such key exists returns empty string
- *
- * @param key
- * @return std::string
- */
-std::string httpRequest::getHeader(const std::string &key) const {
-    if (_httpHeaders.find(key) != _httpHeaders.end())
-        return _httpHeaders.find(key)->second;
-    return "";
-}
-
-/**
- * @brief Returns body of request
- *
- * @return std::string
- */
-std::string httpRequest::getBody(void) const {
-    return _httpRequestBody;
-}
-
-/**
  * @brief Set to true if the parsing of the body of the request is complete
  *
  * @return true
@@ -137,32 +107,6 @@ bool httpRequest::bodyComplete(void) const {
  */
 bool httpRequest::headerComplete(void) const {
     return _headerParseComplete;
-}
-
-/**
- * @brief Returns a list of keys with the key supplied
- *
- * @param key
- * @return httpRequest::httpRequestListT
- */
-httpRequest::httpRequestListT httpRequest::getHeaderList(std::string const &key) const {
-    std::pair<httpRequestT::const_iterator, httpRequestT::const_iterator> range;
-    httpRequestListT ret;
-
-    range = _httpHeaders.equal_range(key);
-    std::transform(range.first, range.second, std::back_inserter(ret),
-                   [](std::pair<std::string, std::string> key_value) { return key_value.second; });
-    return ret;
-}
-
-/**
- * @brief Prints headers to the ouput stream provided
- *
- * @param os
- */
-void httpRequest::printHeaders(std::ostream &os) const {
-    for (httpRequestT::const_iterator element = _httpHeaders.begin(); element != _httpHeaders.end(); element++)
-        os << element->first << ": " << element->second << "\n";
 }
 
 /**
@@ -212,7 +156,7 @@ void httpRequest::_addToFixedContentSize(std::istream &fs) {
     addedLength = remainingLength(fs);
     if ((size_t)addedLength + _bodyLength >= _contentLength) {
         try {
-            _httpRequestBody += readNumberOfBytesFromFileStream(fs, _contentLength - _bodyLength);
+            _httpBody += readNumberOfBytesFromFileStream(fs, _contentLength - _bodyLength);
         } catch (const std::exception &e) {
             throw httpRequestException(400, "Error reading http request: " + std::string(e.what()));
         }
@@ -220,10 +164,10 @@ void httpRequest::_addToFixedContentSize(std::istream &fs) {
         _bodyComplete = true;
     } else {
         contents << fs.rdbuf();
-        _httpRequestBody += contents.str();
+        _httpBody += contents.str();
         _bodyLength += addedLength;
     }
-    infoLog << _httpRequestBody << " " << _bodyLength;
+    infoLog << _httpBody << " " << _bodyLength;
     return;
 }
 
@@ -257,7 +201,7 @@ void httpRequest::_addChunkedContent(std::istream &fs) {
             throw httpRequestException(400, "Terminating line of chunked http request non-empty");
         }
         try {
-            _httpRequestBody += readNumberOfBytesFromFileStream(fs, nextChunkSize);
+            _httpBody += readNumberOfBytesFromFileStream(fs, nextChunkSize);
         } catch (const std::exception &e) {
             throw httpRequestException(400, "Error reading chunked http request: " + std::string(e.what()));
         }
@@ -279,24 +223,24 @@ void httpRequest::_addUntilNewline(std::istream &fs) {
         if (line.empty()) {
             fs.clear();
             _bodyComplete = true;
-            infoLog << "found double newline: " << _httpRequestBody << " size:" << _bodyLength;
-            if (_httpRequestBody[_httpRequestBody.size() - 1] != '\n') {
-                _httpRequestBody += '\n';
+            infoLog << "found double newline: " << _httpBody << " size:" << _bodyLength;
+            if (_httpBody[_httpBody.size() - 1] != '\n') {
+                _httpBody += '\n';
                 ++_bodyLength;
             }
             return;
         }
         if (line.size() + _bodyLength + static_cast<int>(fs.eof()) > _clientMaxBodySize)
             throw httpRequestException(413, "Request body larger than max body size");
-        _httpRequestBody += line;
+        _httpBody += line;
         _bodyLength += line.size();
         infoLog << "eof bit: " << fs.eof();
         if (!fs.eof()) {
-            _httpRequestBody += '\n';
+            _httpBody += '\n';
             _bodyLength++;
         }
     }
-    infoLog << "found EOF: " << _httpRequestBody << " size:" << _bodyLength;
+    infoLog << "found EOF: " << _httpBody << " size:" << _bodyLength;
     fs.clear();
     return;
 }
@@ -319,15 +263,6 @@ void httpRequest::addToBody(std::istream &fs) {
     if (_contentSizeSet)
         return _addToFixedContentSize(fs);
     _addUntilNewline(fs);
-}
-
-/**
- * @brief Returns the length of the body
- *
- * @return size_t
- */
-size_t httpRequest::getBodyLength(void) const {
-    return _bodyLength;
 }
 
 /**
@@ -364,21 +299,21 @@ void httpRequest::parse(std::string &input) {
             parseHeader(is);
         } catch (const httpRequestException &e) {
             // reply with bad request response?
-            warningLog << "HTTP error " << e.errorNo() << ": " << e.errorStatus() << "\n" << e.what();
+            warningLog << "HTTP error " << e.errorNo() << ": " << e.codeDescription() << "\n" << e.what();
         }
     }
     try {
         addToBody(is);
     } catch (const httpRequestException &e) {
         // reply with bad request response?
-        warningLog << "HTTP error " << e.errorNo() << ": " << e.errorStatus() << "\n" << e.what();
+        warningLog << "HTTP error " << e.errorNo() << ": " << e.codeDescription() << "\n" << e.what();
     }
-	std::cerr << "is length now: [" << remainingLength(is) << "]\n";
-	input = is.str().substr(is.tellg());
-	// if (remainingLength(is))
-	// 	input = is.str();
-	// else
-	// 	input = "";
+    std::cerr << "is length now: [" << remainingLength(is) << "]\n";
+    input = is.str().substr(is.tellg());
+    // if (remainingLength(is))
+    // 	input = is.str();
+    // else
+    // 	input = "";
 }
 
 void httpRequest::_getHttpStartLine(std::istream &fs) {
@@ -441,9 +376,9 @@ void httpRequest::_checkHttpHeaders(void) {
 std::ostream &operator<<(std::ostream &os, httpRequest const &t) {
     os << "Protocol:" << t.getProtocol() << "\n"
        << "Type: " << t.getRequestType() << "\n"
-       << "Adress: " << t.getAdress() << "\n";
-    t.printHeaders(os);
-    os << "\n" << t.getBody() << "\n";
+       << "Adress: " << t.getAdress() << "\n"
+       << t.getHeaderListAsString() << "\n"
+       << t.getBody() << "\n";
     return os;
 }
 

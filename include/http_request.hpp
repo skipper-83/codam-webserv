@@ -8,8 +8,8 @@
 #include <regex>
 #include <sstream>
 #include <algorithm>
-
 #include "config.hpp"
+#include "util.hpp"
 
 
 class httpRequest {
@@ -58,7 +58,7 @@ class httpRequest {
     httpRequestListT	getHeaderList(std::string const &key) const;
 	void printHeaders(std::ostream &os) const;
     void parseHeader(std::istream &fs);
-    void parse(std::string const &input);
+    void parse(std::string &input);
     void addToBody(std::istream &fs);
 	size_t getBodyLength(void) const;
 	void setServer(MainConfig &config, int port);
@@ -68,7 +68,6 @@ class httpRequest {
 		private:
 			const std::string _msg;
 			const int _errorNo;
-
 		public:
 			httpRequestException(int errorNo, std::string msg) :  _msg(msg), _errorNo(errorNo) {};
 			virtual const char* what(void) const noexcept override{
@@ -76,6 +75,10 @@ class httpRequest {
 			}
 			int errorNo(void) const noexcept{
 				return _errorNo;
+			}
+			std::string errorStatus() const noexcept
+			{
+				return WebServUtil::errorStatus(_errorNo);
 			}
 		
 	};

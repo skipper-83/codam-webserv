@@ -307,11 +307,11 @@ void httpRequest::_addUntilNewline(std::istream &fs) {
  * @param fs
  */
 void httpRequest::addToBody(std::istream &fs) {
-    std::streampos addedLength, nextChunkSize;
+    std::streampos nextChunkSize;
     std::stringstream contents;
     std::string line;
 
-    infoLog << "ADD TO BODY: " << addedLength;
+    infoLog << "ADD TO BODY: " << remainingLength(fs);
     if (_bodyComplete)
         return;
     if (_chunkedRequest)
@@ -354,9 +354,31 @@ void httpRequest::parseHeader(std::istream &fs) {
     // addToBody(fs);
 }
 
-void httpRequest::parse(std::string const &input) {
+void httpRequest::parse(std::string &input) {
+    if (!_headerParseComplete && input.find("\n\n") == std::string::npos)
+        return;
     std::stringstream is(input);
-    parseHeader(is);
+
+    if (!_headerParseComplete) {
+        try {
+            parseHeader(is);
+        } catch (const httpRequestException &e) {
+            // reply with bad request response?
+            warningLog << "HTTP error " << e.errorNo() << ": " << e.errorStatus() << "\n" << e.what();
+        }
+    }
+    try {
+        addToBody(is);
+    } catch (const httpRequestException &e) {
+        // reply with bad request response?
+        warningLog << "HTTP error " << e.errorNo() << ": " << e.errorStatus() << "\n" << e.what();
+    }
+	std::cerr << "is length now: [" << remainingLength(is) << "]\n";
+	input = is.str().substr(is.tellg());
+	// if (remainingLength(is))
+	// 	input = is.str();
+	// else
+	// 	input = "";
 }
 
 void httpRequest::_getHttpStartLine(std::istream &fs) {
@@ -370,7 +392,7 @@ void httpRequest::_getHttpStartLine(std::istream &fs) {
         "((https?://[\\w-]+(\\.[\\w-]+)*/?)?/[^ ]*?(\\?[^ ]+?)?) "
         "HTTP/\\d\\.\\d$");
     if (!std::regex_match(line, http_startline_pattern))
-        throw std::invalid_argument("Invalid HTTP start line");
+        throw httpRequestException(400, "Invalid HTTP start line");
     request_type_pos = line.find(' ');
     address_pos = line.find(' ', request_type_pos + 1);
     _httpRequestType = line.substr(0, request_type_pos);
@@ -388,7 +410,7 @@ void httpRequest::_getHttpHeaders(std::istream &fs) {
             break;
         key_end = line.find(':', 0);
         if (key_end == std::string::npos)
-            throw std::invalid_argument("Invalid HTTP key/value pair");
+            throw httpRequestException(400, "Invalid HTTP key/value pair");
         val_start = line.find_first_not_of(' ', key_end + 1);
         if (val_start == std::string::npos)
             val_start = line.size();

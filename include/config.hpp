@@ -55,15 +55,18 @@ struct ErrorPage
 };
 
 
-struct ServerConfig {
-    ServerNames names;
-	AllowedMethods allowed;
-    std::vector<ListenPort> ports;
-    std::vector<Location> locations;
-	std::vector<ErrorPage> errorPages;
-    AutoIndex autoIndex;
-    BodySize clientMaxBodySize;
-	int	rank;
+class ServerConfig {
+	public:
+		ServerNames names;
+		AllowedMethods allowed;
+		std::vector<ListenPort> ports;
+		std::vector<Location> locations;
+		std::vector<ErrorPage> errorPages;
+		AutoIndex autoIndex;
+		BodySize clientMaxBodySize;
+		int	rank;
+
+		std::string getErrorPage(int errorCode) const;
 };
 
 class MainConfig {

@@ -8,6 +8,7 @@
 #include "test_httpReq.hpp"
 #include "test_config.hpp"
 #include "config.hpp"
+#include "path.hpp"
 
 TEST(hello_world, basic) {
     EXPECT_EQ(hello_world(), "Hello, World!");
@@ -420,3 +421,18 @@ test)";
 	EXPECT_EQ(resp.getRequestAsString(), exp_eq);
 }
 
+TEST_F(configWithRequest, getErrorPage)
+{
+	request_input << "Host: myname:8080\n\n123456789";
+	config_input >> config;
+
+	request.parseHeader(request_input);
+	request.setServer(config, 8080);
+	EXPECT_EQ(request.getErrorPage(504), "/50xxxx.html");
+
+}
+
+TEST(path, first)
+{
+	checkFile("Appie");
+}

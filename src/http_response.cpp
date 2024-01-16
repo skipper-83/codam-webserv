@@ -4,8 +4,11 @@ httpResponse::httpResponse() {
 	_httpProtocol = DEFAULT_RESPONSE_PROTOCOL;
 	setHeader("Content-Type", "text/html; charset=UTF-8");
 	setHeader("Server","Jelle en Albert's webserv");
+}
 
-
+httpResponse::httpResponse(httpRequest* callingRequest) {
+	httpResponse();
+	_precedingRequest = callingRequest;
 }
 
 void httpResponse::setCode(int code) {

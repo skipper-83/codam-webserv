@@ -43,6 +43,7 @@ class httpRequest : public httpMessage{
 
     std::string getAdress(void) const;
 	std::string getRequestType(void) const;
+	std::string getErrorPage(int errorCode) const;
     bool bodyComplete(void) const;
 	bool headerComplete(void) const;
     void parseHeader(std::istream &fs);

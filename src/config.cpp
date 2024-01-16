@@ -1,4 +1,5 @@
 #include "config.hpp"
+
 #include <iostream>
 
 /**
@@ -60,6 +61,16 @@ const ServerConfig *MainConfig::getServer(int port, std::string name) {
     return nullptr;
 }
 
-const std::vector<uint16_t>& MainConfig::getPorts(void) {
+const std::vector<uint16_t> &MainConfig::getPorts(void) {
     return (_ports);
+}
+
+std::string ServerConfig::getErrorPage(int errorCode) const {
+    for (auto it : this->errorPages) {
+        for (size_t i = 0; i < it.errorNumbers.size(); ++i) {
+			if (it.errorNumbers[i] == errorCode)
+				return it.page;
+        }
+    }
+    return std::string();
 }

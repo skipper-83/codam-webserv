@@ -14,6 +14,10 @@ set (SRCS
 	src/async/iofd.cpp
 	src/async/socket.cpp
 	src/async/pollarray.cpp
+	src/config_extractors.cpp
+	src/config_insertions.cpp
+	src/config.cpp
+	src/http_request.cpp
 )
 set (EXEC_NAME webserv)
 
@@ -26,11 +30,14 @@ set (CMAKE_EXPORT_COMPILE_COMMANDS ON) #vscode include path checking
 
 # Make executable with output name specified under EXEC_NAME and sources specified under SRCS and SRCS_MAIN
 add_executable(${EXEC_NAME} ${SRCS} ${SRCS_MAIN})
+# add_executable(ava_test parse_config.cpp parse_config_extractor_overloads.cpp parse_config_insertion_overloads.cpp src/logging.cpp)
 target_include_directories(${EXEC_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+# target_include_directories(ava_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Link libraries
 add_subdirectory(lib/cpplog)
 target_link_libraries(${EXEC_NAME} cpplog)
+# target_link_libraries(ava_test cpplog)
 
 #-------------------- TESTING -------------------------------
 

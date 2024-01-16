@@ -7,11 +7,11 @@
 #include <logging.hpp>
 #include <stdexcept>
 
-static CPPLog::Instance logI = logOut.instance(CPPLog::INFO, "AsyncFD");
-static CPPLog::Instance logD = logOut.instance(CPPLog::DEBUG, "AsyncFD");
-static CPPLog::Instance logW = logOut.instance(CPPLog::WARNING, "AsyncFD");
-static CPPLog::Instance logE = logOut.instance(CPPLog::ERROR, "AsyncFD");
-static CPPLog::Instance logF = logOut.instance(CPPLog::FATAL, "AsyncFD");
+static CPPLog::Instance logI = logOut.instance(CPPLog::Level::INFO, "AsyncFD");
+static CPPLog::Instance logD = logOut.instance(CPPLog::Level::DEBUG, "AsyncFD");
+static CPPLog::Instance logW = logOut.instance(CPPLog::Level::WARNING, "AsyncFD");
+static CPPLog::Instance logE = logOut.instance(CPPLog::Level::ERROR, "AsyncFD");
+static CPPLog::Instance logF = logOut.instance(CPPLog::Level::FATAL, "AsyncFD");
 
 AsyncFD::AsyncFD(int fd) : _fd(fd) {
     setAsyncFlags();

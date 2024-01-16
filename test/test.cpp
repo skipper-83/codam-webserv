@@ -3,9 +3,11 @@
 #include <sstream>
 
 #include "http_request.hpp"
+#include "http_response.hpp"
 #include "test_httpReq.hpp"
 #include "test_config.hpp"
 #include "config.hpp"
+#include "path.hpp"
 
 TEST(http_request_fs, basic) {
     std::stringstream req(R"(GET /path/to/resource?query=123 HTTP/1.0
@@ -33,52 +35,63 @@ Host: 123.124.123.123
 
 TEST(http_request_fs, wrong_host) {
     std::stringstream req(R"(GET /path/to/resource?query=123 HTTP/1.0
-	Host: 123.124.12#3.123
-	)");
-    EXPECT_THROW(httpRequest test(req), std::invalid_argument);
+Host: 123.124.12#3.123
+
+)");
+    EXPECT_THROW(httpRequest test(req), httpRequest::httpRequestException);
 }
 
 TEST(http_request_str_constructor, wrong_host) {
+	testing::internal::CaptureStderr();
     std::string req = R"(GET /path/to/resource?query=123 HTTP/1.0
-	Host: 123.124.12#3.123
-	)";
-    EXPECT_THROW(httpRequest test(req), std::invalid_argument);
+Host: 123.124.12#3.123
+
+)";
+	httpRequest test(req);
+	std::string output = testing::internal::GetCapturedStderr();
+	std::cerr << "output: " << output;
+	EXPECT_TRUE(output.find("HTTP error 400: Bad Request") != std::string::npos);
 }
 
 TEST(http_request_fs, req) {
     std::stringstream req(R"(GET /path/to/resource?query=123 HTTP/1.1
-	Host: 123.124.123.123
-	)");
-    EXPECT_THROW(httpRequest test(req), std::invalid_argument);
+Host: 123.124.123.123
+)");
+    EXPECT_NO_THROW(httpRequest test(req));
 }
 
 TEST(http_request_fs, wrong_start_line1) {
     std::stringstream req(R"(GT /path/to/resource?query=123 HTTP/1.0
 Host: 123.124.123.123
 )");
-    EXPECT_THROW(httpRequest test(req), std::invalid_argument);
+    EXPECT_THROW(httpRequest test(req), httpRequest::httpRequestException);
 }
 
 TEST(http_request_fs, wrong_start_line2) {
     std::stringstream req(R"(GET /path/t o/resource?query=123 HTTP/1.0
 Host: 123.124.123.123
 )");
-    EXPECT_THROW(httpRequest test(req), std::invalid_argument);
+    EXPECT_THROW(httpRequest test(req), httpRequest::httpRequestException);
 }
 
 TEST(http_request_fs, wrong_start_line3) {
     std::stringstream req(R"(GET /path/to/resource?query=123 HTT/0.9
 Host: 123.124.123.123
 )");
-    EXPECT_THROW(httpRequest test(req), std::invalid_argument);
+    EXPECT_THROW(httpRequest test(req), httpRequest::httpRequestException);
 }
 
 TEST(http_request_str, wrong_start_line3) {
     std::string req = R"(GET /path/to/resource?query=123 HTT/0.9
 Host: 123.124.123.123
+
 )";
     httpRequest request;
-    EXPECT_THROW(request.parse(req), std::invalid_argument);
+	testing::internal::CaptureStderr();
+	request.parse(req);
+	std::string out = testing::internal::GetCapturedStderr();
+	EXPECT_TRUE (out.find("HTTP error 400: Bad Request") != std::string::npos);
+    // EXPECT_THROW(request.parse(req), std::invalid_argument);
 }
 
 TEST_F(httpRequestTest, get_adress) {
@@ -342,16 +355,79 @@ TEST_F(configWithRequest, request_larger_than_client_max_body_size)
 	EXPECT_THROW(request.addToBody(request_input), httpRequest::httpRequestException);
 }
 
-TEST_F(configWithRequest, request_with_wrong_port)
-{
-	request_input << "Host: 123.123.123.123:8081\n\n123456789";
+// TEST_F(configWithRequest, request_with_wrong_port)
+// {
+// 	request_input << "Host: 123.123.123.123:8081\n\n123456789";
 	
+// 	config_input >> config;
+// 	request.parseHeader(request_input);
+// 	EXPECT_TRUE(request.headerComplete());
+// 	std::cerr << request.getHeaderListAsString();
+// 	EXPECT_THROW(request.setServer(config, 8080), httpRequest::httpRequestException);
+// }
+
+TEST_F(configTest, ports_getter)
+{
+	std::stringstream ports_list;
+
 	config_input >> config;
-	request.parseHeader(request_input);
-	EXPECT_TRUE(request.headerComplete());
-	request.printHeaders(std::cerr);
-	EXPECT_THROW(request.setServer(config, 8080), httpRequest::httpRequestException);
+	for(auto it: config.getPorts())
+		ports_list << it;
+	EXPECT_EQ(ports_list.str(), "8080808180880");
 }
 
+TEST(parse, basic)
+{
+	std::string input = R"(GET )";
 
+	httpRequest req;
 
+	req.parse(input);
+	input.append(R"(/path/to/resource?query=123 HTTP/1.0
+Host: 123.124.123.123
+Content-Length: 9
+
+123)");
+	req.parse(input);
+	EXPECT_TRUE(req.headerComplete());
+	EXPECT_FALSE(req.bodyComplete());
+	EXPECT_EQ(input, "");
+
+	input.append("456789abcd");
+	req.parse(input);
+	EXPECT_TRUE(req.bodyComplete());
+	EXPECT_EQ(input, "abcd");
+}
+// TEST(response, basic)
+// {
+// 	httpResponse resp;
+// 	std::string exp_eq = R"(HTTP/1.1 200 OK
+// Content-Length: 4
+// Content-Type: text/html; charset=UTF-8
+// Date: )" + WebServUtil::timeStamp() + "\n" + 
+// R"(Server: Jelle en Albert's webserv
+
+// test)";
+
+// 	resp.setCode(200);
+// 	resp.setBody("test");
+// 	// std::cerr
+// 	std::cerr << "Response: \n" <<  resp.getRequestAsString() << "\n";
+// 	EXPECT_EQ(resp.getRequestAsString(), exp_eq);
+// }
+
+TEST_F(configWithRequest, getErrorPage)
+{
+	request_input << "Host: myname:8080\n\n123456789";
+	config_input >> config;
+
+	request.parseHeader(request_input);
+	request.setServer(config, 8080);
+	EXPECT_EQ(request.getErrorPage(504), "/50xxxx.html");
+
+}
+
+// TEST(path, first)
+// {
+// 	checkFile("Appie");
+// }

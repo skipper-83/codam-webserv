@@ -163,6 +163,8 @@ server {
 				root   /usr/share/nginx/html ;
 				index  index3.html index2.htm ;
 				}
+				error_page   500 502 503 504  /50xxxx.html;
+				error_page  404              /404.html;
 				client_max_body_size 5;
 	}
 )");

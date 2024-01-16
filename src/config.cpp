@@ -1,5 +1,7 @@
 #include "config.hpp"
 
+#include <iostream>
+
 /**
  * @brief Called after all servers are passed, overrides defaults when a global value is set,
  * 		and the server has no specific 'own' setting.
@@ -26,24 +28,26 @@ void MainConfig::_overrideDefaults() {
 void MainConfig::_setServerNameAndPortArrays(void) {
     for (size_t i = 0; i < this->_servers.size(); ++i) {
         for (auto it_ports : this->_servers[i].ports) {
-            this->_ports.insert({it_ports.value, &this->_servers[i]});
+            this->_portsToServers.insert({it_ports.value, &this->_servers[i]});
+            if (std::find(_ports.begin(), _ports.end(), it_ports.value) == _ports.end())
+                _ports.push_back(it_ports.value);
             for (auto it_names : this->_servers[i].names.name_vec) {
-                this->_portsNames.insert({{it_ports.value, it_names}, &this->_servers[i]});
+                this->_portsNamesToServers.insert({{it_ports.value, it_names}, &this->_servers[i]});
             }
         }
     }
 }
 
 const ServerConfig *MainConfig::getServerFromPort(int port) {
-    auto pos = this->_ports.find(port);
-    if (pos != this->_ports.end())
+    auto pos = this->_portsToServers.find(port);
+    if (pos != this->_portsToServers.end())
         return pos->second;
     return nullptr;
 }
 
 const ServerConfig *MainConfig::getServerFromPortAndName(int port, std::string name) {
-    auto pos = this->_portsNames.find({port, name});
-    if (pos != this->_portsNames.end())
+    auto pos = this->_portsNamesToServers.find({port, name});
+    if (pos != this->_portsNamesToServers.end())
         return pos->second;
     return nullptr;
 }
@@ -55,4 +59,18 @@ const ServerConfig *MainConfig::getServer(int port, std::string name) {
     if ((ret = getServerFromPort(port)))
         return ret;
     return nullptr;
+}
+
+const std::vector<uint16_t> &MainConfig::getPorts(void) {
+    return (_ports);
+}
+
+std::string ServerConfig::getErrorPage(int errorCode) const {
+    for (auto it : this->errorPages) {
+        for (size_t i = 0; i < it.errorNumbers.size(); ++i) {
+			if (it.errorNumbers[i] == errorCode)
+				return it.page;
+        }
+    }
+    return std::string();
 }

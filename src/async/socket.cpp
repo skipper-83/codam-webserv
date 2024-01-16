@@ -6,7 +6,7 @@
 
 #include "async/fd.hpp"
 
-AsyncSocket::AsyncSocket(uint16_t port, int backlog) : _port(port), _backlog(backlog) {
+AsyncSocket::AsyncSocket(uint16_t port, int backlog) : _port(port), _backlog(backlog), _hasPendingAccept(false) {
     int fd;
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -56,4 +56,8 @@ void AsyncSocket::errorCb() {}
 
 std::unique_ptr<AsyncSocket> AsyncSocket::create(uint16_t port, int backlog) {
     return std::make_unique<AsyncSocket>(port, backlog);
+}
+
+uint16_t AsyncSocket::getPort() const {
+    return _port;
 }

@@ -53,6 +53,8 @@ class AsyncIOFD : public AsyncFD {
     void writeReadyCb() override;
     void errorCb() override;
 
+    bool hasPendingRead = false;
+
     std::string readBuffer;
     std::string writeBuffer;
 
@@ -78,9 +80,10 @@ class AsyncSocket : public AsyncFD {
     bool hasPendingAccept() const;
     std::unique_ptr<AsyncIOFD> accept();
 
+    uint16_t getPort() const;
+
    private:
-    bool _hasPendingAccept;
     int _port;
     int _backlog;
-    std::function<void(std::unique_ptr<AsyncIOFD>)> _acceptCb;
+    bool _hasPendingAccept;
 };

@@ -9,6 +9,8 @@
 #include "config.hpp"
 #include "path.hpp"
 
+MainConfig mainConfig;
+
 TEST(http_request_fs, basic) {
     std::stringstream req(R"(GET /path/to/resource?query=123 HTTP/1.0
 Host: 123.124.123.123
@@ -22,16 +24,16 @@ TEST(http_request_str, basic) {
 Host: 123.124.123.123
 )");
     httpRequest request;
-    EXPECT_NO_THROW(request.parse(req));
+    EXPECT_NO_THROW(request.parse(req, 80));
 }
 
-TEST(http_request_str_constructor, basic) {
-    std::string req(R"(GET /path/to/resource?query=123 HTTP/1.0
-Host: 123.124.123.123
-)");
-    httpRequest request;
-    EXPECT_NO_THROW(httpRequest test(req));
-}
+// TEST(http_request_str_constructor, basic) {
+//     std::string req(R"(GET /path/to/resource?query=123 HTTP/1.0
+// Host: 123.124.123.123
+// )");
+//     httpRequest request;
+//     EXPECT_NO_THROW(httpRequest test(req));
+// }
 
 TEST(http_request_fs, wrong_host) {
     std::stringstream req(R"(GET /path/to/resource?query=123 HTTP/1.0
@@ -41,17 +43,17 @@ Host: 123.124.12#3.123
     EXPECT_THROW(httpRequest test(req), httpRequest::httpRequestException);
 }
 
-TEST(http_request_str_constructor, wrong_host) {
-	testing::internal::CaptureStderr();
-    std::string req = R"(GET /path/to/resource?query=123 HTTP/1.0
-Host: 123.124.12#3.123
+// TEST(http_request_str_constructor, wrong_host) {
+// 	testing::internal::CaptureStderr();
+//     std::string req = R"(GET /path/to/resource?query=123 HTTP/1.0
+// Host: 123.124.12#3.123
 
-)";
-	httpRequest test(req);
-	std::string output = testing::internal::GetCapturedStderr();
-	std::cerr << "output: " << output;
-	EXPECT_TRUE(output.find("HTTP error 400: Bad Request") != std::string::npos);
-}
+// )";
+// 	httpRequest test(req);
+// 	std::string output = testing::internal::GetCapturedStderr();
+// 	std::cerr << "output: " << output;
+// 	EXPECT_TRUE(output.find("HTTP error 400: Bad Request") != std::string::npos);
+// }
 
 TEST(http_request_fs, req) {
     std::stringstream req(R"(GET /path/to/resource?query=123 HTTP/1.1
@@ -88,7 +90,7 @@ Host: 123.124.123.123
 )";
     httpRequest request;
 	testing::internal::CaptureStderr();
-	request.parse(req);
+	request.parse(req, 80);
 	std::string out = testing::internal::GetCapturedStderr();
 	EXPECT_TRUE (out.find("HTTP error 400: Bad Request") != std::string::npos);
     // EXPECT_THROW(request.parse(req), std::invalid_argument);
@@ -382,19 +384,19 @@ TEST(parse, basic)
 
 	httpRequest req;
 
-	req.parse(input);
+	req.parse(input, 80);
 	input.append(R"(/path/to/resource?query=123 HTTP/1.0
 Host: 123.124.123.123
 Content-Length: 9
 
 123)");
-	req.parse(input);
+	req.parse(input, 80);
 	EXPECT_TRUE(req.headerComplete());
 	EXPECT_FALSE(req.bodyComplete());
 	EXPECT_EQ(input, "");
 
 	input.append("456789abcd");
-	req.parse(input);
+	req.parse(input, 80);
 	EXPECT_TRUE(req.bodyComplete());
 	EXPECT_EQ(input, "abcd");
 }

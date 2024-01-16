@@ -5,11 +5,11 @@
 
 CPPLog::Instance mainLogI = logOut.instance(CPPLog::Level::INFO, "main");
 
+   MainConfig mainConfig;
 int main(int argc, char** argv) {
     mainLogI << "main() called" << CPPLog::end;
 
     std::fstream file;
-    MainConfig config;
     if (argc != 2)
         return 1;
 
@@ -17,12 +17,12 @@ int main(int argc, char** argv) {
     if (!file)
         return 1;
     try {
-        file >> config;
+        file >> mainConfig;
     } catch (const std::exception& e) {
 		logOut.stream(CPPLog::Level::FATAL, "main") << e.what();
         return 1;
     }
 
     // config.servers[0].clientMaxBodySize.value = 99;
-    std::cout << config;
+    std::cout << mainConfig;
 }

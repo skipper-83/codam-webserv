@@ -14,14 +14,14 @@ static CPPLog::Instance warningLog = logOut.instance(CPPLog::Level::WARNING, "ht
  */
 httpRequest::httpRequest() {}
 
-/**
- * @brief Construct a new http Request::http Request object
- *
- * @param input
- */
-httpRequest::httpRequest(std::string input) {
-    this->parse(input);
-}
+// /**
+//  * @brief Construct a new http Request::http Request object
+//  *
+//  * @param input
+//  */
+// httpRequest::httpRequest(std::string input) {
+//     this->parse(input);
+// }
 
 /**
  * @brief Construct a new http Request::http Request object from an input stream
@@ -89,9 +89,9 @@ std::string httpRequest::getRequestType(void) const {
     return this->_httpRequestType;
 }
 
-std::string httpRequest::getErrorPage(int errorCode) const{
-	if (this->_server == nullptr)
-		return std::string();
+std::string httpRequest::getErrorPage(int errorCode) const {
+    if (this->_server == nullptr)
+        return std::string();
     return (this->_server->getErrorPage(errorCode));
 }
 
@@ -277,7 +277,7 @@ void httpRequest::addToBody(std::istream &fs) {
  * @param config main config with the configured server blocks
  * @param port port from select()
  */
-void httpRequest::setServer(MainConfig &config, int port) {
+void httpRequest::setServer(MainConfig &config, uint16_t port) {
     if (!this->_headerParseComplete)
         return;  // might handle this differently, this is here now to avoid segfaults.
     // if (this->_port > -1 && _port != port)
@@ -295,7 +295,7 @@ void httpRequest::parseHeader(std::istream &fs) {
     // addToBody(fs);
 }
 
-void httpRequest::parse(std::string &input) {
+void httpRequest::parse(std::string &input, uint16_t port) {
     if (!this->_headerParseComplete && input.find("\n\n") == std::string::npos)
         return;
     std::stringstream is(input);
@@ -308,11 +308,22 @@ void httpRequest::parse(std::string &input) {
             warningLog << "HTTP error " << e.errorNo() << ": " << e.codeDescription() << "\n" << e.what();
         }
     }
-    try {
-        addToBody(is);
-    } catch (const httpRequestException &e) {
-        // reply with bad request response?
-        warningLog << "HTTP error " << e.errorNo() << ": " << e.codeDescription() << "\n" << e.what();
+    if (this->_headerParseComplete && this->_server == nullptr)
+        try {
+            setServer(mainConfig, port);
+        } catch (const std::exception &e) {
+            // if(dynamic_cast<httpRequestException>(e))
+            throw(httpRequestException(500, e.what()));
+            // else
+            // throw(httpR)
+        }
+    if (this->_headerParseComplete && !this->_bodyComplete) {
+        try {
+            addToBody(is);
+        } catch (const httpRequestException &e) {
+            // reply with bad request response?
+            warningLog << "HTTP error " << e.errorNo() << ": " << e.codeDescription() << "\n" << e.what();
+        }
     }
     std::cerr << "is length now: [" << remainingLength(is) << "]\n";
     input = is.str().substr(is.tellg());

@@ -12,6 +12,8 @@
 #include "config.hpp"
 #include "util.hpp"
 
+extern MainConfig mainConfig;
+
 class httpRequest : public httpMessage{
    private:
     void _getHttpHeaders(std::istream &fs);
@@ -34,7 +36,7 @@ class httpRequest : public httpMessage{
 
    public:
     httpRequest();
-    httpRequest(std::string input);
+    // httpRequest(std::string input);
     explicit httpRequest(std::istream &fs);
     httpRequest(const httpRequest &src);
     ~httpRequest();
@@ -47,9 +49,9 @@ class httpRequest : public httpMessage{
     bool bodyComplete(void) const;
 	bool headerComplete(void) const;
     void parseHeader(std::istream &fs);
-    void parse(std::string &input);
+    void parse(std::string &input, uint16_t port);
+	void setServer(MainConfig &config, uint16_t port);
     void addToBody(std::istream &fs);
-	void setServer(MainConfig &config, int port);
 
 	class httpRequestException : public std::exception
 	{

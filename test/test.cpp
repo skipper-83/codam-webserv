@@ -2,17 +2,12 @@
 
 #include <sstream>
 
-#include "hello-world.hpp"
 #include "http_request.hpp"
 #include "http_response.hpp"
 #include "test_httpReq.hpp"
 #include "test_config.hpp"
 #include "config.hpp"
 #include "path.hpp"
-
-TEST(hello_world, basic) {
-    EXPECT_EQ(hello_world(), "Hello, World!");
-}
 
 TEST(http_request_fs, basic) {
     std::stringstream req(R"(GET /path/to/resource?query=123 HTTP/1.0

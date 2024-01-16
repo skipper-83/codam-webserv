@@ -20,21 +20,3 @@ Thumbs.db
 
 archive
 _deps
-lib/cpplog/cmake_install.cmake
-lib/cpplog/libcpplog.a
-lib/cpplog/CMakeFiles/CMakeDirectoryInformation.cmake
-lib/cpplog/CMakeFiles/progress.marks
-lib/cpplog/CMakeFiles/cpplog.dir/build.make
-lib/cpplog/CMakeFiles/cpplog.dir/cmake_clean_target.cmake
-lib/cpplog/CMakeFiles/cpplog.dir/cmake_clean.cmake
-lib/cpplog/CMakeFiles/cpplog.dir/compiler_depend.make
-lib/cpplog/CMakeFiles/cpplog.dir/depend.make
-lib/cpplog/CMakeFiles/cpplog.dir/DependInfo.cmake
-lib/cpplog/CMakeFiles/cpplog.dir/flags.make
-lib/cpplog/CMakeFiles/cpplog.dir/link.txt
-lib/cpplog/CMakeFiles/cpplog.dir/progress.make
-lib/cpplog/CMakeFiles/cpplog.dir/src/cpplog.cpp.o
-lib/cpplog/CMakeFiles/cpplog.dir/src/cpplog.cpp.o.d
-lib/cpplog/CMakeFiles/cpplog.dir/compiler_depend.ts
-extraction_op_test.cpp
-.gitignore

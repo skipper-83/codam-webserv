@@ -1,6 +1,5 @@
 #include <fstream>
 
-#include "hello-world.hpp"
 #include "logging.hpp"
 #include "config.hpp"
 
@@ -8,7 +7,6 @@ CPPLog::Instance mainLogI = logOut.instance(CPPLog::Level::INFO, "main");
 
 int main(int argc, char** argv) {
     mainLogI << "main() called" << CPPLog::end;
-    mainLogI << "hello_world() returned: " << hello_world() << CPPLog::end;
 
     std::fstream file;
     MainConfig config;

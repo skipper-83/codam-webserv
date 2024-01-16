@@ -9,8 +9,11 @@ set (SRCS_MAIN
 
 # Sourcefiles without main function (included in testing)
 set (SRCS
-	src/hello-world.cpp
 	src/logging.cpp
+	src/async/fd.cpp
+	src/async/iofd.cpp
+	src/async/socket.cpp
+	src/async/pollarray.cpp
 	src/config_extractors.cpp
 	src/config_insertions.cpp
 	src/config.cpp
@@ -31,6 +34,7 @@ add_executable(${EXEC_NAME} ${SRCS} ${SRCS_MAIN})
 target_include_directories(${EXEC_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 # target_include_directories(ava_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# Link libraries
 add_subdirectory(lib/cpplog)
 target_link_libraries(${EXEC_NAME} cpplog)
 # target_link_libraries(ava_test cpplog)

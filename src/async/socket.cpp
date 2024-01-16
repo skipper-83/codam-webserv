@@ -21,12 +21,12 @@ AsyncSocket::AsyncSocket(uint16_t port, int backlog) : _port(port), _backlog(bac
 
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
-    addr.sin_port = htons(port);
+    addr.sin_port = htons(_port);
 
     if (bind(fd, (struct sockaddr*)&addr, sizeof(addr)) < 0)
         throw std::runtime_error("bind() failed");
 
-    if (listen(fd, backlog) < 0)
+    if (listen(fd, _backlog) < 0)
         throw std::runtime_error("listen() failed");
     _fd = fd;
     setAsyncFlags();

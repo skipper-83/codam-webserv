@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <unordered_map>
+#include <vector>
 
 void AsyncPollArray::add(std::shared_ptr<AsyncFD> fd) {
     _fds.insert(fd);

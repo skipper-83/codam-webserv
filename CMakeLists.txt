@@ -16,9 +16,7 @@ set (SRCS
 	src/config.cpp
 	src/http_request.cpp
 	src/http_message.cpp
-	src/http_response.cpp
 	src/util.cpp
-	src/path.cpp
 )
 set (EXEC_NAME webserv)
 

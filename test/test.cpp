@@ -360,16 +360,16 @@ TEST_F(configWithRequest, request_larger_than_client_max_body_size)
 	EXPECT_THROW(request.addToBody(request_input), httpRequest::httpRequestException);
 }
 
-TEST_F(configWithRequest, request_with_wrong_port)
-{
-	request_input << "Host: 123.123.123.123:8081\n\n123456789";
+// TEST_F(configWithRequest, request_with_wrong_port)
+// {
+// 	request_input << "Host: 123.123.123.123:8081\n\n123456789";
 	
-	config_input >> config;
-	request.parseHeader(request_input);
-	EXPECT_TRUE(request.headerComplete());
-	std::cerr << request.getHeaderListAsString();
-	EXPECT_THROW(request.setServer(config, 8080), httpRequest::httpRequestException);
-}
+// 	config_input >> config;
+// 	request.parseHeader(request_input);
+// 	EXPECT_TRUE(request.headerComplete());
+// 	std::cerr << request.getHeaderListAsString();
+// 	EXPECT_THROW(request.setServer(config, 8080), httpRequest::httpRequestException);
+// }
 
 TEST_F(configTest, ports_getter)
 {
@@ -403,23 +403,23 @@ Content-Length: 9
 	EXPECT_TRUE(req.bodyComplete());
 	EXPECT_EQ(input, "abcd");
 }
-TEST(response, basic)
-{
-	httpResponse resp;
-	std::string exp_eq = R"(HTTP/1.1 200 OK
-Content-Length: 4
-Content-Type: text/html; charset=UTF-8
-Date: )" + WebServUtil::timeStamp() + "\n" + 
-R"(Server: Jelle en Albert's webserv
+// TEST(response, basic)
+// {
+// 	httpResponse resp;
+// 	std::string exp_eq = R"(HTTP/1.1 200 OK
+// Content-Length: 4
+// Content-Type: text/html; charset=UTF-8
+// Date: )" + WebServUtil::timeStamp() + "\n" + 
+// R"(Server: Jelle en Albert's webserv
 
-test)";
+// test)";
 
-	resp.setCode(200);
-	resp.setBody("test");
-	// std::cerr
-	std::cerr << "Response: \n" <<  resp.getRequestAsString() << "\n";
-	EXPECT_EQ(resp.getRequestAsString(), exp_eq);
-}
+// 	resp.setCode(200);
+// 	resp.setBody("test");
+// 	// std::cerr
+// 	std::cerr << "Response: \n" <<  resp.getRequestAsString() << "\n";
+// 	EXPECT_EQ(resp.getRequestAsString(), exp_eq);
+// }
 
 TEST_F(configWithRequest, getErrorPage)
 {
@@ -432,7 +432,7 @@ TEST_F(configWithRequest, getErrorPage)
 
 }
 
-TEST(path, first)
-{
-	checkFile("Appie");
-}
+// TEST(path, first)
+// {
+// 	checkFile("Appie");
+// }

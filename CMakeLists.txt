@@ -14,6 +14,7 @@ set (SRCS
 	src/async/iofd.cpp
 	src/async/socket.cpp
 	src/async/pollarray.cpp
+	src/client.cpp
 	src/config_extractors.cpp
 	src/config_insertions.cpp
 	src/config.cpp

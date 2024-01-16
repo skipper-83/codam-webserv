@@ -29,6 +29,7 @@ void AsyncIOFD::readReadyCb() {
         return;
     }
     readBuffer.append(buf.get(), ret);
+    hasPendingRead = true;
 }
 
 void AsyncIOFD::writeReadyCb() {
@@ -44,6 +45,7 @@ void AsyncIOFD::writeReadyCb() {
         throw std::runtime_error("write failed");
     }
     writeBuffer.erase(0, ret);
+
 }
 
 void AsyncIOFD::errorCb() {}

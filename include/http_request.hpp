@@ -21,6 +21,8 @@ class httpRequest : public httpMessage{
 	void _addToFixedContentSize(std::istream &fs);
 	void _addChunkedContent(std::istream &fs);
 	void _addUntilNewline(std::istream &fs);
+	bool _hasNewLine(std::string &str);
+	bool _endsWithNewLine(std::string &str);
 	std::string _httpAdress;
     std::string _httpRequestType;
     size_t _contentLength = 0;

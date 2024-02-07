@@ -218,6 +218,12 @@ void httpRequest::_addChunkedContent(std::istream &fs) {
     return;
 }
 
+bool httpRequest::_endsWithNewLine(std::string &str)
+{
+	(void)str;
+	return true;
+}
+
 /**
  * @brief Reads from filestream until an empty line is encountered.
  *
@@ -230,6 +236,7 @@ void httpRequest::_addUntilNewline(std::istream &fs) {
             fs.clear();
             this->_bodyComplete = true;
             infoLog << "found double newline: " << this->_httpBody << " size:" << this->_bodyLength;
+			// NEWLINE TEST 2	
             if (_httpBody[_httpBody.size() - 1] != '\n') {
                 this->_httpBody += '\n';
                 ++this->_bodyLength;
@@ -242,8 +249,8 @@ void httpRequest::_addUntilNewline(std::istream &fs) {
         this->_bodyLength += line.size();
         infoLog << "eof bit: " << fs.eof();
         if (!fs.eof()) {
-            this->_httpBody += '\n';
-            this->_bodyLength++;
+            this->_httpBody += "\r\n";
+            this->_bodyLength += 2;
         }
     }
     infoLog << "found EOF: " << this->_httpBody << " size:" << this->_bodyLength;
@@ -295,9 +302,17 @@ void httpRequest::parseHeader(std::istream &fs) {
     // addToBody(fs);
 }
 
+bool httpRequest::_hasNewLine(std::string &str)
+{
+	if (str.find("\n\n") == std::string::npos && str.find("\r\n\r\n") == std::string::npos)
+		return false;
+	return true;
+}
+
 void httpRequest::parse(std::string &input) {
-    if (!this->_headerParseComplete && input.find("\n\n") == std::string::npos)
-        return;
+	// NEWLINE TEST 1
+    if (!this->_headerParseComplete && this->_hasNewLine(input)) // header is not complete yet
+        return ;
     std::stringstream is(input);
 
     if (!this->_headerParseComplete) {
@@ -314,12 +329,8 @@ void httpRequest::parse(std::string &input) {
         // reply with bad request response?
         warningLog << "HTTP error " << e.errorNo() << ": " << e.codeDescription() << "\n" << e.what();
     }
+	input = is.str().substr(is.tellg());
     std::cerr << "is length now: [" << remainingLength(is) << "]\n";
-    input = is.str().substr(is.tellg());
-    // if (remainingLength(is))
-    // 	input = is.str();
-    // else
-    // 	input = "";
 }
 
 void httpRequest::_getHttpStartLine(std::istream &fs) {

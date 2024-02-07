@@ -107,7 +107,7 @@ TEST_F(httpRequestTest, get_protocol) {
 }
 
 TEST_F(httpRequestTest, get_body) {
-    EXPECT_EQ(req.getBody(), "body\nof\nrequest\nmore\n");
+    EXPECT_EQ(req.getBody(), "body\r\nof\r\nrequest\r\nmore\r\n");
 }
 
 TEST_F(httpRequestTest, get_header) {
@@ -117,7 +117,6 @@ TEST_F(httpRequestTest, get_header) {
 TEST_F(httpRequestTest, get_headerlist) {
     EXPECT_EQ(req.getHeaderList("Cookie").at(0), "session_id=123");
     EXPECT_EQ(req.getHeaderList("Cookie").at(1), "user_pref=dark_mode");
-    // std::cout "BOOH"\n
 }
 
 TEST_F(httpBodyParseTest, with_content_length)
@@ -165,12 +164,12 @@ TEST_F(httpBodyParseTest, double_newline)
 	EXPECT_TRUE(test.headerComplete());
 	test.addToBody(request);
 	EXPECT_TRUE(test.bodyComplete());
-	EXPECT_EQ(test.getBodyLength(), 7);
-	EXPECT_EQ(test.getBody(), "012345\n");
+	EXPECT_EQ(test.getBodyLength(), 8);
+	EXPECT_EQ(test.getBody(), "012345\r\n");
 	request << "6789";
 	test.addToBody(request);
-	EXPECT_EQ(test.getBodyLength(), 7);
-	EXPECT_EQ(test.getBody(), "012345\n");
+	EXPECT_EQ(test.getBodyLength(), 8);
+	EXPECT_EQ(test.getBody(), "012345\r\n");
 	EXPECT_TRUE(test.bodyComplete());
 
 }
@@ -188,8 +187,8 @@ TEST_F(httpBodyParseTest, double_newline_in_second_chunk)
 	EXPECT_FALSE(test.bodyComplete());
 	request << "joe\n\nnee";
 	test.addToBody(request);
-	EXPECT_EQ(test.getBodyLength(), 14);
-	EXPECT_EQ(test.getBody(), "0123456789joe\n");
+	EXPECT_EQ(test.getBodyLength(), 15);
+	EXPECT_EQ(test.getBody(), "0123456789joe\r\n");
 	EXPECT_TRUE(test.bodyComplete());
 
 }
@@ -398,23 +397,23 @@ Content-Length: 9
 	EXPECT_TRUE(req.bodyComplete());
 	EXPECT_EQ(input, "abcd");
 }
-// TEST(response, basic)
-// {
-// 	httpResponse resp;
-// 	std::string exp_eq = R"(HTTP/1.1 200 OK
-// Content-Length: 4
-// Content-Type: text/html; charset=UTF-8
-// Date: )" + WebServUtil::timeStamp() + "\n" + 
-// R"(Server: Jelle en Albert's webserv
+TEST(response, basic)
+{
+	httpResponse resp;
+	std::string exp_eq = R"(HTTP/1.1 200 OK
+Content-Length: 4
+Content-Type: text/html; charset=UTF-8
+Date: )" + WebServUtil::timeStamp() + "\n" + 
+R"(Server: Jelle en Albert's webserv
 
-// test)";
+test)";
 
-// 	resp.setCode(200);
-// 	resp.setBody("test");
-// 	// std::cerr
-// 	std::cerr << "Response: \n" <<  resp.getRequestAsString() << "\n";
-// 	EXPECT_EQ(resp.getRequestAsString(), exp_eq);
-// }
+	resp.setCode(200);
+	resp.setBody("test");
+	// std::cerr
+	std::cerr << "Response: \n" <<  resp.getRequestAsString() << "\n";
+	EXPECT_EQ(resp.getRequestAsString(), exp_eq);
+}
 
 TEST_F(configWithRequest, getErrorPage)
 {
@@ -427,7 +426,7 @@ TEST_F(configWithRequest, getErrorPage)
 
 }
 
-// TEST(path, first)
-// {
-// 	checkFile("Appie");
-// }
+TEST(path, first)
+{
+	checkFile("../../test/test_dir/");
+}

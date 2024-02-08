@@ -14,10 +14,16 @@ set (SRCS
 	src/async/iofd.cpp
 	src/async/socket.cpp
 	src/async/pollarray.cpp
+	src/client.cpp
 	src/config_extractors.cpp
 	src/config_insertions.cpp
 	src/config.cpp
-	src/http_request.cpp
+	src/httpRequest/http_request.cpp
+	src/httpRequest/parse.cpp
+	src/httpRequest/parse_header.cpp
+	src/httpRequest/parse_body.cpp
+	src/httpRequest/getters_setters.cpp
+	src/httpRequest/helpers.cpp
 	src/http_message.cpp
 	src/http_response.cpp
 	src/path.cpp

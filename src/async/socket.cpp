@@ -6,7 +6,7 @@
 
 #include "async/fd.hpp"
 
-AsyncSocket::AsyncSocket(uint16_t port, int backlog) : _port(port), _backlog(backlog) {
+AsyncSocket::AsyncSocket(uint16_t port, int backlog) : _port(port), _backlog(backlog), _hasPendingAccept(false) {
     int fd;
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -14,9 +14,8 @@ AsyncSocket::AsyncSocket(uint16_t port, int backlog) : _port(port), _backlog(bac
         throw std::runtime_error("socket() failed");
 
     int opt = 1;
-    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) < 0)
-        throw std::runtime_error("setsockopt() failed");
-
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0 || setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
+        throw std::runtime_error("setsockopt() failed: " + std::to_string(errno) + ": " + std::strerror(errno));
     struct sockaddr_in addr;
 
     addr.sin_family = AF_INET;
@@ -56,4 +55,8 @@ void AsyncSocket::errorCb() {}
 
 std::unique_ptr<AsyncSocket> AsyncSocket::create(uint16_t port, int backlog) {
     return std::make_unique<AsyncSocket>(port, backlog);
+}
+
+uint16_t AsyncSocket::getPort() const {
+    return _port;
 }

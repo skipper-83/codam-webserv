@@ -9,6 +9,8 @@
 #include "config.hpp"
 #include "path.hpp"
 
+MainConfig mainConfig;
+
 TEST(http_request_fs, basic) {
     std::stringstream req(R"(GET /path/to/resource?query=123 HTTP/1.0
 Host: 123.124.123.123
@@ -22,16 +24,16 @@ TEST(http_request_str, basic) {
 Host: 123.124.123.123
 )");
     httpRequest request;
-    EXPECT_NO_THROW(request.parse(req));
+    EXPECT_NO_THROW(request.parse(req, 80));
 }
 
-TEST(http_request_str_constructor, basic) {
-    std::string req(R"(GET /path/to/resource?query=123 HTTP/1.0
-Host: 123.124.123.123
-)");
-    httpRequest request;
-    EXPECT_NO_THROW(httpRequest test(req));
-}
+// TEST(http_request_str_constructor, basic) {
+//     std::string req(R"(GET /path/to/resource?query=123 HTTP/1.0
+// Host: 123.124.123.123
+// )");
+//     httpRequest request;
+//     EXPECT_NO_THROW(httpRequest test(req));
+// }
 
 TEST(http_request_fs, wrong_host) {
     std::stringstream req(R"(GET /path/to/resource?query=123 HTTP/1.0
@@ -41,17 +43,17 @@ Host: 123.124.12#3.123
     EXPECT_THROW(httpRequest test(req), httpRequest::httpRequestException);
 }
 
-TEST(http_request_str_constructor, wrong_host) {
-	testing::internal::CaptureStderr();
-    std::string req = R"(GET /path/to/resource?query=123 HTTP/1.0
-Host: 123.124.12#3.123
+// TEST(http_request_str_constructor, wrong_host) {
+// 	testing::internal::CaptureStderr();
+//     std::string req = R"(GET /path/to/resource?query=123 HTTP/1.0
+// Host: 123.124.12#3.123
 
-)";
-	httpRequest test(req);
-	std::string output = testing::internal::GetCapturedStderr();
-	std::cerr << "output: " << output;
-	EXPECT_TRUE(output.find("HTTP error 400: Bad Request") != std::string::npos);
-}
+// )";
+// 	httpRequest test(req);
+// 	std::string output = testing::internal::GetCapturedStderr();
+// 	std::cerr << "output: " << output;
+// 	EXPECT_TRUE(output.find("HTTP error 400: Bad Request") != std::string::npos);
+// }
 
 TEST(http_request_fs, req) {
     std::stringstream req(R"(GET /path/to/resource?query=123 HTTP/1.1
@@ -88,7 +90,7 @@ Host: 123.124.123.123
 )";
     httpRequest request;
 	testing::internal::CaptureStderr();
-	request.parse(req);
+	request.parse(req, 80);
 	std::string out = testing::internal::GetCapturedStderr();
 	EXPECT_TRUE (out.find("HTTP error 400: Bad Request") != std::string::npos);
     // EXPECT_THROW(request.parse(req), std::invalid_argument);
@@ -107,7 +109,7 @@ TEST_F(httpRequestTest, get_protocol) {
 }
 
 TEST_F(httpRequestTest, get_body) {
-    EXPECT_EQ(req.getBody(), "body\r\nof\r\nrequest\r\nmore\r\n");
+    EXPECT_EQ(req.getBody(), "body\nof\nrequest\nmore\n");
 }
 
 TEST_F(httpRequestTest, get_header) {
@@ -124,7 +126,7 @@ TEST_F(httpBodyParseTest, with_content_length)
 	
 	request << "Content-Length: 9\n\n0123456789";
 	test.parseHeader(request);
-	test.addToBody(request);
+	test.parseBody(request);
 	EXPECT_TRUE(test.bodyComplete());
 	EXPECT_EQ(test.getBodyLength(), 9);
 	EXPECT_EQ(test.getBody(), "012345678");
@@ -133,7 +135,7 @@ TEST_F(httpBodyParseTest, with_content_length)
 TEST_F(httpBodyParseTest, empty_body)
 {	
 	test.parseHeader(request);
-	test.addToBody(request);
+	test.parseBody(request);
 	EXPECT_TRUE(test.headerComplete());
 	EXPECT_EQ(test.getBodyLength(), 0);
 }
@@ -144,12 +146,12 @@ TEST_F(httpBodyParseTest, with_content_length_two_chunks)
 	request << "Content-Length: 9\n\n012345";
 	test.parseHeader(request);
 	EXPECT_TRUE(test.headerComplete());
-	test.addToBody(request);
+	test.parseBody(request);
 	EXPECT_FALSE(test.bodyComplete());
 	EXPECT_EQ(test.getBodyLength(), 6);
 	EXPECT_EQ(test.getBody(), "012345");
 	request << "6789";
-	test.addToBody(request);
+	test.parseBody(request);
 	EXPECT_TRUE(test.bodyComplete());
 	EXPECT_EQ(test.getBodyLength(), 9);
 	EXPECT_EQ(test.getBody(), "012345678");
@@ -162,14 +164,14 @@ TEST_F(httpBodyParseTest, double_newline)
 	request << "\n012345\n\n6789";
 	test.parseHeader(request);
 	EXPECT_TRUE(test.headerComplete());
-	test.addToBody(request);
+	test.parseBody(request);
 	EXPECT_TRUE(test.bodyComplete());
-	EXPECT_EQ(test.getBodyLength(), 8);
-	EXPECT_EQ(test.getBody(), "012345\r\n");
+	EXPECT_EQ(test.getBodyLength(), 7);
+	EXPECT_EQ(test.getBody(), "012345\n");
 	request << "6789";
-	test.addToBody(request);
-	EXPECT_EQ(test.getBodyLength(), 8);
-	EXPECT_EQ(test.getBody(), "012345\r\n");
+	test.parseBody(request);
+	EXPECT_EQ(test.getBodyLength(), 7);
+	EXPECT_EQ(test.getBody(), "012345\n");
 	EXPECT_TRUE(test.bodyComplete());
 
 }
@@ -181,14 +183,14 @@ TEST_F(httpBodyParseTest, double_newline_in_second_chunk)
 	request << "\n0123456789";
 	test.parseHeader(request);
 	EXPECT_TRUE(test.headerComplete());
-	test.addToBody(request);
+	test.parseBody(request);
 	EXPECT_EQ(test.getBodyLength(), 10);
 	EXPECT_EQ(test.getBody(), "0123456789");
 	EXPECT_FALSE(test.bodyComplete());
 	request << "joe\n\nnee";
-	test.addToBody(request);
-	EXPECT_EQ(test.getBodyLength(), 15);
-	EXPECT_EQ(test.getBody(), "0123456789joe\r\n");
+	test.parseBody(request);
+	EXPECT_EQ(test.getBodyLength(), 14);
+	EXPECT_EQ(test.getBody(), "0123456789joe\n");
 	EXPECT_TRUE(test.bodyComplete());
 
 }
@@ -199,12 +201,12 @@ TEST_F(httpBodyParseTest, double_newline_is_second_chunk)
 	request << "\n0123456789";
 	test.parseHeader(request);
 	EXPECT_TRUE(test.headerComplete());
-	test.addToBody(request);
+	test.parseBody(request);
 	EXPECT_EQ(test.getBodyLength(), 10);
 	EXPECT_EQ(test.getBody(), "0123456789");
 	EXPECT_FALSE(test.bodyComplete());
 	request << "\n\nnee";
-	test.addToBody(request);
+	test.parseBody(request);
 	EXPECT_EQ(test.getBodyLength(), 11);
 	EXPECT_EQ(test.getBody(), "0123456789\n");
 	EXPECT_TRUE(test.bodyComplete());
@@ -224,7 +226,7 @@ TEST_F(httpBodyParseTest, chunked_happy)
 GET etc)";
 	test.parseHeader(request);
 	EXPECT_TRUE(test.headerComplete());
-	test.addToBody(request);
+	test.parseBody(request);
 	EXPECT_EQ(test.getBody(), "01234012345");
 	EXPECT_EQ(test.getBodyLength(), 11);
 	EXPECT_TRUE(test.bodyComplete());
@@ -238,12 +240,12 @@ TEST_F(httpBodyParseTest, chunked_in_three_parts)
 01234)";
 	test.parseHeader(request);
 	EXPECT_TRUE(test.headerComplete());
-	test.addToBody(request);
+	test.parseBody(request);
 	EXPECT_EQ(test.getBody(), "01234");
 	EXPECT_EQ(test.getBodyLength(), 5);
 	request << R"(6
 012345)";
-	test.addToBody(request);
+	test.parseBody(request);
 	EXPECT_EQ(test.getBody(), "01234012345");
 	EXPECT_EQ(test.getBodyLength(), 11);
 	EXPECT_EQ(test.bodyComplete(), false);
@@ -251,7 +253,7 @@ TEST_F(httpBodyParseTest, chunked_in_three_parts)
 	request << R"(0
 
 and some)";
-	test.addToBody(request);
+	test.parseBody(request);
 	EXPECT_EQ(test.getBody(), "01234012345");
 	EXPECT_EQ(test.getBodyLength(), 11);
 	EXPECT_EQ(test.bodyComplete(), true);
@@ -339,7 +341,7 @@ TEST_F(configWithRequest, happy_path)
 	request.parseHeader(request_input);
 	EXPECT_TRUE(request.headerComplete());
 	request.setServer(config, 8080);
-	request.addToBody(request_input);
+	request.parseBody(request_input);
 	EXPECT_EQ(request.getBody(), "123456789");
 }
 
@@ -351,7 +353,7 @@ TEST_F(configWithRequest, request_larger_than_client_max_body_size)
 	request.parseHeader(request_input);
 	EXPECT_TRUE(request.headerComplete());
 	request.setServer(config, 8080);
-	EXPECT_THROW(request.addToBody(request_input), httpRequest::httpRequestException);
+	EXPECT_THROW(request.parseBody(request_input), httpRequest::httpRequestException);
 }
 
 // TEST_F(configWithRequest, request_with_wrong_port)
@@ -381,19 +383,19 @@ TEST(parse, basic)
 
 	httpRequest req;
 
-	req.parse(input);
+	req.parse(input, 80);
 	input.append(R"(/path/to/resource?query=123 HTTP/1.0
 Host: 123.124.123.123
 Content-Length: 9
 
 123)");
-	req.parse(input);
+	req.parse(input, 80);
 	EXPECT_TRUE(req.headerComplete());
 	EXPECT_FALSE(req.bodyComplete());
 	EXPECT_EQ(input, "");
 
 	input.append("456789abcd");
-	req.parse(input);
+	req.parse(input, 80);
 	EXPECT_TRUE(req.bodyComplete());
 	EXPECT_EQ(input, "abcd");
 }

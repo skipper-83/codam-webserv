@@ -1,9 +1,9 @@
 
 #include "http_request.hpp"
 // #include <map>
-// #include "logging.hpp"
+#include "logging.hpp"
 
-// static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest parser");
+static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest parser");
 // static CPPLog::Instance warningLog = logOut.instance(CPPLog::Level::WARNING, "httpRequest parser");
 
 /**
@@ -50,8 +50,9 @@ httpRequest &httpRequest::operator=(const httpRequest &rhs) {
     this->_httpProtocol = rhs._httpProtocol;
     this->_httpHeaders = httpRequestT(rhs._httpHeaders);
     this->_httpBody = rhs._httpBody;
+    this->_bodyLength = rhs._bodyLength;
     this->_headerParseComplete = rhs._headerParseComplete;
-	this->_bodyComplete = rhs._bodyComplete;
+    this->_bodyComplete = rhs._bodyComplete;
     this->_contentLength = rhs._contentLength;
     this->_chunkedRequest = rhs._chunkedRequest;
     this->_contentSizeSet = rhs._contentSizeSet;
@@ -61,10 +62,10 @@ httpRequest &httpRequest::operator=(const httpRequest &rhs) {
     return *this;
 }
 
-void httpRequest::clear(void)
-{
-	httpRequest empty;
-	*this = empty;
+void httpRequest::clear(void) {
+    infoLog << "Clearing request" << CPPLog::end;
+    httpRequest empty;
+    *this = empty;
 }
 
 std::ostream &operator<<(std::ostream &os, httpRequest const &t) {
@@ -76,7 +77,6 @@ std::ostream &operator<<(std::ostream &os, httpRequest const &t) {
     return os;
 }
 
-
 // /**
 //  * @brief Construct a new http Request::http Request object
 //  *
@@ -85,5 +85,3 @@ std::ostream &operator<<(std::ostream &os, httpRequest const &t) {
 // httpRequest::httpRequest(std::string input) {
 //     this->parse(input);
 // }
-
-

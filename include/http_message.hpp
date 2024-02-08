@@ -22,9 +22,9 @@ class httpMessage
 	protected:
 		httpMessage(void);
 		
-		std::string _httpProtocol;
+		std::string _httpProtocol = "";
 		httpRequestT _httpHeaders;
-		std::string _httpBody;
+		std::string _httpBody = "";
 		size_t _bodyLength = 0;
 
 };

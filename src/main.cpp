@@ -12,6 +12,7 @@
 #include "logging.hpp"
 
 CPPLog::Instance mainLogI = logOut.instance(CPPLog::Level::INFO, "main");
+CPPLog::Instance mainLogW = logOut.instance(CPPLog::Level::WARNING, "main");
 
 MainConfig mainConfig;
 
@@ -37,12 +38,9 @@ int main(int argc, char** argv) {
     }
 
     parseConfig(argv[1]);
-	std::cout << "Done parsing" << std::endl;
     std::vector<uint16_t> ports = mainConfig.getPorts();
-	std::cout << "Got ports" << std::endl;
     std::vector<std::shared_ptr<AsyncSocket>> sockets;
     std::transform(ports.begin(), ports.end(), std::back_inserter(sockets), [](auto& port) { return AsyncSocket::create(port); });
-	std::cout << "here 1" << std::endl;
     AsyncPollArray pollArray;
     std::for_each(sockets.begin(), sockets.end(), [&pollArray](auto& socket) { pollArray.add(socket); });
 
@@ -72,7 +70,14 @@ int main(int argc, char** argv) {
                 return;
             mainLogI << "received " << client.fd().readBuffer.size() << " bytes from " << client.port() << CPPLog::end;
             mainLogI << "received: " << client.fd().readBuffer << CPPLog::end;
-            client.request().parse(client.fd().readBuffer, client.port());
+            try {
+                client.request().parse(client.fd().readBuffer, client.port());
+            } catch (const httpRequest::httpRequestException& e) {
+                client.request().clear();
+                client.fd().readBuffer.clear();
+                mainLogW << "HTTP error " << e.errorNo() << ": " << e.codeDescription() << "\n" << e.what();
+            }
+
             client.fd().hasPendingRead = false;
             mainLogI << "parsed request from " << client.port() << CPPLog::end;
 
@@ -82,8 +87,12 @@ int main(int argc, char** argv) {
                 mainLogI << "request path: " << client.request().getAdress() << CPPLog::end;
             }
 
-            if (client.request().bodyComplete())
+            if (client.request().bodyComplete()) {
                 mainLogI << "request body complete" << CPPLog::end;
+                mainLogI << "Body: [" << client.request().getBody() << "] " << CPPLog::end;
+				client.fd().writeBuffer = "test";
+                client.request().clear();
+            }
         });
     }
 }

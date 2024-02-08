@@ -14,7 +14,7 @@ void httpRequest::parseBody(std::istream &fs) {
     std::stringstream contents;
     std::string line;
 
-    infoLog << "ADD TO BODY: " << _remainingLength(fs);
+    infoLog << "ADD TO BODY: " << _remainingLength(fs) << CPPLog::end;
     if (this->_bodyComplete)
         return;
     if (this->_chunkedRequest)
@@ -47,7 +47,7 @@ void httpRequest::_addToFixedContentSize(std::istream &fs) {
         this->_httpBody += contents.str();
         this->_bodyLength += addedLength;
     }
-    infoLog << this->_httpBody << " " << this->_bodyLength;
+    infoLog << this->_httpBody << " " << this->_bodyLength << CPPLog::end;
     return;
 }
 
@@ -62,7 +62,7 @@ void httpRequest::_addChunkedContent(std::istream &fs) {
     std::streampos nextChunkSize;
 
     while (fs) {
-		line = _getLineWithCRLF(fs);
+        line = _getLineWithCRLF(fs);
         try {
             nextChunkSize = stoi(line);
         } catch (std::exception &e) {
@@ -75,7 +75,7 @@ void httpRequest::_addChunkedContent(std::istream &fs) {
             throw httpRequestException(413, "Request body larger than max body size");
         if (!nextChunkSize) {
             // std::getline(fs, line);
-			line = _getLineWithCRLF(fs);
+            line = _getLineWithCRLF(fs);
             if (line.empty()) {
                 this->_bodyComplete = true;
                 return;
@@ -88,13 +88,12 @@ void httpRequest::_addChunkedContent(std::istream &fs) {
             throw httpRequestException(400, "Error reading chunked http request: " + std::string(e.what()));
         }
         this->_bodyLength += (size_t)nextChunkSize;
-		line = _getLineWithCRLF(fs); // skip terminating newline
+        line = _getLineWithCRLF(fs);  // skip terminating newline
         // std::getline(fs, line);  // skip terminating newline
     }
     fs.clear();
     return;
 }
-
 
 /**
  * @brief Reads from filestream until an empty line is encountered.
@@ -103,17 +102,17 @@ void httpRequest::_addChunkedContent(std::istream &fs) {
  */
 void httpRequest::_addUntilNewline(std::istream &fs) {
     std::string line;
-	std::cerr << "Parsing until double newline\n";
-	line = _getLineWithCRLF(fs);
+    // std::cerr << "Parsing until double newline\n";
+    line = _getLineWithCRLF(fs);
     while (fs) {
-		std::cerr << "loop\n";
-		std::cerr << "line: [" << line << "]\n";
+        // std::cerr << "loop\n";
+        // std::cerr << "line: [" << line << "]\n";
         if (line.empty()) {
-			std::cerr << "found double nl\n";
+            std::cerr << "found double nl\n";
             fs.clear();
             this->_bodyComplete = true;
-            infoLog << "found double newline: " << this->_httpBody << " size:" << this->_bodyLength;
-			// NEWLINE TEST 2	
+            infoLog << "found double newline: " << this->_httpBody << " size:" << this->_bodyLength << CPPLog::end;
+            // NEWLINE TEST 2
             if (_httpBody[_httpBody.size() - 1] != '\n') {
                 this->_httpBody += '\n';
                 ++this->_bodyLength;
@@ -124,14 +123,14 @@ void httpRequest::_addUntilNewline(std::istream &fs) {
             throw httpRequestException(413, "Request body larger than max body size");
         this->_httpBody += line;
         this->_bodyLength += line.size();
-        infoLog << "eof bit: " << fs.eof();
+        infoLog << "eof bit: " << fs.eof() << CPPLog::end;
         if (!fs.eof()) {
             this->_httpBody += "\n";
             this->_bodyLength += 1;
         }
-		line = _getLineWithCRLF(fs);
+        line = _getLineWithCRLF(fs);
     }
-    infoLog << "found EOF: " << this->_httpBody << " size:" << this->_bodyLength;
+    infoLog << "found EOF: " << this->_httpBody << " size:" << this->_bodyLength << CPPLog::end;
     fs.clear();
     return;
 }

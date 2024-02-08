@@ -1,15 +1,16 @@
-#include "http_request.hpp"
-#include "logging.hpp"
 #include <regex>
 
+#include "http_request.hpp"
+#include "logging.hpp"
+
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest header parser");
-static CPPLog::Instance warningLog = logOut.instance(CPPLog::Level::WARNING, "httpRequest header parses");
+static CPPLog::Instance warningLog = logOut.instance(CPPLog::Level::WARNING, "httpRequest header parser");
 
 void httpRequest::parseHeader(std::istream &fs) {
     _parseHttpStartLine(fs);
     _parseHttpHeaders(fs);
     this->_headerParseComplete = true;
-	infoLog << "Request header parse succesfully";
+    infoLog << "Request header parse succesfully";
 }
 
 void httpRequest::_parseHttpStartLine(std::istream &fs) {
@@ -17,7 +18,7 @@ void httpRequest::_parseHttpStartLine(std::istream &fs) {
 
     line = _getLineWithCRLF(fs);
     std::string::size_type request_type_pos, address_pos;
-	infoLog << "Parsing Start Line: [" << line << "]";
+    infoLog << "Parsing Start Line: [" << line << "]";
     static const std::regex http_startline_pattern(
         "^(GET|POST|PUT|DELETE|HEAD|OPTIONS|PATCH) "
         "((https?://[\\w-]+(\\.[\\w-]+)*/?)?/[^ ]*?(\\?[^ ]+?)?) "
@@ -29,7 +30,7 @@ void httpRequest::_parseHttpStartLine(std::istream &fs) {
     this->_httpRequestType = line.substr(0, request_type_pos);
     this->_httpAdress = line.substr(request_type_pos + 1, address_pos - request_type_pos - 1);
     this->_httpProtocol = line.substr(address_pos + 1, request_type_pos - address_pos - 1);
-	infoLog << "Start Line parsed";
+    infoLog << "Start Line parsed" << CPPLog::end;
     return;
 }
 
@@ -38,7 +39,7 @@ void httpRequest::_parseHttpHeaders(std::istream &fs) {
     std::string::size_type key_end, val_start;
 
     while (fs) {
-		line = _getLineWithCRLF(fs);
+        line = _getLineWithCRLF(fs);
         if (line.empty())
             break;
         key_end = line.find(':', 0);
@@ -87,7 +88,7 @@ void httpRequest::_setVars(void) {
         try {
             this->_contentLength = stoi(var);
         } catch (const std::exception &e) {
-            warningLog << e.what() << ": wrong argument for Content-Length";
+            warningLog << e.what() << ": wrong argument for Content-Length" << CPPLog::end;
             this->_contentLength = 0;
         }
         this->_contentSizeSet = true;
@@ -102,7 +103,7 @@ void httpRequest::_setVars(void) {
         var = it->second;
         this->_httpHeaders.erase(it);
         this->_httpHeaders.insert({"Host", var.substr(0, pos)});
-        infoLog << var.substr(pos + 1, var.size() - pos - 1);
+        infoLog << var.substr(pos + 1, var.size() - pos - 1) << CPPLog::end;
         this->_port = stoi(var.substr(pos + 1, var.size() - pos - 1));
     }
 }

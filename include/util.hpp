@@ -17,4 +17,5 @@ class WebServUtil
 	public:
 	static std::string codeDescription(int httpCode);
 	static std::string timeStamp(void);
+	static bool isRequestWithoutBody(std::string requestType);
 };

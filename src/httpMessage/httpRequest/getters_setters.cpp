@@ -51,12 +51,8 @@ bool httpRequest::headerComplete(void) const {
  * @param port port from select()
  */
 void httpRequest::setServer(MainConfig &config, uint16_t port) {
-    if (!this->_headerParseComplete)
-        return;  // might handle this differently, this is here now to avoid segfaults.
-    // if (this->_port > -1 && _port != port)
-    //     throw httpRequestException(400, "Transmission port does not match port in Host header");
     this->_server = config.getServer(port, this->getHeader("Host"));
     if (this->_server == nullptr)
-        throw std::runtime_error("No server match found");
+        throw httpRequestException(500, "No server match found");
     this->_clientMaxBodySize = this->_server->clientMaxBodySize.value;
 }

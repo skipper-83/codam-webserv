@@ -2,9 +2,6 @@
 #ifndef HTTP_REQUEST_HPP
 #define HTTP_REQUEST_HPP
 
-// #include <iostream>
-// #include <map>
-// #include <regex>
 #include "config.hpp"
 #include "http_message.hpp"
 #include "util.hpp"
@@ -21,8 +18,7 @@ class httpRequest : public httpMessage {
     void _addChunkedContent(std::istream &fs);
     void _addUntilNewline(std::istream &fs);
     bool _hasNewLine(std::string &str);
-    bool _endsWithNewLine(std::string &str);
-	std::string _getLineWithCRLF(std::istream &is);
+    std::string _getLineWithCRLF(std::istream &is);
     std::string _readNumberOfBytesFromFileStream(std::istream &fs, size_t amountOfBytes);
     std::streampos _remainingLength(std::istream &fs);
     std::string _httpAdress;
@@ -38,7 +34,6 @@ class httpRequest : public httpMessage {
 
    public:
     httpRequest();
-    // httpRequest(std::string input);
     explicit httpRequest(std::istream &fs);
     httpRequest(const httpRequest &src);
     ~httpRequest();
@@ -54,7 +49,7 @@ class httpRequest : public httpMessage {
     void parse(std::string &input, uint16_t port);
     void setServer(MainConfig &config, uint16_t port);
     void parseBody(std::istream &fs);
-	void clear(void);
+    void clear(void);
 
     class httpRequestException : public std::exception {
        private:

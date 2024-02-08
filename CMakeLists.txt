@@ -15,17 +15,17 @@ set (SRCS
 	src/async/socket.cpp
 	src/async/pollarray.cpp
 	src/client.cpp
-	src/config_extractors.cpp
-	src/config_insertions.cpp
-	src/config.cpp
-	src/httpRequest/http_request.cpp
-	src/httpRequest/parse.cpp
-	src/httpRequest/parse_header.cpp
-	src/httpRequest/parse_body.cpp
-	src/httpRequest/getters_setters.cpp
-	src/httpRequest/helpers.cpp
-	src/http_message.cpp
-	src/http_response.cpp
+	src/config/config_extractors.cpp
+	src/config/config_insertions.cpp
+	src/config/config.cpp
+	src/httpMessage/httpRequest/http_request.cpp
+	src/httpMessage/httpRequest/parse.cpp
+	src/httpMessage/httpRequest/parse_header.cpp
+	src/httpMessage/httpRequest/parse_body.cpp
+	src/httpMessage/httpRequest/getters_setters.cpp
+	src/httpMessage/httpRequest/helpers.cpp
+	src/httpMessage/http_message.cpp
+	src/httpMessage/http_response.cpp
 	src/path.cpp
 	src/util.cpp
 )

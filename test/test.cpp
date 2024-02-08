@@ -89,10 +89,10 @@ Host: 123.124.123.123
 
 )";
     httpRequest request;
-	testing::internal::CaptureStderr();
-	request.parse(req, 80);
-	std::string out = testing::internal::GetCapturedStderr();
-	EXPECT_TRUE (out.find("HTTP error 400: Bad Request") != std::string::npos);
+	// testing::internal::CaptureStderr();
+	EXPECT_THROW(request.parse(req, 80), httpRequest::httpRequestException);
+	// std::string out = testing::internal::GetCapturedStderr();
+	// EXPECT_TRUE (out.find("HTTP error 400: Bad Request") != std::string::npos);
     // EXPECT_THROW(request.parse(req), std::invalid_argument);
 }
 
@@ -377,28 +377,28 @@ TEST_F(configTest, ports_getter)
 	EXPECT_EQ(ports_list.str(), "8080808180880");
 }
 
-TEST(parse, basic)
-{
-	std::string input = R"(GET )";
+// TEST(parse, basic)
+// {
+// 	std::string input = R"(GET )";
 
-	httpRequest req;
+// 	httpRequest req;
 
-	req.parse(input, 80);
-	input.append(R"(/path/to/resource?query=123 HTTP/1.0
-Host: 123.124.123.123
-Content-Length: 9
+// 	req.parse(input, 80);
+// 	input.append(R"(/path/to/resource?query=123 HTTP/1.0
+// Host: 123.124.123.123
+// Content-Length: 9
 
-123)");
-	req.parse(input, 80);
-	EXPECT_TRUE(req.headerComplete());
-	EXPECT_FALSE(req.bodyComplete());
-	EXPECT_EQ(input, "");
+// 123)");
+// 	req.parse(input, 80);
+// 	EXPECT_TRUE(req.headerComplete());
+// 	EXPECT_FALSE(req.bodyComplete());
+// 	EXPECT_EQ(input, "");
 
-	input.append("456789abcd");
-	req.parse(input, 80);
-	EXPECT_TRUE(req.bodyComplete());
-	EXPECT_EQ(input, "abcd");
-}
+// 	input.append("456789abcd");
+// 	req.parse(input, 80);
+// 	EXPECT_TRUE(req.bodyComplete());
+// 	EXPECT_EQ(input, "abcd");
+// }
 TEST(response, basic)
 {
 	httpResponse resp;

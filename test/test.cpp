@@ -413,8 +413,8 @@ test)";
 	resp.setCode(200);
 	resp.setBody("test");
 	// std::cerr
-	std::cerr << "Response: \n" <<  resp.getRequestAsString() << "\n";
-	EXPECT_EQ(resp.getRequestAsString(), exp_eq);
+	std::cerr << "Response: \n" <<  resp.getResponseAsString() << "\n";
+	EXPECT_EQ(resp.getResponseAsString(), exp_eq);
 }
 
 TEST_F(configWithRequest, getErrorPage)

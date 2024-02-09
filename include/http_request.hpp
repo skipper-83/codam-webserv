@@ -48,6 +48,7 @@ class httpRequest : public httpMessage {
     void parseHeader(std::istream &fs);
     void parse(std::string &input, uint16_t port);
     void setServer(MainConfig &config, uint16_t port);
+	const ServerConfig* getServer(void) const;
     void parseBody(std::istream &fs);
     void clear(void);
 

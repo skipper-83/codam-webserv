@@ -5,11 +5,14 @@
 #include "http_request.hpp"
 #include "util.hpp"
 
+extern MainConfig mainConfig;
+
 class httpResponse : public httpMessage {
    private:
     int _responseCode;
     std::string _responseCodeDescription;
 	const httpRequest* _precedingRequest;
+	void setErrorBody();
 
    public:
     httpResponse();
@@ -17,6 +20,7 @@ class httpResponse : public httpMessage {
 
     void setCode(int code);
     void setBody(std::string body);
-	void setHeader(std::string key, std::string value);
-	std::string getRequestAsString(void);
+	void setPrecedingRequest(httpRequest* const callingRequest);
+	// void setHeader(std::string key, std::string value);
+	std::string getResponseAsString(void);
 };

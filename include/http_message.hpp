@@ -18,6 +18,7 @@ class httpMessage
 		std::string getHeaderListAsString(void) const;
 		size_t getBodyLength(void) const;
 		void deleteHeader(std::string key);
+		void setHeader(std::string key, std::string value);
 	
 	protected:
 		httpMessage(void);

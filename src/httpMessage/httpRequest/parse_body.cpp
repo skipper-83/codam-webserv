@@ -33,6 +33,8 @@ void httpRequest::_addToFixedContentSize(std::istream &fs) {
     std::stringstream contents;
     std::streampos addedLength;
 
+	if (this->_contentLength > this->_clientMaxBodySize)
+		throw httpRequestException(413, "Request body larger than max body size");
     addedLength = _remainingLength(fs);
     if ((size_t)addedLength + this->_bodyLength >= this->_contentLength) {
         try {

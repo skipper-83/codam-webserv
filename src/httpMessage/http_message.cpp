@@ -51,6 +51,11 @@ void httpMessage::deleteHeader(std::string key) {
     }
 }
 
+void httpMessage::setHeader(std::string key, std::string value) {
+    this->_httpHeaders.insert(std::make_pair(key, value));
+}
+
+
 /**
  * @brief Returns a list of keys with the key supplied
  *
@@ -71,7 +76,7 @@ std::string httpMessage::getHeaderListAsString(void) const {
     std::string ret;
 
     for (httpRequestT::const_iterator element = _httpHeaders.begin(); element != _httpHeaders.end(); element++)
-        ret.append(element->first + ": " + element->second + "\n");
+        ret.append(element->first + ": " + element->second + "\r\n");
     return ret;
 }
 httpMessage::~httpMessage(void) {}

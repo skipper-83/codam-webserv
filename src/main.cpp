@@ -73,9 +73,12 @@ int main(int argc, char** argv) {
             try {
                 client.request().parse(client.fd().readBuffer, client.port());
             } catch (const httpRequest::httpRequestException& e) {
-                client.request().clear();
-                client.fd().readBuffer.clear();
+				// client.response().setPrecedingRequest(&client.request());
+				client.response().setCode(e.errorNo());
+				client.fd().writeBuffer = client.response().getResponseAsString();
                 mainLogW << "HTTP error " << e.errorNo() << ": " << e.codeDescription() << "\n" << e.what();
+                client.fd().readBuffer.clear();
+                client.request().clear();
             }
 
             client.fd().hasPendingRead = false;

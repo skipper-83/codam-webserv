@@ -1,6 +1,5 @@
 
 #include "http_message.hpp"
-
 #include "http_request.hpp"
 
 /**
@@ -54,7 +53,6 @@ void httpMessage::deleteHeader(std::string key) {
 void httpMessage::setHeader(std::string key, std::string value) {
     this->_httpHeaders.insert(std::make_pair(key, value));
 }
-
 
 /**
  * @brief Returns a list of keys with the key supplied

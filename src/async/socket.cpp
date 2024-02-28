@@ -14,9 +14,10 @@ AsyncSocket::AsyncSocket(uint16_t port, int backlog) : _port(port), _backlog(bac
         throw std::runtime_error("socket() failed");
 
     int opt = 1;
-    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0 || setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0 || setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0)
         throw std::runtime_error("setsockopt() failed: " + std::to_string(errno) + ": " + std::strerror(errno));
     struct sockaddr_in addr;
+
 
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;

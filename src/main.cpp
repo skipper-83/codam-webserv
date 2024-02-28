@@ -73,9 +73,9 @@ int main(int argc, char** argv) {
             try {
                 client.request().parse(client.fd().readBuffer, client.port());
             } catch (const httpRequest::httpRequestException& e) {
-				// client.response().setPrecedingRequest(&client.request());
-				client.response().setCode(e.errorNo());
-				client.fd().writeBuffer = client.response().getResponseAsString();
+                // client.response().setPrecedingRequest(&client.request());
+                client.response().setCode(e.errorNo());
+                client.fd().writeBuffer = client.response().getResponseAsString();
                 mainLogW << "HTTP error " << e.errorNo() << ": " << e.codeDescription() << "\n" << e.what();
                 client.fd().readBuffer.clear();
                 client.request().clear();
@@ -93,8 +93,9 @@ int main(int argc, char** argv) {
             if (client.request().bodyComplete()) {
                 mainLogI << "request body complete" << CPPLog::end;
                 mainLogI << "Body: [" << client.request().getBody() << "] " << CPPLog::end;
-				client.fd().writeBuffer = "test";
+                client.fd().writeBuffer = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\ntestr\r\n\r\n";
                 client.request().clear();
+                mainLogI << "body complete part done" << CPPLog::end;
             }
         });
     }

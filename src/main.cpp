@@ -12,6 +12,7 @@
 #include "logging.hpp"
 
 CPPLog::Instance mainLogI = logOut.instance(CPPLog::Level::INFO, "main");
+CPPLog::Instance mainLogW = logOut.instance(CPPLog::Level::WARNING, "main");
 
 MainConfig mainConfig;
 
@@ -38,10 +39,8 @@ int main(int argc, char** argv) {
 
     parseConfig(argv[1]);
     std::vector<uint16_t> ports = mainConfig.getPorts();
-
     std::vector<std::shared_ptr<AsyncSocket>> sockets;
     std::transform(ports.begin(), ports.end(), std::back_inserter(sockets), [](auto& port) { return AsyncSocket::create(port); });
-
     AsyncPollArray pollArray;
     std::for_each(sockets.begin(), sockets.end(), [&pollArray](auto& socket) { pollArray.add(socket); });
 
@@ -71,7 +70,17 @@ int main(int argc, char** argv) {
                 return;
             mainLogI << "received " << client.fd().readBuffer.size() << " bytes from " << client.port() << CPPLog::end;
             mainLogI << "received: " << client.fd().readBuffer << CPPLog::end;
-            client.request().parse(client.fd().readBuffer, client.port());
+            try {
+                client.request().parse(client.fd().readBuffer, client.port());
+            } catch (const httpRequest::httpRequestException& e) {
+                // client.response().setPrecedingRequest(&client.request());
+                client.response().setCode(e.errorNo());
+                client.fd().writeBuffer = client.response().getResponseAsString();
+                mainLogW << "HTTP error " << e.errorNo() << ": " << e.codeDescription() << "\n" << e.what();
+                client.fd().readBuffer.clear();
+                client.request().clear();
+            }
+
             client.fd().hasPendingRead = false;
             mainLogI << "parsed request from " << client.port() << CPPLog::end;
 
@@ -81,8 +90,13 @@ int main(int argc, char** argv) {
                 mainLogI << "request path: " << client.request().getAdress() << CPPLog::end;
             }
 
-            if (client.request().bodyComplete())
+            if (client.request().bodyComplete()) {
                 mainLogI << "request body complete" << CPPLog::end;
+                mainLogI << "Body: [" << client.request().getBody() << "] " << CPPLog::end;
+                client.fd().writeBuffer = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\ntestr\r\n\r\n";
+                client.request().clear();
+                mainLogI << "body complete part done" << CPPLog::end;
+            }
         });
     }
 }

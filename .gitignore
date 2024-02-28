@@ -15,8 +15,13 @@ Thumbs.db
 # VScode #
 ##########
 .vscode/*
+nginx_test/html/dir/*
 !.vscode/c_cpp_properties.json.default
 !.vscode/settings.json.default
 
 archive
 _deps
+nginx-test/html/dir/ieta_anders_met_een_bizar_lange_naam_gaat_het_dan_nog_goed_qua_tabs
+nginx-test/html/dir/iets
+test/test_dir/file1
+test/test_dir/iets_anders_met_een_bizar_lange_naam_gaat_het_dan_nog_goed_qua_tabs

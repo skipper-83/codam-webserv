@@ -6,6 +6,7 @@ static CPPLog::Instance logI = logOut.instance(CPPLog::Level::INFO, "Client");
 
 Client::Client(std::shared_ptr<AsyncIOFD> fd, uint16_t port) : _fd(std::move(fd)), _port(port), _request() {
 	logI << "Created client on port " << _port << CPPLog::end;
+	this->_response.setPrecedingRequest(&this->_request);
 }
 
 Client::~Client() {
@@ -22,4 +23,8 @@ uint16_t Client::port() const {
 
 httpRequest& Client::request() {
 	return _request;
+}
+
+httpResponse& Client::response() {
+    return _response;
 }

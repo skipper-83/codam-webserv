@@ -1,8 +1,6 @@
 
-#include "http_request.hpp"
 #include "http_message.hpp"
-
-
+#include "http_request.hpp"
 
 /**
  * @brief Returns protocol of request (ie HTTP1.1)
@@ -44,13 +42,16 @@ size_t httpMessage::getBodyLength(void) const {
 }
 
 void httpMessage::deleteHeader(std::string key) {
-	while (1)
-	{
-		auto it = _httpHeaders.find(key);
-		if (it == _httpHeaders.end())
-			return ;
-		_httpHeaders.erase(it);
-	}
+    while (1) {
+        auto it = _httpHeaders.find(key);
+        if (it == _httpHeaders.end())
+            return;
+        _httpHeaders.erase(it);
+    }
+}
+
+void httpMessage::setHeader(std::string key, std::string value) {
+    this->_httpHeaders.insert(std::make_pair(key, value));
 }
 
 /**
@@ -70,11 +71,11 @@ httpMessage::httpRequestListT httpMessage::getHeaderList(std::string const &key)
 }
 
 std::string httpMessage::getHeaderListAsString(void) const {
-	std::string ret;
+    std::string ret;
 
     for (httpRequestT::const_iterator element = _httpHeaders.begin(); element != _httpHeaders.end(); element++)
-        ret.append(element->first + ": " + element->second + "\n");
+        ret.append(element->first + ": " + element->second + "\r\n");
     return ret;
 }
-httpMessage::~httpMessage(void){}
-httpMessage::httpMessage(void){}
+httpMessage::~httpMessage(void) {}
+httpMessage::httpMessage(void) {}

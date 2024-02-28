@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "http_request.hpp"
+#include "http_response.hpp"
 
 class Client {
    public:
@@ -20,9 +21,11 @@ class Client {
     uint16_t port() const;
 
     httpRequest &request();
+	httpResponse &response();
 
    private:
     std::shared_ptr<AsyncIOFD> _fd;
     uint16_t _port;
     httpRequest _request;
+	httpResponse _response;
 };

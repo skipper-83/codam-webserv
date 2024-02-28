@@ -67,6 +67,7 @@ int main(int argc, char** argv) {
                       clients.end());
 
         std::for_each(clients.begin(), clients.end(), [](Client& client) {
+<<<<<<< Updated upstream
             if (!client.fd().hasPendingRead)
                 return;
             mainLogI << "received " << client.fd().readBuffer.size() << " bytes from " << client.port() << CPPLog::end;
@@ -83,6 +84,10 @@ int main(int argc, char** argv) {
 
             if (client.request().bodyComplete())
                 mainLogI << "request body complete" << CPPLog::end;
+=======
+				client.clientReadCb();
+            
+>>>>>>> Stashed changes
         });
     }
 }

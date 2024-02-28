@@ -4,6 +4,7 @@
 
 #include "async/fd.hpp"
 #include "http_request.hpp"
+#include "http_response.hpp"
 
 enum class ClientState {
     READY_FOR_INPUT,
@@ -26,28 +27,23 @@ class Client {
     Client(Client&&) = default;
     Client& operator=(Client&&) = default;
 
-    // AsyncIOFD &fd();
-    // uint16_t port() const;
+    AsyncIOFD &fd();
+    uint16_t port() const;
 
-<<<<<<< Updated upstream
-    httpRequest &request();
-=======
     void clientReadCb();
     void clientWriteCb();
->>>>>>> Stashed changes
+	void localReadCb();
+	void localWriteCb();
+
 
    private:
     ClientState _state;
     std::shared_ptr<AsyncIOFD> _fd;
     uint16_t _port;
     httpRequest _request;
-<<<<<<< Updated upstream
-=======
-    httpResponse _response;
-
+	httpResponse _response;
     std::string _clientReadBuffer;
     std::string _clientWriteBuffer;
     std::string _localReadBuffer;
     std::string _localWriteBuffer;
->>>>>>> Stashed changes
 };

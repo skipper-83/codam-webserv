@@ -3,6 +3,7 @@
 #include <poll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <cstring>
 
 #include "async/fd.hpp"
 

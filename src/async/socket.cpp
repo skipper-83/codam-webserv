@@ -3,11 +3,14 @@
 #include <poll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+
 #include <cstring>
 
 #include "async/fd.hpp"
 
-AsyncSocket::AsyncSocket(uint16_t port, int backlog) : _port(port), _backlog(backlog), _hasPendingAccept(false) {
+using namespace std::placeholders;
+AsyncSocket::AsyncSocket(uint16_t port, const SocketCallback &clientAvailableCb, int backlog)
+    : AsyncFD({{EventTypes::IN, AsyncSocket::_internalClientAvailableCb}}), _port(port), _clientAvailableCb(clientAvailableCb), _backlog(backlog) {
     int fd;
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -19,12 +22,11 @@ AsyncSocket::AsyncSocket(uint16_t port, int backlog) : _port(port), _backlog(bac
         throw std::runtime_error("setsockopt() failed: " + std::to_string(errno) + ": " + std::strerror(errno));
     struct sockaddr_in addr;
 
-
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(_port);
 
-    if (bind(fd, (struct sockaddr*)&addr, sizeof(addr)) < 0)
+    if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0)
         throw std::runtime_error("bind() failed");
 
     if (listen(fd, _backlog) < 0)
@@ -33,32 +35,28 @@ AsyncSocket::AsyncSocket(uint16_t port, int backlog) : _port(port), _backlog(bac
     setAsyncFlags();
 }
 
+std::unique_ptr<AsyncSocket> AsyncSocket::create(uint16_t port, const SocketCallback &clientAvailableCb, int backlog) {
+    return std::make_unique<AsyncSocket>(port, clientAvailableCb, backlog);
+}
+
 AsyncSocket::~AsyncSocket() {}
 
-void AsyncSocket::readReadyCb() {
-    _hasPendingAccept = true;
-}
-
-bool AsyncSocket::hasPendingAccept() const {
-    return _hasPendingAccept;
-}
-
-void AsyncSocket::writeReadyCb() {}
-
-std::unique_ptr<AsyncIOFD> AsyncSocket::accept() {
+std::unique_ptr<AsyncSocketClient> AsyncSocket::accept(const AsyncSocketClient::SocketClientCallback &clientReadReadyCb,
+                                                       const AsyncSocketClient::SocketClientCallback &clientWriteReadyCb) {
     int fd = ::accept(_fd, nullptr, nullptr);
     if (fd < 0)
         throw std::runtime_error("accept() failed");
     _hasPendingAccept = false;
-    return AsyncIOFD::create(fd);
+    return AsyncSocketClient::create(fd, _port, clientReadReadyCb, clientWriteReadyCb);
 }
 
-void AsyncSocket::errorCb() {}
-
-std::unique_ptr<AsyncSocket> AsyncSocket::create(uint16_t port, int backlog) {
-    return std::make_unique<AsyncSocket>(port, backlog);
+void AsyncSocket::_internalClientAvailableCb(AsyncFD &fd) {
+    AsyncSocket &socket = static_cast<AsyncSocket &>(fd);
+    socket._hasPendingAccept = true;
+    if (socket._clientAvailableCb)
+        socket._clientAvailableCb(socket);
 }
 
-uint16_t AsyncSocket::getPort() const {
-    return _port;
+bool AsyncSocket::clientAvailable() const {
+    return _hasPendingAccept;
 }

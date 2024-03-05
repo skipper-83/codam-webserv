@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -32,71 +33,39 @@ void parseConfig(const std::string& path) {
 int main(int argc, char** argv) {
     mainLogI << "main() called" << CPPLog::end;
 
-    if (argc != 2) {
-        std::cerr << "usage: " << argv[0] << " <config file>" << std::endl;
-        return 1;
-    }
+    // if (argc != 2) {
+    //     std::cerr << "usage: " << argv[0] << " <config file>" << std::endl;
+    //     return 1;
+    // }
+    (void)argc;
+    (void)argv;
 
-    parseConfig(argv[1]);
-    std::vector<uint16_t> ports = mainConfig.getPorts();
-    std::vector<std::shared_ptr<AsyncSocket>> sockets;
-    std::transform(ports.begin(), ports.end(), std::back_inserter(sockets), [](auto& port) { return AsyncSocket::create(port); });
+    std::function mainReadCb = [](AsyncSocketClient& client) {
+        mainLogI << "read CB" << CPPLog::end;
+
+        std::string data = client.read(1024);
+        mainLogI << "read: " << data << CPPLog::end;
+
+        std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHello";
+        client.write(response);
+    };
+
     AsyncPollArray pollArray;
-    std::for_each(sockets.begin(), sockets.end(), [&pollArray](auto& socket) { pollArray.add(socket); });
 
-    std::vector<Client> clients;
+    std::function mainClientAvailableCb = [mainReadCb, &pollArray](AsyncSocket& socket) {
+        mainLogI << "client available CB" << CPPLog::end;
+        mainLogI << "creating client" << CPPLog::end;
+        std::shared_ptr<AsyncSocketClient> client = socket.accept(mainReadCb, nullptr);
+        mainLogI << "adding client to pollArray" << CPPLog::end;
+        pollArray.add(client);
+    };
+
+    std::shared_ptr<AsyncSocket> socket = AsyncSocket::create(8080, mainClientAvailableCb);
+    mainLogI << "adding socket to pollArray" << CPPLog::end;
+    pollArray.add(socket);
+
     while (true) {
+        // mainLogI << "polling pollArray" << CPPLog::end;
         pollArray.poll(-1);
-        std::for_each(sockets.begin(), sockets.end(), [&clients, &pollArray](std::shared_ptr<AsyncSocket>& socket) {
-            if (socket->hasPendingAccept()) {
-                std::shared_ptr<AsyncIOFD> clientSocket = socket->accept();
-                uint16_t port = socket->getPort();
-                clients.emplace_back(clientSocket, port);
-                pollArray.add(clientSocket);
-            }
-        });
-
-        clients.erase(std::remove_if(clients.begin(), clients.end(),
-                                     [](Client& client) {
-                                         if (client.fd().isValid())
-                                             return false;
-                                         mainLogI << "client on port " << client.port() << " disconnected" << CPPLog::end;
-                                         return true;
-                                     }),
-                      clients.end());
-
-        std::for_each(clients.begin(), clients.end(), [](Client& client) {
-            if (!client.fd().hasPendingRead)
-                return;
-            mainLogI << "received " << client.fd().readBuffer.size() << " bytes from " << client.port() << CPPLog::end;
-            mainLogI << "received: " << client.fd().readBuffer << CPPLog::end;
-            try {
-                client.request().parse(client.fd().readBuffer, client.port());
-            } catch (const httpRequest::httpRequestException& e) {
-                // client.response().setPrecedingRequest(&client.request());
-                client.response().setCode(e.errorNo());
-                client.fd().writeBuffer = client.response().getResponseAsString();
-                mainLogW << "HTTP error " << e.errorNo() << ": " << e.codeDescription() << "\n" << e.what();
-                client.fd().readBuffer.clear();
-                client.request().clear();
-            }
-
-            client.fd().hasPendingRead = false;
-            mainLogI << "parsed request from " << client.port() << CPPLog::end;
-
-            if (client.request().headerComplete()) {
-                mainLogI << "request header complete" << CPPLog::end;
-                mainLogI << "request method: " << client.request().getRequestType() << CPPLog::end;
-                mainLogI << "request path: " << client.request().getAdress() << CPPLog::end;
-            }
-
-            if (client.request().bodyComplete()) {
-                mainLogI << "request body complete" << CPPLog::end;
-                mainLogI << "Body: [" << client.request().getBody() << "] " << CPPLog::end;
-                client.fd().writeBuffer = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\ntestr\r\n\r\n";
-                client.request().clear();
-                mainLogI << "body complete part done" << CPPLog::end;
-            }
-        });
     }
 }

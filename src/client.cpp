@@ -4,7 +4,7 @@
 static CPPLog::Instance logI = logOut.instance(CPPLog::Level::INFO, "Client");
 
 
-Client::Client(std::shared_ptr<AsyncIOFD> fd, uint16_t port) : _fd(std::move(fd)), _port(port), _request() {
+Client::Client(std::shared_ptr<AsyncFD> fd, uint16_t port) : _fd(std::move(fd)), _port(port), _request() {
 	logI << "Created client on port " << _port << CPPLog::end;
 	this->_response.setPrecedingRequest(&this->_request);
 }
@@ -13,7 +13,7 @@ Client::~Client() {
 	logI << "Destroyed client on port " << _port << CPPLog::end;
 }
 
-AsyncIOFD& Client::fd() {
+AsyncFD& Client::fd() {
 	return *_fd;
 }
 

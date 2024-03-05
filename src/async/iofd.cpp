@@ -8,44 +8,84 @@ static CPPLog::Instance logW = logOut.instance(CPPLog::Level::WARNING, "AsyncFD"
 static CPPLog::Instance logE = logOut.instance(CPPLog::Level::ERROR, "AsyncFD");
 static CPPLog::Instance logF = logOut.instance(CPPLog::Level::FATAL, "AsyncFD");
 
-AsyncIOFD::AsyncIOFD(int fd) : AsyncFD(fd) {}
+AsyncIO::AsyncIO(int fd, const std::map<EventTypes, EventCallback> &eventCallbacks)
+    : AsyncFD(fd, eventCallbacks), _inCb(), _outCb(), _hasPendingRead(false), _hasPendingWrite(false) {
+    if (_eventCallbacks.contains(EventTypes::IN))
+        _inCb = _eventCallbacks.at(EventTypes::IN);
+    if (_eventCallbacks.contains(EventTypes::OUT))
+        _outCb = _eventCallbacks.at(EventTypes::OUT);
 
-std::unique_ptr<AsyncIOFD> AsyncIOFD::create(int fd) {
-    return std::make_unique<AsyncIOFD>(fd);
+    _eventCallbacks[EventTypes::IN] = AsyncIO::_internalInCb;
+    _eventCallbacks[EventTypes::OUT] = AsyncIO::_internalOutReadyCb;
 }
 
-AsyncIOFD::~AsyncIOFD() {}
+std::unique_ptr<AsyncIO> AsyncIO::create(int fd, const std::map<EventTypes, EventCallback> &eventCallbacks) {
+    return std::make_unique<AsyncIO>(fd, eventCallbacks);
+}
 
-void AsyncIOFD::readReadyCb() {
-    std::unique_ptr<char[]> buf = std::make_unique<char[]>(READ_CHUNK_SIZE);
-    ssize_t ret = ::read(this->_fd, buf.get(), READ_CHUNK_SIZE);
-    if (ret < 0) {
+AsyncIO::~AsyncIO() {}
+
+void AsyncIO::_internalInCb(AsyncFD &fd) {
+    AsyncIO &io = static_cast<AsyncIO &>(fd);
+    if (!io._hasPendingRead)
+        logI << "read ready cb";
+    io._hasPendingRead = true;
+    if (io._inCb)
+        io._inCb(io);
+}
+
+void AsyncIO::_internalOutReadyCb(AsyncFD &fd) {
+    AsyncIO &io = static_cast<AsyncIO &>(fd);
+    if (!io._hasPendingWrite)
+        logI << "write ready cb";
+    io._hasPendingWrite = true;
+    if (io._outCb)
+        io._outCb(io);
+}
+
+std::string AsyncIO::read(size_t size) {
+    std::string ret;
+
+    if (!_hasPendingRead) {
+        logW << "no pending read";
+        return ret;
+    }
+
+    if (size == 0) {
+        logW << "read size is 0";
+        return ret;
+    }
+    std::unique_ptr<char[]> buf = std::make_unique<char[]>(size);
+    ssize_t retSize = ::read(_fd, buf.get(), size);
+    if (retSize < 0) {
         logE << "read failed";
         throw std::runtime_error("read failed");
     }
-    if (ret == 0) {
+    if (retSize == 0) {
         logI << "read EOF";
         close();
-        return;
+        return ret;
     }
-    readBuffer.append(buf.get(), ret);
-    hasPendingRead = true;
+    _hasPendingRead = false;
+    ret.append(buf.get(), retSize);
+    return ret;
 }
 
-void AsyncIOFD::writeReadyCb() {
-    if (writeBuffer.size() == 0)
-        return;
-    if (!*this) {
-        logI << "invalid fd";
-        return;
+size_t AsyncIO::write(std::string &data) {
+    if (!_hasPendingWrite) {
+        logW << "no pending write";
+        return 0;
     }
-    ssize_t ret = ::write(this->_fd, writeBuffer.c_str(), writeBuffer.size());
+    if (data.size() == 0) {
+        logW << "write size is 0";
+        return 0;
+    }
+    ssize_t ret = ::write(_fd, data.c_str(), data.size());
     if (ret < 0) {
         logE << "write failed";
         throw std::runtime_error("write failed");
     }
-    writeBuffer.erase(0, ret);
-
+    data.erase(0, ret);
+    _hasPendingWrite = false;
+    return ret;
 }
-
-void AsyncIOFD::errorCb() {}

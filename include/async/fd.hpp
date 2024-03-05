@@ -3,11 +3,26 @@
 #include <unistd.h>
 
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
 
 class AsyncFD {
    public:
+    using EventCallback = std::function<void(AsyncFD&)>;
+    enum class EventTypes {
+        IN,
+        OUT,
+        ERROR,
+        HANGUP,
+    };
+
+    AsyncFD();
+    AsyncFD(int fd, const std::map<EventTypes, EventCallback>& eventCallbacks = {});
+    AsyncFD(const std::map<EventTypes, EventCallback>& eventCallbacks);
+
+    static std::unique_ptr<AsyncFD> create(int fd, const std::map<EventTypes, EventCallback>& eventCallbacks = {});
+    static std::unique_ptr<AsyncFD> create(const std::map<EventTypes, EventCallback>& eventCallbacks);
     virtual ~AsyncFD();
 
     AsyncFD(const AsyncFD&) = delete;
@@ -17,54 +32,80 @@ class AsyncFD {
     AsyncFD& operator=(AsyncFD&&) = default;
 
     void close();
-
-    virtual void readReadyCb() = 0;
-    virtual void writeReadyCb() = 0;
-    virtual void errorCb() = 0;
-
     void poll();
 
     operator bool() const;
-
     bool isValid() const;
 
    protected:
-    AsyncFD(int fd);
-    AsyncFD();
+    friend class AsyncPollArray;
+    static const std::map<int, EventTypes> pollToEventType;
+    static const std::map<EventTypes, int> eventTypeToPoll;
 
     void setAsyncFlags();
-    friend class AsyncPollArray;
+
+    void eventCb(EventTypes type);
     int _fd;
+    std::map<EventTypes, EventCallback> _eventCallbacks;
 };
 
-class AsyncIOFD : public AsyncFD {
+class AsyncIO : public AsyncFD {
    public:
-    AsyncIOFD(int fd);
-    static std::unique_ptr<AsyncIOFD> create(int fd);
-    virtual ~AsyncIOFD();
+    AsyncIO(int fd, const std::map<EventTypes, EventCallback>& eventCallbacks = {});
+    static std::unique_ptr<AsyncIO> create(int fd, const std::map<EventTypes, EventCallback>& eventCallbacks = {});
+    virtual ~AsyncIO();
 
-    AsyncIOFD(const AsyncIOFD&) = delete;
-    AsyncIOFD& operator=(const AsyncIOFD&) = delete;
+    AsyncIO(const AsyncIO&) = delete;
+    AsyncIO& operator=(const AsyncIO&) = delete;
 
-    AsyncIOFD(AsyncIOFD&&) = default;
-    AsyncIOFD& operator=(AsyncIOFD&&) = default;
+    AsyncIO(AsyncIO&&) = default;
+    AsyncIO& operator=(AsyncIO&&) = default;
 
-    void readReadyCb() override;
-    void writeReadyCb() override;
-    void errorCb() override;
+    std::string read(size_t size);
+    size_t write(std::string& data);
 
-    bool hasPendingRead = false;
+   protected:
+    static void _internalInCb(AsyncFD& fd);
+    static void _internalOutReadyCb(AsyncFD& fd);
+    EventCallback _inCb;
+    EventCallback _outCb;
 
-    std::string readBuffer;
-    std::string writeBuffer;
+    bool _hasPendingRead;
+    bool _hasPendingWrite;
+};
 
-    static constexpr size_t READ_CHUNK_SIZE = 4096;
+class AsyncSocketClient : public AsyncIO {
+   public:
+    using SocketClientCallback = std::function<void(AsyncSocketClient&)>;
+
+    AsyncSocketClient(int fd, uint16_t port, const SocketClientCallback& clientReadReadyCb = {}, const SocketClientCallback& clientWriteReadyCb = {});
+    static std::unique_ptr<AsyncSocketClient> create(int fd, uint16_t port, const SocketClientCallback& clientReadReadyCb = {},
+                                                     const SocketClientCallback& clientWriteReadyCb = {});
+    virtual ~AsyncSocketClient();
+
+    AsyncSocketClient(const AsyncSocketClient&) = delete;
+    AsyncSocketClient& operator=(const AsyncSocketClient&) = delete;
+
+    AsyncSocketClient(AsyncSocketClient&&) = default;
+    AsyncSocketClient& operator=(AsyncSocketClient&&) = default;
+
+    uint16_t getPort() const;
+
+   protected:
+    static void _internalReadReadyCb(AsyncFD& fd);
+    static void _internalWriteReadyCb(AsyncFD& fd);
+
+    uint16_t _port;
+    SocketClientCallback _clientReadReadyCb;
+    SocketClientCallback _clientWriteReadyCb;
 };
 
 class AsyncSocket : public AsyncFD {
    public:
-    AsyncSocket(uint16_t port, int backlog = 10);
-    static std::unique_ptr<AsyncSocket> create(uint16_t port, int backlog = 10);
+    using SocketCallback = std::function<void(AsyncSocket&)>;
+
+    AsyncSocket(uint16_t port, const SocketCallback& clientAvailableCb = {}, int backlog = 10);
+    static std::unique_ptr<AsyncSocket> create(uint16_t port, const SocketCallback& clientAvailableCb = {}, int backlog = 10);
     virtual ~AsyncSocket();
 
     AsyncSocket(const AsyncSocket&) = delete;
@@ -73,17 +114,14 @@ class AsyncSocket : public AsyncFD {
     AsyncSocket(AsyncSocket&&) = default;
     AsyncSocket& operator=(AsyncSocket&&) = default;
 
-    void readReadyCb() override;
-    void writeReadyCb() override;
-    void errorCb() override;
+    bool clientAvailable() const;
+    std::unique_ptr<AsyncSocketClient> accept(const AsyncSocketClient::SocketClientCallback& clientReadReadyCb = {},
+                                              const AsyncSocketClient::SocketClientCallback& clientWriteReadyCb = {});
 
-    bool hasPendingAccept() const;
-    std::unique_ptr<AsyncIOFD> accept();
-
-    uint16_t getPort() const;
-
-   private:
-    int _port;
+   protected:
+    static void _internalClientAvailableCb(AsyncFD& fd);
+    uint16_t _port;
+    SocketCallback _clientAvailableCb;
     int _backlog;
     bool _hasPendingAccept;
 };

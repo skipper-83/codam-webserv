@@ -1,31 +1,31 @@
 #pragma once
 
-#include "async/fd.hpp"
 #include <memory>
 
+#include "async/fd.hpp"
 #include "http_request.hpp"
 #include "http_response.hpp"
 
 class Client {
    public:
-    Client(std::shared_ptr<AsyncIOFD> fd, uint16_t port);
+    Client(std::shared_ptr<AsyncFD> fd, uint16_t port);
     ~Client();
 
-    Client(const Client&) = delete;
-    Client& operator=(const Client&) = delete;
+    Client(const Client &) = delete;
+    Client &operator=(const Client &) = delete;
 
-    Client(Client&&) = default;
-    Client& operator=(Client&&) = default;
+    Client(Client &&) = default;
+    Client &operator=(Client &&) = default;
 
-    AsyncIOFD &fd();
+    AsyncFD &fd();
     uint16_t port() const;
 
     httpRequest &request();
-	httpResponse &response();
+    httpResponse &response();
 
    private:
-    std::shared_ptr<AsyncIOFD> _fd;
+    std::shared_ptr<AsyncFD> _fd;
     uint16_t _port;
     httpRequest _request;
-	httpResponse _response;
+    httpResponse _response;
 };

@@ -31,3 +31,11 @@ void AsyncSocketClient::_internalWriteReadyCb(AsyncFD &fd) {
         client._clientWriteReadyCb(client);
     }
 }
+
+void AsyncSocketClient::registerReadReadyCb(const SocketClientCallback &cb) {
+    _clientReadReadyCb = cb;
+}
+
+void AsyncSocketClient::registerWriteReadyCb(const SocketClientCallback &cb) {
+    _clientWriteReadyCb = cb;
+}

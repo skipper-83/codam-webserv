@@ -50,7 +50,7 @@ std::string AsyncIO::read(size_t size) {
         logW << "no pending read";
         return ret;
     }
-
+    _hasPendingRead = false;
     if (size == 0) {
         logW << "read size is 0";
         return ret;
@@ -66,7 +66,6 @@ std::string AsyncIO::read(size_t size) {
         close();
         return ret;
     }
-    _hasPendingRead = false;
     ret.append(buf.get(), retSize);
     return ret;
 }
@@ -76,6 +75,7 @@ size_t AsyncIO::write(std::string &data) {
         logW << "no pending write";
         return 0;
     }
+    _hasPendingWrite = false;
     if (data.size() == 0) {
         logW << "write size is 0";
         return 0;
@@ -86,6 +86,5 @@ size_t AsyncIO::write(std::string &data) {
         throw std::runtime_error("write failed");
     }
     data.erase(0, ret);
-    _hasPendingWrite = false;
     return ret;
 }

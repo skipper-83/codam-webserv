@@ -91,6 +91,9 @@ class AsyncSocketClient : public AsyncIO {
 
     uint16_t getPort() const;
 
+    void registerReadReadyCb(const SocketClientCallback& cb);
+    void registerWriteReadyCb(const SocketClientCallback& cb);
+
    protected:
     static void _internalReadReadyCb(AsyncFD& fd);
     static void _internalWriteReadyCb(AsyncFD& fd);

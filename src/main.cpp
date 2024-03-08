@@ -39,6 +39,7 @@ int main(int argc, char** argv) {
     // }
     (void)argc;
     (void)argv;
+	std::vector<Client> clients;
 
     std::function mainReadCb = [](AsyncSocketClient& client) {
         mainLogI << "read CB" << CPPLog::end;
@@ -52,15 +53,18 @@ int main(int argc, char** argv) {
 
     AsyncPollArray pollArray;
 
-    std::function mainClientAvailableCb = [mainReadCb, &pollArray](AsyncSocket& socket) {
+    std::function mainClientAvailableCb = [mainReadCb, &pollArray, &clients](AsyncSocket& socket) {
         mainLogI << "client available CB" << CPPLog::end;
         mainLogI << "creating client" << CPPLog::end;
-        std::shared_ptr<AsyncSocketClient> newSocketClient = socket.accept(mainReadCb, nullptr);
+        std::shared_ptr<AsyncSocketClient> newSocketClient = socket.accept(nullptr, nullptr);
+		// Client newClient(newSocketClient, 8080);
+		clients.emplace_back(newSocketClient, 8080);
         mainLogI << "adding client to pollArray" << CPPLog::end;
         pollArray.add(newSocketClient);
     };
 
     std::shared_ptr<AsyncSocket> socket = AsyncSocket::create(8080, mainClientAvailableCb);
+
     mainLogI << "adding socket to pollArray" << CPPLog::end;
     pollArray.add(socket);
 

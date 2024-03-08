@@ -1,14 +1,16 @@
 #include "client.hpp"
 #include "logging.hpp"
 
-static CPPLog::Instance logI = logOut.instance(CPPLog::Level::INFO, "Client");
+static CPPLog::Instance logI = logOut.instance(CPPLog::Level::INFO, "client");
 
-CPPLog::Instance clienLogI = logOut.instance(CPPLog::Level::INFO, "client");
-CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "client");
+// CPPLog::Instance clienLogI = logOut.instance(CPPLog::Level::INFO, "client");
+// CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "client");
 
-Client::Client(std::shared_ptr<AsyncFD> fd, uint16_t port, std::map<AsyncFD::EventTypes, AsyncFD::EventCallback> eventCallbacks) : _fd(fd, eventCallbacks), _port(port), _request() {
+Client::Client(std::shared_ptr<AsyncSocketClient> &fd, uint16_t port) : _fd(fd), _port(port), _request() {
+	std::cout << "client constructor" << std::endl;
 	logI << "Created client on port " << _port << CPPLog::end;
 	this->_response.setPrecedingRequest(&this->_request);
+	this->_fd->registerReadReadyCb(std::bind(&Client::clientReadCb, this, std::placeholders::_1));
 }
 
 Client::~Client() {
@@ -23,8 +25,19 @@ uint16_t Client::port() const {
     return _port;
 }
 
-void Client::clientReadCb() {
-	clienLogI << "clientReadCb" << CPPLog::end;
+// SocketClientCallback Client::clientReadCb() {
+//     return SocketClientCallback();
+// }
+
+void Client::clientReadCb(AsyncSocketClient& client) {
+	// return [this](AsyncSocketClient& client) {
+	// 	this->clientReadCb();
+	// };
+	std::cout << "clientReadCb" << std::endl;
+	logI << "clientReadCb" << client.getPort() << CPPLog::end;
+	_localReadBuffer += _fd->read(1024);
+	logI << "read: " << _localReadBuffer << CPPLog::end;
+	
     // if (!this->_fd->hasPendingRead)
     //     return;
     // clienLogI << "received " << this->_fd->readBuffer.size() << " bytes from " << this->_port << CPPLog::end;

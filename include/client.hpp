@@ -15,11 +15,12 @@ enum class ClientState {
     ERROR,
     DONE,
 };
-
+//using SocketClientCallback = std::function<void(AsyncSocketClient&)>;
 class Client {
-   public:
-    // Client(std::shared_ptr<AsyncFD> fd, uint16_t port);
-	Client(std::shared_ptr<AsyncFD> fd, std::map<AsyncFD::EventTypes, AsyncFD::EventCallback>& eventCallbacks);
+	public:
+	using SocketClientCallback = AsyncSocketClient::SocketClientCallback;
+    Client(std::shared_ptr<AsyncSocketClient> &fd, uint16_t port);
+	// Client(std::shared_ptr<AsyncFD> fd, std::map<AsyncFD::EventTypes, AsyncFD::EventCallback>& eventCallbacks);
     ~Client();
 
     Client(const Client &) = delete;
@@ -30,8 +31,9 @@ class Client {
 
     AsyncIO &fd();
     uint16_t port() const;
-
-    void clientReadCb();
+// 
+	// SocketClientCallback clientReadCb;
+    void clientReadCb(AsyncSocketClient& client);
     void clientWriteCb();
 	void localReadCb();
 	void localWriteCb();
@@ -39,7 +41,7 @@ class Client {
 
    private:
     ClientState _state;
-    std::shared_ptr<AsyncIO> _fd;
+    std::shared_ptr<AsyncSocketClient> _fd;
     uint16_t _port;
     httpRequest _request;
 	httpResponse _response;

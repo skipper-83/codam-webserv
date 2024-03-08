@@ -13,6 +13,7 @@ set (SRCS
 	src/async/fd.cpp
 	src/async/iofd.cpp
 	src/async/socket.cpp
+	src/async/socketclient.cpp
 	src/async/pollarray.cpp
 	src/client.cpp
 	src/config/config_extractors.cpp

@@ -18,16 +18,17 @@ enum class ClientState {
 
 class Client {
    public:
-    Client(std::shared_ptr<AsyncIOFD> fd, uint16_t port);
+    // Client(std::shared_ptr<AsyncFD> fd, uint16_t port);
+	Client(std::shared_ptr<AsyncFD> fd, std::map<AsyncFD::EventTypes, AsyncFD::EventCallback>& eventCallbacks);
     ~Client();
 
-    Client(const Client&) = delete;
-    Client& operator=(const Client&) = delete;
+    Client(const Client &) = delete;
+    Client &operator=(const Client &) = delete;
 
-    Client(Client&&) = default;
-    Client& operator=(Client&&) = default;
+    Client(Client &&) = default;
+    Client &operator=(Client &&) = default;
 
-    AsyncIOFD &fd();
+    AsyncIO &fd();
     uint16_t port() const;
 
     void clientReadCb();
@@ -38,7 +39,7 @@ class Client {
 
    private:
     ClientState _state;
-    std::shared_ptr<AsyncIOFD> _fd;
+    std::shared_ptr<AsyncIO> _fd;
     uint16_t _port;
     httpRequest _request;
 	httpResponse _response;

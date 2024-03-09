@@ -10,7 +10,7 @@ static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequ
  * @brief Construct a new http Request::http Request object
  *
  */
-httpRequest::httpRequest() {}
+httpRequest::httpRequest() {infoLog << "Creating empty request" << this << CPPLog::end;}
 
 /**
  * @brief Construct a new http Request::http Request object from an input stream

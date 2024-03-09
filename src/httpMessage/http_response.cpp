@@ -12,10 +12,12 @@ httpResponse::httpResponse() {
 
 httpResponse::httpResponse(httpRequest* callingRequest) {
     httpResponse();
+	infoLog << "Constructor with preceding req" << CPPLog::end;
     this->setPrecedingRequest(callingRequest);
 }
 
 void httpResponse::setPrecedingRequest(httpRequest* const callingRequest) {
+	infoLog << "Setting preceding request" << CPPLog::end;
     _precedingRequest = callingRequest;
 }
 
@@ -29,8 +31,8 @@ void httpResponse::setCode(int code) {
 void httpResponse::setErrorBody() {
     std::string error_page;
 
-    infoLog << "Setting up error page" << CPPLog::end;
-    if (this->_precedingRequest != nullptr)
+    infoLog << "Setting up error page for " << this->_responseCode << CPPLog::end;
+    if (this->_precedingRequest != nullptr && this->_precedingRequest->getServer() != nullptr)
         error_page = this->_precedingRequest->getServer()->getErrorPage(this->_responseCode);
     if (error_page.empty()) {
         error_page.append("<html><head><title>")
@@ -44,6 +46,7 @@ void httpResponse::setErrorBody() {
 			.append("</center>");
     }
     this->setBody(error_page);
+	infoLog << "Error page set to: " << error_page << CPPLog::end;
 }
 
 void httpResponse::setBody(std::string body) {

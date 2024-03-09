@@ -10,9 +10,12 @@
 
 #define DEFAULT_CLIENT_BODY_SIZE 1000000
 #define DEFAULT_PORT 80
+#define DEFAULT_MAX_HEADER_SIZE 50
+#define DEFAULT_READ_SIZE 1024
 #define DEFAULT_ALLOWED_METHODS 		{"GET", true}, {"POST", true}, {"PUT", true}, {"DELETE", true}, {"HEAD", true}, {"OPTIONS", true}, {"PATCH", true}
 #define DEFAULT_RESPONSE_PROTOCOL "HTTP/1.1"
 #define DEFAULT_SERVER_NAME "Jelle en Alberts webserv 1.0"
+
 
 using SubParsers = std::map<std::string, std::function<void(std::istream&)> >;
 

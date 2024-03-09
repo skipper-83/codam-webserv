@@ -33,32 +33,22 @@ void parseConfig(const std::string& path) {
 int main(int argc, char** argv) {
     mainLogI << "main() called" << CPPLog::end;
 
-    // if (argc != 2) {
-    //     std::cerr << "usage: " << argv[0] << " <config file>" << std::endl;
-    //     return 1;
-    // }
+    if (argc != 2) {
+        std::cerr << "usage: " << argv[0] << " <config file>" << std::endl;
+        return 1;
+    }
+	parseConfig(argv[1]);
     (void)argc;
     (void)argv;
 	std::vector<Client> clients;
 
-    std::function mainReadCb = [](AsyncSocketClient& client) {
-        mainLogI << "read CB" << CPPLog::end;
-
-        std::string data = client.read(1024);
-        mainLogI << "read: " << data << CPPLog::end;
-
-        std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHello";
-        client.write(response);
-    };
-
     AsyncPollArray pollArray;
 
-    std::function mainClientAvailableCb = [mainReadCb, &pollArray, &clients](AsyncSocket& socket) {
+    std::function mainClientAvailableCb = [&pollArray, &clients](AsyncSocket& socket) {
         mainLogI << "client available CB" << CPPLog::end;
         mainLogI << "creating client" << CPPLog::end;
-        std::shared_ptr<AsyncSocketClient> newSocketClient = socket.accept(nullptr, nullptr);
-		// Client newClient(newSocketClient, 8080);
-		clients.emplace_back(newSocketClient, 8080);
+        std::shared_ptr<AsyncSocketClient> newSocketClient = socket.accept();
+		clients.emplace_back(newSocketClient);
         mainLogI << "adding client to pollArray" << CPPLog::end;
         pollArray.add(newSocketClient);
     };
@@ -69,7 +59,6 @@ int main(int argc, char** argv) {
     pollArray.add(socket);
 
     while (true) {
-        // mainLogI << "polling pollArray" << CPPLog::end;
         pollArray.poll(-1);
     }
 }

@@ -10,8 +10,7 @@ httpResponse::httpResponse() {
     setHeader("Server", DEFAULT_SERVER_NAME);
 }
 
-httpResponse::httpResponse(httpRequest* callingRequest) {
-    httpResponse();
+httpResponse::httpResponse(httpRequest* callingRequest) : httpResponse() {
 	infoLog << "Constructor with preceding req" << CPPLog::end;
     this->setPrecedingRequest(callingRequest);
 }

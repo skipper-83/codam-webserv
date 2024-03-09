@@ -17,10 +17,6 @@ class httpResponse : public httpMessage {
    public:
     httpResponse();
 	httpResponse(httpRequest* const callingRequest);
-	// httpResponse(const httpResponse& other) = delete;
-	// httpResponse& operator=(const httpResponse& other) = delete;
-	// httpResponse(httpResponse&& other) = delete;
-	// httpResponse& operator=(httpResponse&& other) = delete;
 
     void setCode(int code);
     void setBody(std::string body);

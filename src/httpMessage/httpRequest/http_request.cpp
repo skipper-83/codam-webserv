@@ -68,6 +68,10 @@ void httpRequest::clear(void) {
     *this = empty;
 }
 
+uint16_t httpRequest::getPort(void) const {
+    return _port;
+}
+
 std::ostream &operator<<(std::ostream &os, httpRequest const &t) {
     os << "Protocol:" << t.getProtocol() << "\n"
        << "Type: " << t.getRequestType() << "\n"
@@ -76,12 +80,3 @@ std::ostream &operator<<(std::ostream &os, httpRequest const &t) {
        << t.getBody() << "\n";
     return os;
 }
-
-// /**
-//  * @brief Construct a new http Request::http Request object
-//  *
-//  * @param input
-//  */
-// httpRequest::httpRequest(std::string input) {
-//     this->parse(input);
-// }

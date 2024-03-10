@@ -15,6 +15,21 @@ httpResponse::httpResponse(httpRequest* callingRequest) : httpResponse() {
     this->setPrecedingRequest(callingRequest);
 }
 
+httpResponse& httpResponse::operator=(const httpResponse& rhs) {
+        if (this == &rhs)
+        return *this;
+    this->_httpProtocol = rhs._httpProtocol;
+    this->_httpHeaders = httpRequestT(rhs._httpHeaders);
+    this->_httpBody = rhs._httpBody;
+    this->_bodyLength = rhs._bodyLength;
+    this->_bodyComplete = rhs._bodyComplete;
+	this->_responseCode = rhs._responseCode;
+	this->_bodyComplete = rhs._bodyComplete;
+	this->_responseCodeDescription = rhs._responseCodeDescription;
+	this->_precedingRequest = rhs._precedingRequest;
+    return *this;
+}
+
 void httpResponse::setPrecedingRequest(httpRequest* const callingRequest) {
 	infoLog << "Setting preceding request" << CPPLog::end;
     _precedingRequest = callingRequest;
@@ -44,18 +59,19 @@ void httpResponse::setErrorBody() {
 			.append(DEFAULT_SERVER_NAME)
 			.append("</center>");
     }
-    this->setBody(error_page);
+    this->setFixedSizeBody(error_page);
 	infoLog << "Error page set to: " << error_page << CPPLog::end;
 }
 
-void httpResponse::setBody(std::string body) {
+void httpResponse::setFixedSizeBody(std::string body) {
     this->_httpBody = body;
     this->_bodyLength = this->_httpBody.length();
     deleteHeader("Content-Length");
     setHeader("Content-Length", std::to_string(this->_bodyLength));
+	this->_bodyComplete = true;
 }
 
-std::string httpResponse::getResponseAsString(void) {
+std::string httpResponse::getFixedBodyResponseAsString(void) {
     std::string ret;
 
     deleteHeader("Date");
@@ -66,4 +82,17 @@ std::string httpResponse::getResponseAsString(void) {
     ret.append(getHeaderListAsString());
     ret.append("\r\n").append(_httpBody).append("\r\n\r\n");
     return ret;
+}
+
+bool httpResponse::isBodyComplete(void) const {
+    return _bodyComplete;
+}
+
+void httpResponse::clear(void) {
+	infoLog << "Clearing response but preserving precedingRequest pointer" << CPPLog::end;
+	httpResponse empty;
+	const httpRequest* tmpPrecedingRequest = this->_precedingRequest;
+
+	*this = empty;
+	this->_precedingRequest = tmpPrecedingRequest;
 }

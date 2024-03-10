@@ -51,6 +51,7 @@ class httpRequest : public httpMessage {
 	const ServerConfig* getServer(void) const;
     void parseBody(std::istream &fs);
     void clear(void);
+	uint16_t getPort(void) const;
 
     class httpRequestException : public std::exception {
        private:

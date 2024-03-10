@@ -41,20 +41,23 @@ uint16_t Client::port() const {
     return _port;
 }
 
+
 void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
 
-	if (_localWriteBuffer.empty()) {
+	// If the buffer is empty, return
+	if (_localWriteBuffer.empty())
 		return;
-	}
-	clientLogI << "clientWriteCb" << CPPLog::end;
+		
 	size_t bytesWritten = 0;
 	std::string writeBuffer;
 
+	// TODO: action if the buffer is too large
 	if(_localWriteBuffer.size() + _bytesWrittenCounter > DEFAULT_MAX_WRITE_SIZE) {
 		clientLogE << "clientWriteCb: response too large" << CPPLog::end;
 		return ;
 	}
 
+	// If the buffer is too large, write only a part of it
 	if (_localWriteBuffer.size() > DEFAULT_WRITE_SIZE) {
 		writeBuffer = _localWriteBuffer.substr(0, DEFAULT_WRITE_SIZE);
 	} else {
@@ -68,19 +71,33 @@ void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
 		_state = ClientState::ERROR;
 		return;
 	}
-	clientLogI << "clientWriteCb: wrote " << bytesWritten << " bytes" << CPPLog::end;
 	_localWriteBuffer.erase(0, bytesWritten);
 	_bytesWrittenCounter += bytesWritten;
+	clientLogI << "clientWriteCb: wrote " << bytesWritten << " bytes to " << this->_port << CPPLog::end;
+	clientLogI << "clientWriteCb: " << _localWriteBuffer.size() << " bytes left to write" << CPPLog::end;
+	clientLogI << "clientWriteCb: " << _bytesWrittenCounter << " bytes written in total" << CPPLog::end;
+	clientLogI << "clientWriteCb: response body complete? " << this->_response.isBodyComplete() << CPPLog::end;
+
+	// If the response is complete, clear the response and the write counter
+	if (_localWriteBuffer.empty() && this->_response.isBodyComplete()) {
+		this->_response.clear();
+		_bytesWrittenCounter = 0;
+	}
 }
 
 void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
 	// Read from the socket and append to the local buffer
-	_localReadBuffer += asyncSocketClient.read(DEFAULT_READ_SIZE);
-	
+	clientLogI << "clientReadCb" << CPPLog::end;
+	try {_localReadBuffer += asyncSocketClient.read(DEFAULT_READ_SIZE);}
+	catch (const std::exception& e) {
+		clientLogE << "clientReadCb: " << e.what() << CPPLog::end;
+		_state = ClientState::ERROR;
+		return;
+	}
+
+	clientLogI << "read: " << _localReadBuffer.size() << " bytes from " << this->_port << CPPLog::end;
 	clientLogI << "read: " << _localReadBuffer << CPPLog::end;
 	
-    clientLogI << "received " << _localReadBuffer.size() << " bytes from " << this->_port << CPPLog::end;
-    clientLogI << "received: " << _localReadBuffer << CPPLog::end;
 
 	// Try to parse the buffer as http request. If request is incomplete, parse will leave the buffer in place. On error, it will reply with a http error response
     try {
@@ -98,13 +115,17 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
         clientLogI << "request header complete" << CPPLog::end;
         clientLogI << "request method: " << this->_request.getRequestType() << CPPLog::end;
         clientLogI << "request path: " << this->_request.getAdress() << CPPLog::end;
+		clientLogI << "request port: " << this->_request.getPort() << CPPLog::end;
     }
 
 	// Request is complete, handle it
     if (this->_request.bodyComplete()) {
         clientLogI << "request body complete" << CPPLog::end;
         clientLogI << "Body: [" << this->_request.getBody() << "] " << CPPLog::end;
-        this->_localWriteBuffer = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\ntestr\r\n\r\n";
+		this->_response.setCode(200);
+		this->_response.setFixedSizeBody("Test OK response");
+		this->_localWriteBuffer = this->_response.getFixedBodyResponseAsString();
+        // this->_localWriteBuffer = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\ntestr\r\n\r\n";
         this->_request.clear();
         clientLogI << "body complete part done" << CPPLog::end;
     }
@@ -113,7 +134,7 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
 // Write an error response to the client
 void Client::_returnHttpErrorToClient(int code) {
 	this->_response.setCode(code);
-	this->_localWriteBuffer = this->_response.getResponseAsString();
+	this->_localWriteBuffer = this->_response.getFixedBodyResponseAsString();
 	this->_localReadBuffer.clear();
 	this->_request.clear();
 	this->_state = ClientState::WRITE_RESPONSE;

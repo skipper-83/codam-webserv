@@ -411,10 +411,10 @@ R"(Server: Jelle en Albert's webserv
 test)";
 
 	resp.setCode(200);
-	resp.setBody("test");
+	resp.setFixedSizeBody("test");
 	// std::cerr
-	std::cerr << "Response: \n" <<  resp.getResponseAsString() << "\n";
-	EXPECT_EQ(resp.getResponseAsString(), exp_eq);
+	std::cerr << "Response: \n" <<  resp.getFixedBodyResponseAsString() << "\n";
+	EXPECT_EQ(resp.getFixedBodyResponseAsString(), exp_eq);
 }
 
 TEST_F(configWithRequest, getErrorPage)

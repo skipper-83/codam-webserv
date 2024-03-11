@@ -16,12 +16,9 @@ httpResponse::httpResponse(httpRequest* callingRequest) : httpResponse() {
 }
 
 httpResponse& httpResponse::operator=(const httpResponse& rhs) {
-        if (this == &rhs)
+    if (this == &rhs)
         return *this;
-    this->_httpProtocol = rhs._httpProtocol;
-    this->_httpHeaders = httpRequestT(rhs._httpHeaders);
-    this->_httpBody = rhs._httpBody;
-    this->_bodyLength = rhs._bodyLength;
+	httpMessageAssign(rhs);
     this->_bodyComplete = rhs._bodyComplete;
 	this->_responseCode = rhs._responseCode;
 	this->_bodyComplete = rhs._bodyComplete;

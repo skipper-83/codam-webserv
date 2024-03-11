@@ -112,6 +112,9 @@ void AsyncFD::poll() {
 void AsyncFD::eventCb(EventTypes type) {
     if (!_eventCallbacks.contains(type)) {
         logW << "no callback for event: " << static_cast<int>(type);
+		// _fd.close();
+	if (type == EventTypes::ERROR || type == EventTypes::HANGUP)
+			this->close();
         return;
     }
     _eventCallbacks.at(type)(*this);

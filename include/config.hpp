@@ -14,6 +14,7 @@
 #define DEFAULT_READ_SIZE 1024
 #define DEFAULT_WRITE_SIZE 1024
 #define DEFAULT_MAX_WRITE_SIZE 32768
+#define DEFAULT_TIMEOUT_SECONDS 5
 #define DEFAULT_ALLOWED_METHODS                                                                          \
     {"GET", true}, {"POST", true}, {"PUT", true}, {"DELETE", true}, {"HEAD", true}, {"OPTIONS", true}, { \
         "PATCH", true                                                                                    \
@@ -82,8 +83,11 @@ class MainConfig {
     std::vector<uint16_t> _ports;
     void _overrideDefaults(void);
     void _setServerNameAndPortArrays(void);
+	// auto _timeOutDuration;
 
    public:
+	const std::chrono::seconds _timeOutDuration = std::chrono::seconds(DEFAULT_TIMEOUT_SECONDS);
+
     const ServerConfig* getServerFromPort(int port);
     const ServerConfig* getServerFromPortAndName(int port, std::string name);
     const ServerConfig* getServer(int port, std::string name);

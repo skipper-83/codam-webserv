@@ -10,6 +10,7 @@ class httpMessage
 	public:
 		using httpRequestListT = std::vector<std::string>;
 		using httpRequestT = std::multimap<std::string, std::string>;
+		
 
 		virtual ~httpMessage() ;
 
@@ -24,7 +25,10 @@ class httpMessage
 	
 	protected:
 		httpMessage(void);
-		
+
+		// httpMessage &operator=(const httpMessage &rhs);
+
+		void httpMessageAssign(httpMessage const &rhs);
 		std::string _httpProtocol = "";
 		httpRequestT _httpHeaders;
 		std::string _httpBody = "";

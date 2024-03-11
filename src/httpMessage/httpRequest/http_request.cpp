@@ -45,12 +45,10 @@ httpRequest::~httpRequest() {}
 httpRequest &httpRequest::operator=(const httpRequest &rhs) {
     if (this == &rhs)
         return *this;
+	// static_cast<httpMessage &>(*this) = rhs;
+	httpMessageAssign(rhs);
     this->_httpRequestType = rhs._httpRequestType;
     this->_httpAdress = rhs._httpAdress;
-    this->_httpProtocol = rhs._httpProtocol;
-    this->_httpHeaders = httpRequestT(rhs._httpHeaders);
-    this->_httpBody = rhs._httpBody;
-    this->_bodyLength = rhs._bodyLength;
     this->_headerParseComplete = rhs._headerParseComplete;
     this->_bodyComplete = rhs._bodyComplete;
     this->_contentLength = rhs._contentLength;

@@ -80,3 +80,10 @@ std::string httpMessage::getHeaderListAsString(void) const {
 }
 httpMessage::~httpMessage(void) {}
 httpMessage::httpMessage(void) {}
+
+void httpMessage::httpMessageAssign(const httpMessage &rhs) {
+	this->_httpProtocol = rhs._httpProtocol;
+	this->_httpHeaders = httpRequestT(rhs._httpHeaders);
+	this->_httpBody = rhs._httpBody;
+	this->_bodyLength = rhs._bodyLength;
+}

@@ -22,10 +22,16 @@ void AsyncPollArray::remove(std::shared_ptr<AsyncFD> fd) {
 }
 
 void AsyncPollArray::cleanup() {
-    std::erase_if(_fds, [](const std::shared_ptr<AsyncFD>& fd) { return !fd->isValid(); });
+    std::erase_if(_fds, [](const std::shared_ptr<AsyncFD>& fd) { 
+		if (!fd->isValid()) {
+			fd->close();
+			logI << "removing invalid fd" << CPPLog::end;
+		}
+		return !fd->isValid(); 
+		});
 }
 
-void AsyncPollArray::poll(int timeout) {
+void AsyncPollArray::poll(int timeout) {	
     cleanup();
 
     std::unordered_map<int, std::shared_ptr<AsyncFD>> fdMap;

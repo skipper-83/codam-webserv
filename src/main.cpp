@@ -24,6 +24,7 @@ void mainClientAvailableCb(AsyncSocket& socket, AsyncPollArray& pollArray, std::
     clients.emplace_back(newSocketClient);
     mainLogI << "adding client to pollArray" << CPPLog::end;
     pollArray.add(newSocketClient);
+	// usleep(5000);
 }
 
 void parseConfig(int argc, char** argv) {
@@ -44,7 +45,7 @@ void parseConfig(int argc, char** argv) {
 }
 
 void initiateSockets(AsyncPollArray& pollArray, std::vector<Client>& clients) {
-	for (auto port : mainConfig.getPorts()) {
+	for (uint16_t port : mainConfig.getPorts()) {
 		mainLogI << "creating socket on port " << port << CPPLog::end;
 		std::shared_ptr<AsyncSocket> socket = AsyncSocket::create(port, std::bind(mainClientAvailableCb, std::placeholders::_1, std::ref(pollArray), std::ref(clients)));
 		try {
@@ -68,6 +69,22 @@ int main(int argc, char** argv) {
     }
 
     while (true) {
-        pollArray.poll(-1);
+        pollArray.poll(5);
+		// mainLogI << "client array size " << clients.size() << CPPLog::end;
+		clients.erase(std::remove_if(clients.begin(), clients.end(), [](const Client& client) { 
+			std::chrono::time_point<std::chrono::steady_clock> now = std::chrono::steady_clock::now();
+			if (!client.socketFd().isValid()) {
+				mainLogI << "removing invalid client" << CPPLog::end;
+				client.socketFd().close();
+				return true;
+			}
+			if ((now - client.getLastActivityTime()) > mainConfig._timeOutDuration) {
+				mainLogI << "removing client due to inactivity" << CPPLog::end;
+				client.socketFd().close();
+				return true;
+			}
+			return false;
+			}), clients.end());
+		usleep(5000);
     }
 }

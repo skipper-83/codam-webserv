@@ -19,6 +19,17 @@ AsyncIO::AsyncIO(int fd, const std::map<EventTypes, EventCallback> &eventCallbac
     _eventCallbacks[EventTypes::OUT] = AsyncIO::_internalOutReadyCb;
 }
 
+AsyncIO::AsyncIO(const std::map<EventTypes, EventCallback> &eventCallbacks)
+    : AsyncFD(eventCallbacks), _inCb(), _outCb(), _hasPendingRead(false), _hasPendingWrite(false), _eof(false) {
+    if (_eventCallbacks.contains(EventTypes::IN))
+        _inCb = _eventCallbacks.at(EventTypes::IN);
+    if (_eventCallbacks.contains(EventTypes::OUT))
+        _outCb = _eventCallbacks.at(EventTypes::OUT);
+
+    _eventCallbacks[EventTypes::IN] = AsyncIO::_internalInCb;
+    _eventCallbacks[EventTypes::OUT] = AsyncIO::_internalOutReadyCb;
+}
+
 std::unique_ptr<AsyncIO> AsyncIO::create(int fd, const std::map<EventTypes, EventCallback> &eventCallbacks) {
     return std::make_unique<AsyncIO>(fd, eventCallbacks);
 }
@@ -91,4 +102,12 @@ size_t AsyncIO::write(std::string &data) {
 
 bool AsyncIO::eof() const {
     return _eof;
+}
+
+bool AsyncIO::hasPendingRead() const {
+    return _hasPendingRead;
+}
+
+bool AsyncIO::hasPendingWrite() const {
+    return _hasPendingWrite;
 }

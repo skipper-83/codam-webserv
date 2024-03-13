@@ -93,18 +93,13 @@ void AsyncFD::poll() {
     for (auto [type, cb] : _eventCallbacks) {
         pfd.events |= eventTypeToPoll.at(type);
     }
-    logD << "polling for events: " << pfd.events;
     int ret = ::poll(&pfd, 1, -1);
     if (ret < 0) {
         logF << "poll failed";
         throw std::runtime_error("poll failed");
     }
-
-    logD << "poll returned: " << ret;
-
     for (auto [pollType, eventType] : pollToEventType) {
         if (pfd.revents & pollType) {
-            logD << "event: " << pollType;
             eventCb(eventType);
         }
     }

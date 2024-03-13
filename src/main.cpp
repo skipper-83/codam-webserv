@@ -60,14 +60,6 @@ int main(int argc, char** argv) {
     AsyncPollArray pollArray;
     std::vector<Client> clients;
 
-    try {
-        parseConfig(argc, argv);
-		initiateSockets(pollArray, clients);
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << '\n';
-        return 1;
-    }
-
     while (true) {
         pollArray.poll(5);
 		// mainLogI << "client array size " << clients.size() << CPPLog::end;

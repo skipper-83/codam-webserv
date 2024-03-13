@@ -52,6 +52,7 @@ class AsyncFD {
 class AsyncIO : public AsyncFD {
    public:
     AsyncIO(int fd, const std::map<EventTypes, EventCallback>& eventCallbacks = {});
+    AsyncIO(const std::map<EventTypes, EventCallback>& eventCallbacks = {});
     static std::unique_ptr<AsyncIO> create(int fd, const std::map<EventTypes, EventCallback>& eventCallbacks = {});
     virtual ~AsyncIO();
 
@@ -63,6 +64,9 @@ class AsyncIO : public AsyncFD {
 
     std::string read(size_t size);
     size_t write(std::string& data);
+
+    bool hasPendingRead() const;
+    bool hasPendingWrite() const;
 
     bool eof() const;
 
@@ -130,4 +134,24 @@ class AsyncSocket : public AsyncFD {
     SocketCallback _clientAvailableCb;
     int _backlog;
     bool _hasPendingAccept;
+};
+
+class AsyncFile : public AsyncIO {
+   public:
+    using AsyncFileCallback = std::function<void(AsyncFile&)>;
+
+    AsyncFile(const std::string& path, const AsyncFileCallback& clientReadReadyCb = {});
+    static std::unique_ptr<AsyncFile> create(const std::string& path, const AsyncFileCallback& clientReadReadyCb = {});
+    virtual ~AsyncFile();
+
+    AsyncFile(const AsyncFile&) = delete;
+    AsyncFile& operator=(const AsyncFile&) = delete;
+
+    AsyncFile(AsyncFile&&) = default;
+    AsyncFile& operator=(AsyncFile&&) = default;
+
+   protected:
+    static void _internalInCb(AsyncFD& fd);
+    AsyncFileCallback _clientReadReadyCb;
+    std::string _path;
 };

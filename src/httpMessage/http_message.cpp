@@ -1,5 +1,6 @@
 
 #include "http_message.hpp"
+
 #include "http_request.hpp"
 
 /**
@@ -72,18 +73,18 @@ httpMessage::httpRequestListT httpMessage::getHeaderList(std::string const &key)
 
 std::string httpMessage::getHeaderListAsString(void) const {
     std::string ret;
-	std::cout << "getHeaderListAsString" << std::endl;
+    std::cout << "getHeaderListAsString" << std::endl;
     for (httpRequestT::const_iterator element = _httpHeaders.begin(); element != _httpHeaders.end(); element++)
         ret.append(element->first + ": " + element->second + "\r\n");
-	std::cout << "getHeaderListAsString done" << ret << ";" << std::endl;
+    std::cout << "getHeaderListAsString done" << ret << ";" << std::endl;
     return ret;
 }
 httpMessage::~httpMessage(void) {}
 httpMessage::httpMessage(void) {}
 
 void httpMessage::httpMessageAssign(const httpMessage &rhs) {
-	this->_httpProtocol = rhs._httpProtocol;
-	this->_httpHeaders = httpRequestT(rhs._httpHeaders);
-	this->_httpBody = rhs._httpBody;
-	this->_bodyLength = rhs._bodyLength;
+    this->_httpProtocol = rhs._httpProtocol;
+    this->_httpHeaders = httpRequestT(rhs._httpHeaders);
+    this->_httpBody = rhs._httpBody;
+    this->_bodyLength = rhs._bodyLength;
 }

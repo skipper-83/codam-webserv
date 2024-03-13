@@ -45,7 +45,8 @@ std::unique_ptr<AsyncFD> AsyncFD::create(const std::map<EventTypes, EventCallbac
 
 AsyncFD::~AsyncFD() {
     try {
-        close();
+        if (isValid())
+            close();
     } catch (std::exception& e) {
         logF << "exception in destructor (ignore): " << e.what();
     }
@@ -53,7 +54,7 @@ AsyncFD::~AsyncFD() {
 
 void AsyncFD::close() {
     if (_fd < 0) {
-        logI << "invalid fd";
+        logI << "cannot close, invalid fd";
         return;
     }
     int ret = ::close(_fd);
@@ -112,9 +113,9 @@ void AsyncFD::poll() {
 void AsyncFD::eventCb(EventTypes type) {
     if (!_eventCallbacks.contains(type)) {
         logW << "no callback for event: " << static_cast<int>(type);
-		// _fd.close();
-	if (type == EventTypes::ERROR || type == EventTypes::HANGUP)
-			this->close();
+        // _fd.close();
+        if (type == EventTypes::ERROR || type == EventTypes::HANGUP)
+            this->close();
         return;
     }
     _eventCallbacks.at(type)(*this);

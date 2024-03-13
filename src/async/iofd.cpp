@@ -9,7 +9,7 @@ static CPPLog::Instance logE = logOut.instance(CPPLog::Level::ERROR, "AsyncFD");
 static CPPLog::Instance logF = logOut.instance(CPPLog::Level::FATAL, "AsyncFD");
 
 AsyncIO::AsyncIO(int fd, const std::map<EventTypes, EventCallback> &eventCallbacks)
-    : AsyncFD(fd, eventCallbacks), _inCb(), _outCb(), _hasPendingRead(false), _hasPendingWrite(false) {
+    : AsyncFD(fd, eventCallbacks), _inCb(), _outCb(), _hasPendingRead(false), _hasPendingWrite(false), _eof(false) {
     if (_eventCallbacks.contains(EventTypes::IN))
         _inCb = _eventCallbacks.at(EventTypes::IN);
     if (_eventCallbacks.contains(EventTypes::OUT))
@@ -63,7 +63,7 @@ std::string AsyncIO::read(size_t size) {
     }
     if (retSize == 0) {
         logI << "read EOF";
-        close();
+        _eof = true;
         return ret;
     }
     ret.append(buf.get(), retSize);
@@ -87,4 +87,8 @@ size_t AsyncIO::write(std::string &data) {
     }
     data.erase(0, ret);
     return ret;
+}
+
+bool AsyncIO::eof() const {
+    return _eof;
 }

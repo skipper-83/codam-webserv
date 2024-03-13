@@ -10,7 +10,9 @@ static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequ
  * @brief Construct a new http Request::http Request object
  *
  */
-httpRequest::httpRequest() {infoLog << "Creating empty request" << this << CPPLog::end;}
+httpRequest::httpRequest() {
+    infoLog << "Creating empty request" << this << CPPLog::end;
+}
 
 /**
  * @brief Construct a new http Request::http Request object from an input stream
@@ -45,8 +47,9 @@ httpRequest::~httpRequest() {}
 httpRequest &httpRequest::operator=(const httpRequest &rhs) {
     if (this == &rhs)
         return *this;
-	// static_cast<httpMessage &>(*this) = rhs;
-	httpMessageAssign(rhs);
+
+    // static_cast<httpMessage &>(*this) = rhs;
+    httpMessageAssign(rhs);
     this->_httpRequestType = rhs._httpRequestType;
     this->_httpAdress = rhs._httpAdress;
     this->_headerParseComplete = rhs._headerParseComplete;

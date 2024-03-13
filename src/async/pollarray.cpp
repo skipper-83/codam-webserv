@@ -24,10 +24,9 @@ void AsyncPollArray::remove(std::shared_ptr<AsyncFD> fd) {
 void AsyncPollArray::cleanup() {
     std::erase_if(_fds, [](const std::shared_ptr<AsyncFD>& fd) { 
 		if (!fd->isValid()) {
-			fd->close();
 			logI << "removing invalid fd" << CPPLog::end;
 		}
-		return !fd->isValid(); 
+		return !fd->isValid();
 		});
 }
 

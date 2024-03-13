@@ -11,24 +11,24 @@ httpResponse::httpResponse() {
 }
 
 httpResponse::httpResponse(httpRequest* callingRequest) : httpResponse() {
-	infoLog << "Constructor with preceding req" << CPPLog::end;
+    infoLog << "Constructor with preceding req" << CPPLog::end;
     this->setPrecedingRequest(callingRequest);
 }
 
 httpResponse& httpResponse::operator=(const httpResponse& rhs) {
     if (this == &rhs)
         return *this;
-	httpMessageAssign(rhs);
+    httpMessageAssign(rhs);
     this->_bodyComplete = rhs._bodyComplete;
-	this->_responseCode = rhs._responseCode;
-	this->_bodyComplete = rhs._bodyComplete;
-	this->_responseCodeDescription = rhs._responseCodeDescription;
-	this->_precedingRequest = rhs._precedingRequest;
+    this->_responseCode = rhs._responseCode;
+    this->_bodyComplete = rhs._bodyComplete;
+    this->_responseCodeDescription = rhs._responseCodeDescription;
+    this->_precedingRequest = rhs._precedingRequest;
     return *this;
 }
 
 void httpResponse::setPrecedingRequest(httpRequest* const callingRequest) {
-	infoLog << "Setting preceding request" << CPPLog::end;
+    infoLog << "Setting preceding request" << CPPLog::end;
     _precedingRequest = callingRequest;
 }
 
@@ -53,11 +53,11 @@ void httpResponse::setErrorBody() {
             .append(std::to_string(this->_responseCode))
             .append(" " + this->_responseCodeDescription)
             .append("</h1></center><hr><center>")
-			.append(DEFAULT_SERVER_NAME)
-			.append("</center>");
+            .append(DEFAULT_SERVER_NAME)
+            .append("</center>");
     }
     this->setFixedSizeBody(error_page);
-	infoLog << "Error page set to: " << error_page << CPPLog::end;
+    infoLog << "Error page set to: " << error_page << CPPLog::end;
 }
 
 void httpResponse::setFixedSizeBody(std::string body) {
@@ -65,7 +65,7 @@ void httpResponse::setFixedSizeBody(std::string body) {
     this->_bodyLength = this->_httpBody.length();
     deleteHeader("Content-Length");
     setHeader("Content-Length", std::to_string(this->_bodyLength));
-	this->_bodyComplete = true;
+    this->_bodyComplete = true;
 }
 
 std::string httpResponse::getFixedBodyResponseAsString(void) {
@@ -86,10 +86,10 @@ bool httpResponse::isBodyComplete(void) const {
 }
 
 void httpResponse::clear(void) {
-	infoLog << "Clearing response but preserving precedingRequest pointer" << CPPLog::end;
-	httpResponse empty;
-	const httpRequest* tmpPrecedingRequest = this->_precedingRequest;
+    infoLog << "Clearing response but preserving precedingRequest pointer" << CPPLog::end;
+    httpResponse empty;
+    const httpRequest* tmpPrecedingRequest = this->_precedingRequest;
 
-	*this = empty;
-	this->_precedingRequest = tmpPrecedingRequest;
+    *this = empty;
+    this->_precedingRequest = tmpPrecedingRequest;
 }

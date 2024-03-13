@@ -64,6 +64,8 @@ class AsyncIO : public AsyncFD {
     std::string read(size_t size);
     size_t write(std::string& data);
 
+    bool eof() const;
+
    protected:
     static void _internalInCb(AsyncFD& fd);
     static void _internalOutReadyCb(AsyncFD& fd);
@@ -72,6 +74,7 @@ class AsyncIO : public AsyncFD {
 
     bool _hasPendingRead;
     bool _hasPendingWrite;
+    bool _eof;
 };
 
 class AsyncSocketClient : public AsyncIO {

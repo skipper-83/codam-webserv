@@ -73,14 +73,18 @@ int main(int argc, char** argv) {
 		// mainLogI << "client array size " << clients.size() << CPPLog::end;
 		clients.erase(std::remove_if(clients.begin(), clients.end(), [](const Client& client) { 
 			std::chrono::time_point<std::chrono::steady_clock> now = std::chrono::steady_clock::now();
-			if (!client.socketFd().isValid()) {
-				mainLogI << "removing invalid client" << CPPLog::end;
-				client.socketFd().close();
-				return true;
-			}
+			if (client.socketFd().eof()) {
+                mainLogI << "removing client due to EOF" << CPPLog::end;
+                client.socketFd().close();
+                return true;
+            }
 			if ((now - client.getLastActivityTime()) > mainConfig._timeOutDuration) {
 				mainLogI << "removing client due to inactivity" << CPPLog::end;
 				client.socketFd().close();
+				return true;
+			}
+            if (!client.socketFd().isValid()) {
+				mainLogI << "removing invalid client" << CPPLog::end;
 				return true;
 			}
 			return false;

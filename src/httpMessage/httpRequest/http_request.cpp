@@ -10,7 +10,9 @@ static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequ
  * @brief Construct a new http Request::http Request object
  *
  */
-httpRequest::httpRequest() {}
+httpRequest::httpRequest() {
+    infoLog << "Creating empty request" << this << CPPLog::end;
+}
 
 /**
  * @brief Construct a new http Request::http Request object from an input stream
@@ -45,12 +47,11 @@ httpRequest::~httpRequest() {}
 httpRequest &httpRequest::operator=(const httpRequest &rhs) {
     if (this == &rhs)
         return *this;
+
+    // static_cast<httpMessage &>(*this) = rhs;
+    httpMessageAssign(rhs);
     this->_httpRequestType = rhs._httpRequestType;
     this->_httpAdress = rhs._httpAdress;
-    this->_httpProtocol = rhs._httpProtocol;
-    this->_httpHeaders = httpRequestT(rhs._httpHeaders);
-    this->_httpBody = rhs._httpBody;
-    this->_bodyLength = rhs._bodyLength;
     this->_headerParseComplete = rhs._headerParseComplete;
     this->_bodyComplete = rhs._bodyComplete;
     this->_contentLength = rhs._contentLength;
@@ -68,6 +69,10 @@ void httpRequest::clear(void) {
     *this = empty;
 }
 
+uint16_t httpRequest::getPort(void) const {
+    return _port;
+}
+
 std::ostream &operator<<(std::ostream &os, httpRequest const &t) {
     os << "Protocol:" << t.getProtocol() << "\n"
        << "Type: " << t.getRequestType() << "\n"
@@ -76,12 +81,3 @@ std::ostream &operator<<(std::ostream &os, httpRequest const &t) {
        << t.getBody() << "\n";
     return os;
 }
-
-// /**
-//  * @brief Construct a new http Request::http Request object
-//  *
-//  * @param input
-//  */
-// httpRequest::httpRequest(std::string input) {
-//     this->parse(input);
-// }

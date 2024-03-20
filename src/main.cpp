@@ -44,10 +44,12 @@ void parseConfig(int argc, char** argv) {
     }
 }
 
-void initiateSockets(AsyncPollArray& pollArray, std::vector<Client>& clients) {
+//TODO: Catch exceptions from AsyncSocket::create
+void initiateSockets(AsyncPollArray& pollArray, std::vector<Client>& clients, std::vector <std::shared_ptr<AsyncSocket>>& sockets) {
 	for (uint16_t port : mainConfig.getPorts()) {
 		mainLogI << "creating socket on port " << port << CPPLog::end;
 		std::shared_ptr<AsyncSocket> socket = AsyncSocket::create(port, std::bind(mainClientAvailableCb, std::placeholders::_1, std::ref(pollArray), std::ref(clients)));
+        sockets.push_back(socket);
 		try {
 			pollArray.add(socket);
 		} catch (const std::exception& e) {
@@ -60,9 +62,10 @@ int main(int argc, char** argv) {
     AsyncPollArray pollArray;
     std::vector<Client> clients;
 
+    std::vector <std::shared_ptr<AsyncSocket>> sockets;
     try {
         parseConfig(argc, argv);
-		initiateSockets(pollArray, clients);
+		initiateSockets(pollArray, clients, sockets);
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
         return 1;

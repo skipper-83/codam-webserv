@@ -21,7 +21,10 @@ void mainClientAvailableCb(AsyncSocket& socket, AsyncPollArray& pollArray, std::
     mainLogI << "client available CB" << CPPLog::end;
     mainLogI << "creating client" << CPPLog::end;
     std::shared_ptr<AsyncSocketClient> newSocketClient = socket.accept();
-    clients.emplace_back(newSocketClient);
+    clients.emplace_back(newSocketClient, [&pollArray](std::shared_ptr<AsyncFD> fd) {
+		mainLogI << "adding client to pollArray" << CPPLog::end;
+		pollArray.add(fd);
+	});
     mainLogI << "adding client to pollArray" << CPPLog::end;
     pollArray.add(newSocketClient);
 	// usleep(5000);
@@ -47,7 +50,7 @@ void parseConfig(int argc, char** argv) {
 void initiateSockets(AsyncPollArray& pollArray, std::vector<Client>& clients) {
 	for (uint16_t port : mainConfig.getPorts()) {
 		mainLogI << "creating socket on port " << port << CPPLog::end;
-		std::shared_ptr<AsyncSocket> socket = AsyncSocket::create(port, std::bind(mainClientAvailableCb, std::placeholders::_1, std::ref(pollArray), std::ref(clients)));
+		std::shared_ptr<AsyncSocket> socket = AsyncSocket::create(port, std::bind(mainClientAvailableCb, std::placeholders::_1, std::ref(pollArray), std::ref(clients)), DEFAULT_FD_BACKLOG_SIZE);
 		try {
 			pollArray.add(socket);
 		} catch (const std::exception& e) {
@@ -89,6 +92,6 @@ int main(int argc, char** argv) {
 			}
 			return false;
 			}), clients.end());
-		usleep(5000);
+		usleep(1000);
     }
 }

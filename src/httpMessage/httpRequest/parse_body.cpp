@@ -65,6 +65,7 @@ void httpRequest::_addChunkedContent(std::istream &fs) {
 
     while (fs) {
         line = _getLineWithCRLF(fs);
+	// MAYBE IMPLEMENT CHECK FOR EMPTY LINE
         try {
             nextChunkSize = stoi(line);
         } catch (std::exception &e) {

@@ -16,7 +16,8 @@ set (SRCS
 	src/async/socketclient.cpp
 	src/async/pollarray.cpp
 	src/async/file.cpp
-	src/client.cpp
+	src/client/client.cpp
+	src/client/client_callbacks.cpp
 	src/config/config_extractors.cpp
 	src/config/config_insertions.cpp
 	src/config/config.cpp

@@ -36,10 +36,10 @@ void httpResponse::setCode(int code) {
     this->_responseCodeDescription = WebServUtil::codeDescription(code);
     this->_responseCode = code;
     if (this->_responseCode >= 400 && this->_responseCode <= 599)
-        this->setErrorBody();
+        this->_setErrorBody();
 }
 
-void httpResponse::setErrorBody() {
+void httpResponse::_setErrorBody() {
     std::string error_page;
 
     infoLog << "Setting up error page for " << this->_responseCode << CPPLog::end;
@@ -68,14 +68,36 @@ void httpResponse::setFixedSizeBody(std::string body) {
     this->_bodyComplete = true;
 }
 
+std::string httpResponse::_getStartLine(void) const {
+	return this->getProtocol() + " " + std::to_string(this->_responseCode) + " " + this->_responseCodeDescription + "\r\n";
+}
+
+std::string httpResponse::getHeadersForChunkedResponse(void) {
+	std::string ret;
+
+	deleteHeader("Date");
+	setHeader("Date", WebServUtil::timeStamp());
+	deleteHeader("Content-Length");
+	setHeader("Transfer-Encoding", "chunked");
+	ret.append(this->_getStartLine());
+	ret.append(getHeaderListAsString());
+	ret.append("\r\n");
+	return ret;
+}
+
+std::string httpResponse::transformLineForChunkedResponse(std::string line) {
+	std::string ret;
+
+	ret.append(std::to_string(line.size()) + "\r\n" + line + "\r\n");
+    return (ret);
+}
+
 std::string httpResponse::getFixedBodyResponseAsString(void) {
     std::string ret;
 
     deleteHeader("Date");
     setHeader("Date", WebServUtil::timeStamp());
-    ret.append(this->getProtocol())
-        .append(" ")
-        .append(std::to_string(this->_responseCode).append(" ").append(this->_responseCodeDescription).append("\r\n"));
+    ret.append(this->_getStartLine());
     ret.append(getHeaderListAsString());
     ret.append("\r\n").append(_httpBody).append("\r\n\r\n");
     return ret;

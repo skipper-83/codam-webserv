@@ -20,7 +20,7 @@ enum class ClientState {
 class Client {
 	public:
 	using SocketClientCallback = AsyncSocketClient::SocketClientCallback;
-    Client(std::shared_ptr<AsyncSocketClient> &socketFd);
+    Client(std::shared_ptr<AsyncSocketClient> &socketFd, std::function<void(std::shared_ptr<AsyncFD>)> addLocalFdToPollArray);
     ~Client();
 
     Client(const Client &rhs);
@@ -31,6 +31,7 @@ class Client {
     // Client &operator=(Client &&) = delete;
 
     AsyncIO &socketFd() const;
+	// AsyncFile
     uint16_t port() const;
 // 
 	// SocketClientCallback clientReadCb;
@@ -50,6 +51,7 @@ class Client {
    private:
     ClientState _state;
     std::shared_ptr<AsyncSocketClient> _socketFd;
+	std::shared_ptr<AsyncFile> _localFd = nullptr;
     uint16_t _port;
 	size_t _bytesWrittenCounter;
     httpRequest _request;
@@ -59,6 +61,7 @@ class Client {
     std::string _localReadBuffer;
     std::string _localWriteBuffer;
 	bool _tmpFlag = false;
+	std::function <void(std::shared_ptr<AsyncFD>)> _addLocalFdToPollArray;
 	std::chrono::time_point<std::chrono::steady_clock> _lastActivityTime = std::chrono::steady_clock::now();
 
 	void _registerCallbacks();

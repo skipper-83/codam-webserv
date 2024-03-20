@@ -21,7 +21,7 @@ void httpRequest::_parseHttpStartLine(std::istream &fs) {
     infoLog << "Parsing Start Line: [" << line << "]";
     static const std::regex http_startline_pattern(
         "^(GET|POST|PUT|DELETE|HEAD|OPTIONS|PATCH) "
-        "((https?://[\\w-]+(\\.[\\w-]+)*/?)?/[^ ]*?(\\?[^ ]+?)?) "
+        "((https?://[\\w-]+(\\.[\\w-]+)*/?)?/((?!/\\.\\.)[^ ]*?)(\\?[^ ]+?)?) "
         "HTTP/\\d\\.\\d$");
     if (!std::regex_match(line, http_startline_pattern))
         throw httpRequestException(400, "Invalid HTTP start line");
@@ -48,7 +48,7 @@ void httpRequest::_parseHttpHeaders(std::istream &fs) {
         val_start = line.find_first_not_of(' ', key_end + 1);
         if (val_start == std::string::npos)
             val_start = line.size();
-		this->setHeader(line.substr(0, key_end), line.substr(val_start, line.size() - 1));
+        this->setHeader(line.substr(0, key_end), line.substr(val_start, line.size() - 1));
         // this->_httpHeaders.insert(std::make_pair(line.substr(0, key_end), line.substr(val_start, line.size() - 1)));
     }
     _checkHttpHeaders();
@@ -103,7 +103,7 @@ void httpRequest::_setVars(void) {
     if ((it = this->_httpHeaders.find("Host")) != this->_httpHeaders.end() && (pos = it->second.find(':')) != std::string::npos) {
         var = it->second;
         this->_httpHeaders.erase(it);
-		this->setHeader("Host", var.substr(0, pos));
+        this->setHeader("Host", var.substr(0, pos));
         // this->_httpHeaders.insert({"Host", var.substr(0, pos)});
         infoLog << var.substr(pos + 1, var.size() - pos - 1) << CPPLog::end;
         this->_port = stoi(var.substr(pos + 1, var.size() - pos - 1));

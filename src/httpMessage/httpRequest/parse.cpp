@@ -16,6 +16,12 @@ void httpRequest::parse(std::string &input, uint16_t port) {
         parseHeader(is);
     if (this->_headerParseComplete && this->_server == nullptr)
         setServer(mainConfig, port);
+	infoLog << "Checking method if method " << _httpRequestType << " allowed" << CPPLog::end;
+	if(this->_server->allowed.methods.find(_httpRequestType)->second == false)
+	{
+		infoLog << "Method not allowed" << CPPLog::end;
+		throw httpRequestException(405, "Method Not Allowed");
+	}
     if (this->_headerParseComplete && !this->_bodyComplete) {
         if (WebServUtil::isRequestWithoutBody(this->_httpRequestType))
             this->_bodyComplete = true;

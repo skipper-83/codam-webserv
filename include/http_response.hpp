@@ -13,7 +13,8 @@ class httpResponse : public httpMessage {
 	bool _bodyComplete = false;
     std::string _responseCodeDescription;
 	const httpRequest* _precedingRequest;
-	void setErrorBody();
+	void _setErrorBody();
+	std::string _getStartLine(void) const;
 
    public:
     httpResponse();
@@ -24,6 +25,8 @@ class httpResponse : public httpMessage {
     void setFixedSizeBody(std::string body);
 	void setPrecedingRequest(httpRequest* const callingRequest);
 	std::string getFixedBodyResponseAsString(void);
+	std::string getHeadersForChunkedResponse(void);
+	std::string transformLineForChunkedResponse(std::string line);
 	bool isBodyComplete(void) const;
 	void clear();
 };

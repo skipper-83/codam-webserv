@@ -1,5 +1,6 @@
 #include "client.hpp"
 #include "logging.hpp"
+#include <filesystem>
 
 static CPPLog::Instance clientLogI = logOut.instance(CPPLog::Level::INFO, "client");
 static CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "client");
@@ -108,6 +109,14 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
 
     if (this->_request.headerComplete()) {
         changeState(ClientState::READ_BODY);
+		if(!std::filesystem::exists(this->_request.getPath())){
+			_returnHttpErrorToClient(404);
+		}
+		if (std::filesystem::is_directory(this->_request.getPath())) {
+			_response.setFixedSizeBody(WebServUtil::directoryIndexList(this->_request.getPath()));
+			_response.setCode(200);
+			_localWriteBuffer = _response.getFixedBodyResponseAsString();
+		}
         clientLogI << "request header complete" << CPPLog::end;
         clientLogI << "request method: " << this->_request.getRequestType() << CPPLog::end;
         clientLogI << "request path: " << this->_request.getAdress() << CPPLog::end;
@@ -121,22 +130,11 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
         clientLogI << "Body: [" << this->_request.getBody() << "] " << CPPLog::end;
         clientLogI << "request address: " << this->_request.getAdress() << CPPLog::end;
 
-        // if (_request.getAdress() == "/conf.conf")
-        // _localFd = _localFd->create("/Users/albertvanandel/Documents/CODAM/webserv/build" + _request.getAdress());
-        try {
             _localFd = AsyncFile::create(_request.getPath(), nullptr);
-            clientLogI << "adding to pollarray" << CPPLog::end;
-            if (_localFd) {
+            if (_localFd) 
                 _addLocalFdToPollArray(_localFd);
-                // _returnHttpErrorToClient(500);
-            }
-        } catch (const std::exception& e) {
-            clientLogE << "clientReadCb: " << e.what() << CPPLog::end;
-            _returnHttpErrorToClient(404);
-        }
-        // _localWriteBuffer = "HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\njoe\r\n\r\n";
-        // _response.setFixedSizeBody("joe");
-        // _localWriteBuffer = _response.getFixedBodyResponseAsString();
+            else
+				_returnHttpErrorToClient(500);
         clientLogI << "body complete part done" << CPPLog::end;
     }
 }

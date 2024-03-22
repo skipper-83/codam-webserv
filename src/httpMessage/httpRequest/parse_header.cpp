@@ -1,4 +1,5 @@
 #include <regex>
+#include <filesystem>
 
 #include "http_request.hpp"
 #include "logging.hpp"
@@ -126,9 +127,39 @@ void httpRequest::_resolvePathAndLocationBlock(void)
 			infoLog << path << CPPLog::end;
 			_path = path;
 			_location = &location;
+
+			// resolve path if it is a directory
+			if (std::filesystem::is_directory(path))
+			{
+				infoLog << "Path is a directory, request: [" << _httpAdress << "] ref: [" << _location->ref << "]" << CPPLog::end;
+				if (_httpAdress == _location->ref ) // if the requested adress is the location root
+				{
+					if (!_location->index_vec.empty())
+					{
+						infoLog << "checking for index files in config" << CPPLog::end;
+						for (auto& rootIndexFile : _location->index_vec)
+						{
+							if (std::filesystem::exists(path + rootIndexFile))
+							{
+								_path = path + rootIndexFile;
+								return;
+							}
+						}
+					}
+					infoLog << "No index files found, checking if autoindex is on" << CPPLog::end;
+					if (_server->autoIndex.on)
+					{
+						infoLog << "Autoindex is on" << CPPLog::end;
+						_path = path;
+						return;
+					}
+					infoLog << "Autoindex is off, returning 403 Forbidden" << CPPLog::end;
+					throw (httpRequestException(403, "No directory index, and autoindex is off"));
+				}
+			}
 			return;
 		}
 	}
 	infoLog << "No match. Resolved default path: " <<  "." + this->_httpAdress << CPPLog::end;
-	_path = "." + this->_httpAdress;		
+	_path = DEFAULT_ROOT + this->_httpAdress.substr(1, this->_httpAdress.size());
 }

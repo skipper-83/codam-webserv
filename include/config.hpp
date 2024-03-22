@@ -23,6 +23,8 @@
     }
 #define DEFAULT_RESPONSE_PROTOCOL "HTTP/1.1"
 #define DEFAULT_SERVER_NAME "Jelle en Alberts webserv 1.0"
+#define DEFAULT_MIMETYPE "text/plain"
+#define DEFAULT_ROOT "./"
 
 using SubParsers = std::map<std::string, std::function<void(std::istream&)> >;
 

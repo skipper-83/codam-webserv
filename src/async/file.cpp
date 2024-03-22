@@ -1,7 +1,6 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
-
 #include <logging.hpp>
 #include <stdexcept>
 

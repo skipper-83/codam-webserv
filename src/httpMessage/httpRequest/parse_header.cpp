@@ -109,3 +109,26 @@ void httpRequest::_setVars(void) {
         this->_port = stoi(var.substr(pos + 1, var.size() - pos - 1));
     }
 }
+
+void httpRequest::_resolvePathAndLocationBlock(void)
+{
+	// const ServerConfig* server = _request.getServer();
+	// const std::vector<Location>& locations = ->locations;
+	std::string path;
+
+	infoLog << "Resolving path for " << this->_httpAdress << CPPLog::end;
+	for (auto& location : this->_server->locations)
+	{
+		if (location.ref == this->_httpAdress.substr(0, location.ref.size()))
+		{
+			infoLog << "Matched location: " << location.ref << CPPLog::end;
+			path = location.root + this->_httpAdress.substr(1, this->_httpAdress.size());
+			infoLog << path << CPPLog::end;
+			_path = path;
+			_location = &location;
+			return;
+		}
+	}
+	infoLog << "No match. Resolved default path: " <<  "." + this->_httpAdress << CPPLog::end;
+	_path = "." + this->_httpAdress;		
+}

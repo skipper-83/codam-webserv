@@ -10,64 +10,34 @@ static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "cl
 
 extern MainConfig mainConfig;
 
-// void Client::simpleReadCb(AsyncSocketClient& asyncSocketClient) {
-//     std::string readBuffer;
-//     try {
-//         readBuffer = asyncSocketClient.read(DEFAULT_READ_SIZE);
-//     } catch (const std::exception& e) {
-//         clientLogE << "SimpleReadCb: " << e.what() << CPPLog::end;
-//         return;
-//     }
-//     clientLogI << "SimpleReadCb: read " << readBuffer.size() << " bytes" << CPPLog::end;
-//     clientLogI << "SimpleReadCb: " << readBuffer << CPPLog::end;
-//     this->_tmpFlag = true;
-// }
-// void Client::simpleWriteCb(AsyncSocketClient& client) {
-//     if (_tmpFlag) {
-//         std::string writeBuffer = "HTTP/1.1 200 OK\r\n\r\njoe\r\n\r\n";
-// 		clientLogI << "Writing " << writeBuffer.size() << " bytes" << CPPLog::end;
-//         try {
-//             client.write(writeBuffer);
-//         } catch (std::exception& e) {
-//             clientLogW << "error!" << CPPLog::end;
-//         };
-//         client.close();
-//     }
-// }
-
 void Client::_registerCallbacks() {
-    // _socketFd->registerReadReadyCb(std::bind(&Client::simpleReadCb, this, std::placeholders::_1));
-    // _socketFd->registerWriteReadyCb(std::bind(&Client::simpleWriteCb, this, std::placeholders::_1));
     _socketFd->registerReadReadyCb(std::bind(&Client::clientReadCb, this, std::placeholders::_1));
     _socketFd->registerWriteReadyCb(std::bind(&Client::clientWriteCb, this, std::placeholders::_1));
 }
 
 Client::Client(std::shared_ptr<AsyncSocketClient>& socketFd, std::function<void(std::shared_ptr<AsyncFD>)> addLocalFdToPollArray) 
-: _socketFd(socketFd), _response(&this->_request), _addLocalFdToPollArray(addLocalFdToPollArray)
+:  _response(&this->_request), _socketFd(socketFd), _addLocalFdToPollArray(addLocalFdToPollArray)
 {
 	// addLocalFdToPollArray(_socketFd);
-    std::cout << "client constructor" << std::endl;
     this->_port = this->_socketFd->getPort();
-    clientLogI << "Created client on port " << _port << CPPLog::end;
     this->_request.setServer(mainConfig, this->_port);
     _registerCallbacks();
 }
 
-Client::Client(Client&& other)
-    : _socketFd(std::move(other._socketFd)),
-      _port(other._port),
+Client::Client(Client&& other) :
       _request(std::move(other._request)),
       _response(&this->_request),
+      _socketFd(std::move(other._socketFd)),
+      _port(other._port),
       _localReadBuffer(std::move(other._localReadBuffer)),
-      _localWriteBuffer(std::move(other._localWriteBuffer)) {
-    clientLogI << "Moved client on port " << _port << CPPLog::end;
+      _localWriteBuffer(std::move(other._localWriteBuffer)),
+	  _addLocalFdToPollArray(std::move(other._addLocalFdToPollArray)){
     _registerCallbacks();
 }
 
 Client::~Client() {
 	if (_localFd != nullptr)
 		_localFd->close();
-    clientLogI << "Destroyed client on port " << _port << CPPLog::end;
 }
 
 Client::Client(const Client& rhs) {
@@ -87,7 +57,8 @@ Client& Client::operator=(const Client& rhs) {
     _state = rhs._state;
     _clientReadBuffer = rhs._clientReadBuffer;
     _clientWriteBuffer = rhs._clientWriteBuffer;
-
+	_localFd = rhs._localFd;
+	_addLocalFdToPollArray = rhs._addLocalFdToPollArray;
     _registerCallbacks();
     return *this;
 }
@@ -112,9 +83,6 @@ void Client::setLastActivityTime() {
 std::chrono::time_point<std::chrono::steady_clock> Client::getLastActivityTime() const {
 	return _lastActivityTime;
 }
-
-
-
 
 // Write an error response to the client
 void Client::_returnHttpErrorToClient(int code) {

@@ -60,6 +60,7 @@ httpRequest &httpRequest::operator=(const httpRequest &rhs) {
     this->_server = rhs._server;
     this->_port = rhs._port;
     this->_clientMaxBodySize = rhs._clientMaxBodySize;
+	this->_path = rhs._path;
     return *this;
 }
 

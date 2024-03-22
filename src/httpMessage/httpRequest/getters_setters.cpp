@@ -60,3 +60,11 @@ void httpRequest::setServer(MainConfig &config, uint16_t port) {
 const ServerConfig *httpRequest::getServer(void) const{
     return _server;
 }
+
+std::string httpRequest::getPath(void) const {
+    return _path;
+}
+
+const Location *httpRequest::getLocation(void) const {
+    return _location;
+}

@@ -1,31 +1,42 @@
 #include "client.hpp"
 #include "logging.hpp"
 
-
 static CPPLog::Instance clientLogI = logOut.instance(CPPLog::Level::INFO, "client");
 static CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "client");
 static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "client");
 
 void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
+    // clientLogI << "clientWriteCb" << CPPLog::end;
+    static std::string tempFileBuffer;
+    if (_localFd != nullptr && _localFd->hasPendingRead()) {
+        clientLogI << "I have a pending read" << CPPLog::end;
+        if (_localFd->eof()) {
+            clientLogI << "file is at eof" << CPPLog::end;
+            _localFd->close();
+            _localFd = nullptr;
+			_response.setCode(200);
+            _response.setFixedSizeBody(tempFileBuffer);
+            _localWriteBuffer = _response.getFixedBodyResponseAsString();
+            tempFileBuffer.clear();
+        } else {
+            tempFileBuffer += _localFd->read(1024);
+            clientLogI << "file buffer: " << tempFileBuffer << CPPLog::end;
+        }
+    }
+    // else
+    // 	clientLogI << "I don't have a pending read" << CPPLog::end;
     // If the buffer is empty, return
     if (_localWriteBuffer.empty())
         return;
 
     size_t bytesWritten = 0;
     std::string writeBuffer;
-	if (_localFd !=nullptr )
-	{
-		clientLogI << "I have a pending read" << CPPLog::end;
-		clientLogI << _localFd->read(1024) << CPPLog::end;
-	}
-	else
-		clientLogI << "I don't have a pending read" << CPPLog::end;
 
     // TODO: action if the buffer is too large
     if (_localWriteBuffer.size() + _bytesWrittenCounter > DEFAULT_MAX_WRITE_SIZE) {
         clientLogE << "clientWriteCb: response too large: " << _bytesWrittenCounter + _localWriteBuffer.size() << "fd: " << _socketFd << CPPLog::end;
         _socketFd->close();
-		changeState(ClientState::DONE);
+        changeState(ClientState::DONE);
         return;
     }
 
@@ -36,10 +47,8 @@ void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
         writeBuffer = _localWriteBuffer;
     }
 
-	
-
     try {
-		changeState(ClientState::WRITE_RESPONSE);
+        changeState(ClientState::WRITE_RESPONSE);
         bytesWritten = asyncSocketClient.write(writeBuffer);
     } catch (const std::exception& e) {
         clientLogE << "clientWriteCb: " << e.what() << CPPLog::end;
@@ -64,7 +73,7 @@ void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
         this->_response.clear();
         this->_request.clear();
         _bytesWrittenCounter = 0;
-		changeState(ClientState::READY_FOR_INPUT);
+        changeState(ClientState::READY_FOR_INPUT);
         // _socketFd->close();
     }
 }
@@ -87,7 +96,7 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
     // error response
     try {
         this->_request.parse(this->_localReadBuffer, this->_port);
-		changeState(ClientState::READ_REQUEST);
+        changeState(ClientState::READ_REQUEST);
     } catch (const httpRequest::httpRequestException& e) {
         this->_returnHttpErrorToClient(e.errorNo());
     }
@@ -98,7 +107,7 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
     }
 
     if (this->_request.headerComplete()) {
-		changeState(ClientState::READ_BODY);
+        changeState(ClientState::READ_BODY);
         clientLogI << "request header complete" << CPPLog::end;
         clientLogI << "request method: " << this->_request.getRequestType() << CPPLog::end;
         clientLogI << "request path: " << this->_request.getAdress() << CPPLog::end;
@@ -107,33 +116,27 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
 
     // Request is complete, handle it
     if (this->_request.bodyComplete()) {
-		changeState(ClientState::BUILDING_RESPONSE);
+        changeState(ClientState::BUILDING_RESPONSE);
         clientLogI << "request body complete" << CPPLog::end;
         clientLogI << "Body: [" << this->_request.getBody() << "] " << CPPLog::end;
-		clientLogI << "request address: " << this->_request.getAdress() << CPPLog::end;
-		if (_request.getAdress() == "/conf.conf")
-			_localFd = _localFd->create("/Users/albertvanandel/Documents/CODAM/webserv/build" + _request.getAdress(), [this](AsyncFD& _localFd) {
-				// (void)_localFd;
-				AsyncFile& file = static_cast<AsyncFile&>(_localFd);
-				clientLogI << "I'm in the callback" << CPPLog::end;
-				// clientLogI << file.read(1024) << CPPLog::end;
-				this->_localWriteBuffer = file.read(1024);
-				if (file.eof())
-				{
-					clientLogI << "file is at eof" << CPPLog::end;
-					file.close();
-					// _localWriteBuffer = _response.getFixedBodyResponseAsString();
-					// clientLogI << "adding to pollarray" << CPPLog::end;
-					// _addLocalFdToPollArray(_localFd);
-					// clientLogI << "body complete part done" << CPPLog::end;
-				}
-			});
-		// _localWriteBuffer = "HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\njoe\r\n\r\n";
-		_response.setFixedSizeBody("joe");
-		_localWriteBuffer = _response.getFixedBodyResponseAsString();
-		clientLogI << "adding to pollarray" << CPPLog::end;
-		if(_localFd)
-			_addLocalFdToPollArray(_localFd);
+        clientLogI << "request address: " << this->_request.getAdress() << CPPLog::end;
+
+        // if (_request.getAdress() == "/conf.conf")
+        // _localFd = _localFd->create("/Users/albertvanandel/Documents/CODAM/webserv/build" + _request.getAdress());
+        try {
+            _localFd = AsyncFile::create(_request.getPath(), nullptr);
+            clientLogI << "adding to pollarray" << CPPLog::end;
+            if (_localFd) {
+                _addLocalFdToPollArray(_localFd);
+                // _returnHttpErrorToClient(500);
+            }
+        } catch (const std::exception& e) {
+            clientLogE << "clientReadCb: " << e.what() << CPPLog::end;
+            _returnHttpErrorToClient(404);
+        }
+        // _localWriteBuffer = "HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\njoe\r\n\r\n";
+        // _response.setFixedSizeBody("joe");
+        // _localWriteBuffer = _response.getFixedBodyResponseAsString();
         clientLogI << "body complete part done" << CPPLog::end;
     }
 }

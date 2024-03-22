@@ -374,6 +374,7 @@ std::istream& operator>>(std::istream& is, ServerConfig& rhs) {
         rhs.ports.push_back(new_port);
     }
     rhs.rank = rank++;
+	rhs.sortLocations();
     return is;
 }
 

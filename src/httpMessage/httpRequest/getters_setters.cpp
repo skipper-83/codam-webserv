@@ -57,7 +57,7 @@ void httpRequest::setServer(MainConfig &config, uint16_t port) {
     this->_clientMaxBodySize = this->_server->clientMaxBodySize.value;
 }
 
-const ServerConfig *httpRequest::getServer(void) const{
+const ServerConfig *httpRequest::getServer(void) const {
     return _server;
 }
 

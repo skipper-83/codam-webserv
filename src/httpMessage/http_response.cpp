@@ -1,12 +1,13 @@
 #include "http_response.hpp"
 
+#include <sstream>
+
 #include "logging.hpp"
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpResponse");
 
 httpResponse::httpResponse() {
     _httpProtocol = DEFAULT_RESPONSE_PROTOCOL;
-    setHeader("Content-Type", "text/html; charset=UTF-8");
     setHeader("Server", DEFAULT_SERVER_NAME);
 }
 
@@ -43,8 +44,12 @@ void httpResponse::_setErrorBody() {
     std::string error_page;
 
     infoLog << "Setting up error page for " << this->_responseCode << CPPLog::end;
-    if (this->_precedingRequest != nullptr && this->_precedingRequest->getServer() != nullptr)
-        error_page = this->_precedingRequest->getServer()->getErrorPage(this->_responseCode);
+	// check if the server has a custom error page for this response code, this is slightly ugly as the calling
+	// function already knows this information, we could omit this and then the body will be set for no reason
+    if (this->_precedingRequest != nullptr && this->_precedingRequest->getServer() != nullptr) {
+        if(!this->_precedingRequest->getServer()->getErrorPage(this->_responseCode).empty())
+			return;
+    }
     if (error_page.empty()) {
         error_page.append("<html><head><title>")
             .append(std::to_string(this->_responseCode))
@@ -56,6 +61,7 @@ void httpResponse::_setErrorBody() {
             .append(DEFAULT_SERVER_NAME)
             .append("</center>");
     }
+    setHeader("Content-Type", "text/html; charset=UTF-8");
     this->setFixedSizeBody(error_page);
     infoLog << "Error page set to: " << error_page << CPPLog::end;
 }
@@ -69,27 +75,27 @@ void httpResponse::setFixedSizeBody(std::string body) {
 }
 
 std::string httpResponse::_getStartLine(void) const {
-	return this->getProtocol() + " " + std::to_string(this->_responseCode) + " " + this->_responseCodeDescription + "\r\n";
+    return this->getProtocol() + " " + std::to_string(this->_responseCode) + " " + this->_responseCodeDescription + "\r\n";
 }
 
 std::string httpResponse::getHeadersForChunkedResponse(void) {
-	std::string ret;
+    std::string ret;
 
-	deleteHeader("Date");
-	setHeader("Date", WebServUtil::timeStamp());
-	deleteHeader("Content-Length");
-	setHeader("Transfer-Encoding", "chunked");
-	ret.append(this->_getStartLine());
-	ret.append(getHeaderListAsString());
-	ret.append("\r\n");
-	return ret;
+    deleteHeader("Date");
+    setHeader("Date", WebServUtil::timeStamp());
+    deleteHeader("Content-Length");
+    setHeader("Transfer-Encoding", "chunked");
+    ret.append(this->_getStartLine());
+    ret.append(getHeaderListAsString());
+    ret.append("\r\n");
+    return ret;
 }
 
 std::string httpResponse::transformLineForChunkedResponse(std::string line) {
-	std::string ret;
+    std::stringstream ret;
 
-	ret.append(std::to_string(line.size()) + "\r\n" + line + "\r\n");
-    return (ret);
+    ret << std::hex << line.size() << "\r\n" << line << "\r\n";
+    return (ret.str());
 }
 
 std::string httpResponse::getFixedBodyResponseAsString(void) {

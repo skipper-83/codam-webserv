@@ -55,8 +55,7 @@ class Client {
     std::shared_ptr<AsyncSocketClient> _socketFd;
     std::shared_ptr<AsyncFile> _localFd = nullptr;
 
-    uint16_t _port;
-    // std::string _path;
+    uint16_t _port = 0;
 
     size_t _bytesWrittenCounter;
 
@@ -68,6 +67,6 @@ class Client {
 
     std::function<void(std::shared_ptr<AsyncFD>)> _addLocalFdToPollArray;
     void _registerCallbacks();
-    void _returnHttpErrorToClient(int code);
+    void _returnHttpErrorToClient(int code, std::string message = "");
     std::string _resolvePath();
 };

@@ -1,5 +1,5 @@
-#include <regex>
 #include <filesystem>
+#include <regex>
 
 #include "http_request.hpp"
 #include "logging.hpp"
@@ -105,61 +105,53 @@ void httpRequest::_setVars(void) {
         var = it->second;
         this->_httpHeaders.erase(it);
         this->setHeader("Host", var.substr(0, pos));
-        // this->_httpHeaders.insert({"Host", var.substr(0, pos)});
         infoLog << var.substr(pos + 1, var.size() - pos - 1) << CPPLog::end;
         this->_port = stoi(var.substr(pos + 1, var.size() - pos - 1));
     }
 }
 
-void httpRequest::_resolvePathAndLocationBlock(void)
-{
-	// const ServerConfig* server = _request.getServer();
-	// const std::vector<Location>& locations = ->locations;
-	std::string path;
+void httpRequest::_resolvePathAndLocationBlock(void) {
+    std::string path;
 
-	infoLog << "Resolving path for " << this->_httpAdress << CPPLog::end;
-	for (auto& location : this->_server->locations)
-	{
-		if (location.ref == this->_httpAdress.substr(0, location.ref.size()))
-		{
-			infoLog << "Matched location: " << location.ref << CPPLog::end;
-			path = location.root + this->_httpAdress.substr(1, this->_httpAdress.size());
-			infoLog << path << CPPLog::end;
-			_path = path;
-			_location = &location;
+    infoLog << "Resolving path for " << this->_httpAdress << CPPLog::end;
+    for (auto &location : this->_server->locations) {
+        if (location.ref == this->_httpAdress.substr(0, location.ref.size())) {
+            infoLog << "Matched location: " << location.ref << CPPLog::end;
+            path = location.root + this->_httpAdress.substr(1, this->_httpAdress.size());
+            infoLog << path << CPPLog::end;
+            _path = path;
+            _location = &location;
 
-			// resolve path if it is a directory
-			if (std::filesystem::is_directory(path))
-			{
-				infoLog << "Path is a directory, request: [" << _httpAdress << "] ref: [" << _location->ref << "]" << CPPLog::end;
-				if (_httpAdress == _location->ref ) // if the requested adress is the location root
-				{
-					if (!_location->index_vec.empty())
-					{
-						infoLog << "checking for index files in config" << CPPLog::end;
-						for (auto& rootIndexFile : _location->index_vec)
-						{
-							if (std::filesystem::exists(path + rootIndexFile))
-							{
-								_path = path + rootIndexFile;
-								return;
-							}
-						}
-					}
-					infoLog << "No index files found, checking if autoindex is on" << CPPLog::end;
-					if (_server->autoIndex.on)
-					{
-						infoLog << "Autoindex is on" << CPPLog::end;
-						_path = path;
-						return;
-					}
-					infoLog << "Autoindex is off, returning 403 Forbidden" << CPPLog::end;
-					throw (httpRequestException(403, "No directory index, and autoindex is off"));
+            // resolve path if it is a directory
+            if (std::filesystem::is_directory(path)) {
+                infoLog << "Path is a directory, request: [" << _httpAdress << "] ref: [" << _location->ref << "]" << CPPLog::end;
+				if (path[path.size() - 1] != '/') // if the path does not end with a slash, redirect
+					throw(httpRequestException(301, _httpAdress + '/'));
+                if (_httpAdress == _location->ref)  // if the requested adress is the location root
+                {
+                    if (!_location->index_vec.empty()) {
+                        infoLog << "checking for index files in config" << CPPLog::end;
+                        for (auto &rootIndexFile : _location->index_vec) {
+                            if (std::filesystem::exists(path + rootIndexFile)) {
+                                _path = path + rootIndexFile;
+                                return;
+                            }
+                        }
+                    }
+                }
+				infoLog << "No index files found, checking if autoindex is on" << CPPLog::end;
+				if (_server->autoIndex.on) {
+					infoLog << "Autoindex is on" << CPPLog::end;
+					_path = path;
+					return;
 				}
-			}
-			return;
-		}
-	}
-	infoLog << "No match. Resolved default path: " <<  "." + this->_httpAdress << CPPLog::end;
-	_path = DEFAULT_ROOT + this->_httpAdress.substr(1, this->_httpAdress.size());
+				infoLog << "Autoindex is off, returning 403 Forbidden" << CPPLog::end;
+				throw(httpRequestException(403, "No directory index, and autoindex is off"));
+            }
+            return;
+        }
+    }
+    infoLog << "No match. Resolved default path: "
+            << "." + this->_httpAdress << CPPLog::end;
+    _path = DEFAULT_ROOT + this->_httpAdress.substr(1, this->_httpAdress.size());
 }

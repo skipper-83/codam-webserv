@@ -33,8 +33,8 @@ void httpRequest::_addToFixedContentSize(std::istream &fs) {
     std::stringstream contents;
     std::streampos addedLength;
 
-	if (this->_contentLength > this->_clientMaxBodySize)
-		throw httpRequestException(413, "Request body larger than max body size");
+    if (this->_contentLength > this->_clientMaxBodySize)
+        throw httpRequestException(413, "Request body larger than max body size");
     addedLength = _remainingLength(fs);
     if ((size_t)addedLength + this->_bodyLength >= this->_contentLength) {
         try {
@@ -65,7 +65,7 @@ void httpRequest::_addChunkedContent(std::istream &fs) {
 
     while (fs) {
         line = _getLineWithCRLF(fs);
-	// MAYBE IMPLEMENT CHECK FOR EMPTY LINE
+        // MAYBE IMPLEMENT CHECK FOR EMPTY LINE
         try {
             nextChunkSize = stoi(line);
         } catch (std::exception &e) {

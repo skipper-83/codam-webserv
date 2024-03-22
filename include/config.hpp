@@ -2,12 +2,12 @@
 #ifndef PARSE_CONFIG_HPP
 #define PARSE_CONFIG_HPP
 
+#include <chrono>
 #include <functional>
 #include <map>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <chrono>
 
 #define DEFAULT_CLIENT_BODY_SIZE 1000000
 #define DEFAULT_PORT 80
@@ -71,14 +71,14 @@ class ServerConfig {
     std::vector<ErrorPage> errorPages;
     AutoIndex autoIndex;
     BodySize clientMaxBodySize;
-    int rank; // deprecated, used for sorting, still used in tests
+    int rank;  // deprecated, used for sorting, still used in tests
 
     std::string getErrorPage(int errorCode) const;
 
-	private:
-	void sortLocations(void);
+   private:
+    void sortLocations(void);
 
-	friend std::istream& operator>>(std::istream& is, ServerConfig& rhs);
+    friend std::istream& operator>>(std::istream& is, ServerConfig& rhs);
 };
 
 class MainConfig {
@@ -87,15 +87,16 @@ class MainConfig {
     AllowedMethods _allowed;
     AutoIndex _autoIndex;
     BodySize clientMaxBodySize;
-    std::unordered_map<uint16_t, ServerConfig*> _portsToServers; // todo: change to multimap to allow for multiple servers on same port
-    std::map<std::pair<uint16_t, std::string>, ServerConfig*> _portsNamesToServers; // todo: change to multimap to allow for multiple servers on same port
+    std::unordered_map<uint16_t, ServerConfig*> _portsToServers;  // todo: change to multimap to allow for multiple servers on same port
+    std::map<std::pair<uint16_t, std::string>, ServerConfig*>
+        _portsNamesToServers;  // todo: change to multimap to allow for multiple servers on same port
     std::vector<uint16_t> _ports;
     void _overrideDefaults(void);
     void _setServerNameAndPortArrays(void);
-	// auto _timeOutDuration;
+    // auto _timeOutDuration;
 
    public:
-	const std::chrono::seconds _timeOutDuration = std::chrono::seconds(DEFAULT_TIMEOUT_SECONDS);
+    const std::chrono::seconds _timeOutDuration = std::chrono::seconds(DEFAULT_TIMEOUT_SECONDS);
 
     const ServerConfig* getServerFromPort(uint16_t port);
     const ServerConfig* getServerFromPortAndName(uint16_t port, std::string name);

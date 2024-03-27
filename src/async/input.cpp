@@ -58,9 +58,8 @@ std::string AsyncInput::read(size_t size) {
 
     ssize_t bytesRead = ::read(_fd, ret.data(), size);
     if (bytesRead < 0) {
-        std::string error = std::string("AsyncInput::read(size_t) failed: ") + std::strerror(errno);
-        logE << error;
-        throw std::runtime_error(error);
+        logE << "AsyncInput::read(size_t) failed: " << std::strerror(errno);
+        throw std::runtime_error(std::strerror(errno));
         return "";
     }
 

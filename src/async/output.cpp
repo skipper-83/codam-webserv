@@ -55,9 +55,8 @@ size_t AsyncOutput::write(std::string &data) {
 
     ssize_t bytesWritten = ::write(_fd, data.data(), data.size());
     if (bytesWritten < 0) {
-        std::string error = std::string("AsyncOutput::write(const std::string&) failed: ") + std::strerror(errno);
-        logE << error;
-        throw std::runtime_error(error);
+        logE << "AsyncOutput::write(const std::string&) failed: " << std::strerror(errno);
+        throw std::runtime_error(std::strerror(errno));
     }
 
     return static_cast<size_t>(bytesWritten);

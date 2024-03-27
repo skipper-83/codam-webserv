@@ -18,8 +18,8 @@ AsyncInFile::AsyncInFile(const std::string& path, const AsyncInFileCallback& cb)
     logD << "AsyncInFile::AsyncInFile(const std::string&, const AsyncInFileCallback&) called";
     _fd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
     if (_fd < 0) {
-        std::string err = "AsyncInFile::AsyncInFile(const std::string&, const AsyncInFileCallback&) failed: " + std::string(std::strerror(errno)) + " file: " + path;
-        throw std::runtime_error("failed to open file");
+        logE << "AsyncInFile::AsyncInFile(const std::string&, const AsyncInFileCallback&) failed: " << std::strerror(errno) << " for path: " << path;
+        throw std::runtime_error(std::strerror(errno));
     }
     setAsyncFlags();
 }

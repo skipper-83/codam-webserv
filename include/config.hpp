@@ -2,12 +2,12 @@
 #ifndef PARSE_CONFIG_HPP
 #define PARSE_CONFIG_HPP
 
+#include <chrono>
 #include <functional>
 #include <map>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <chrono>
 
 #define DEFAULT_CLIENT_BODY_SIZE 1000000
 #define DEFAULT_PORT 80
@@ -15,13 +15,16 @@
 #define DEFAULT_READ_SIZE 1024
 #define DEFAULT_WRITE_SIZE 1024
 #define DEFAULT_MAX_WRITE_SIZE 32768
-#define DEFAULT_TIMEOUT_SECONDS 5
+#define DEFAULT_TIMEOUT_SECONDS 30
+#define DEFAULT_FD_BACKLOG_SIZE 50
 #define DEFAULT_ALLOWED_METHODS                                                                          \
     {"GET", true}, {"POST", true}, {"PUT", true}, {"DELETE", true}, {"HEAD", true}, {"OPTIONS", true}, { \
         "PATCH", true                                                                                    \
     }
 #define DEFAULT_RESPONSE_PROTOCOL "HTTP/1.1"
 #define DEFAULT_SERVER_NAME "Jelle en Alberts webserv 1.0"
+#define DEFAULT_MIMETYPE "text/plain"
+#define DEFAULT_ROOT "./"
 
 using SubParsers = std::map<std::string, std::function<void(std::istream&)> >;
 
@@ -68,9 +71,14 @@ class ServerConfig {
     std::vector<ErrorPage> errorPages;
     AutoIndex autoIndex;
     BodySize clientMaxBodySize;
-    int rank;
+    int rank;  // deprecated, used for sorting, still used in tests
 
     std::string getErrorPage(int errorCode) const;
+
+   private:
+    void sortLocations(void);
+
+    friend std::istream& operator>>(std::istream& is, ServerConfig& rhs);
 };
 
 class MainConfig {
@@ -79,19 +87,20 @@ class MainConfig {
     AllowedMethods _allowed;
     AutoIndex _autoIndex;
     BodySize clientMaxBodySize;
-    std::unordered_map<uint16_t, ServerConfig*> _portsToServers;
-    std::map<std::pair<uint16_t, std::string>, ServerConfig*> _portsNamesToServers;
+    std::unordered_map<uint16_t, ServerConfig*> _portsToServers;  // todo: change to multimap to allow for multiple servers on same port
+    std::map<std::pair<uint16_t, std::string>, ServerConfig*>
+        _portsNamesToServers;  // todo: change to multimap to allow for multiple servers on same port
     std::vector<uint16_t> _ports;
     void _overrideDefaults(void);
     void _setServerNameAndPortArrays(void);
-	// auto _timeOutDuration;
+    // auto _timeOutDuration;
 
    public:
-	const std::chrono::seconds _timeOutDuration = std::chrono::seconds(DEFAULT_TIMEOUT_SECONDS);
+    const std::chrono::seconds _timeOutDuration = std::chrono::seconds(DEFAULT_TIMEOUT_SECONDS);
 
-    const ServerConfig* getServerFromPort(int port);
-    const ServerConfig* getServerFromPortAndName(int port, std::string name);
-    const ServerConfig* getServer(int port, std::string name);
+    const ServerConfig* getServerFromPort(uint16_t port);
+    const ServerConfig* getServerFromPortAndName(uint16_t port, std::string name);
+    const ServerConfig* getServer(uint16_t port, std::string name);
     const std::vector<uint16_t>& getPorts(void);
 
     friend std::istream& operator>>(std::istream& is, ErrorPage& rhs);

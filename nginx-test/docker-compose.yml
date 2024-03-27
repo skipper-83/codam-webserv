@@ -10,3 +10,4 @@ services:
     volumes:
       - ./conf:/etc/nginx/conf.d
       - ./html:/usr/share/nginx/html  
+      - ./:/usr/share/nginx/

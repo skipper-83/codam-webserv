@@ -5,8 +5,8 @@ class AsyncInFile : public AsyncInput {
    public:
     using AsyncInFileCallback = std::function<void(AsyncInFile&)>;
 
-    AsyncInFile(const std::string& path, const AsyncInFileCallback& cb);
-    static std::unique_ptr<AsyncInFile> create(const std::string& path, const AsyncInFileCallback& cb);
+    AsyncInFile(const std::string& path, const AsyncInFileCallback& cb = nullptr);
+    static std::unique_ptr<AsyncInFile> create(const std::string& path, const AsyncInFileCallback& cb = nullptr);
     virtual ~AsyncInFile();
 
     AsyncInFile(const AsyncInFile&) = delete;

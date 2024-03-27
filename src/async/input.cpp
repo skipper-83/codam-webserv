@@ -1,5 +1,5 @@
 #include "async/input.hpp"
-
+#include <unistd.h>
 #include <cstring>
 #include <logging.hpp>
 

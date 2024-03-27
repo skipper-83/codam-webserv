@@ -13,8 +13,8 @@ class AsyncSocket : public AsyncFD {
     AsyncSocket(const AsyncSocket&) = delete;
     AsyncSocket& operator=(const AsyncSocket&) = delete;
 
-    AsyncSocket(AsyncSocket&&) = default;
-    AsyncSocket& operator=(AsyncSocket&&) = default;
+    AsyncSocket(AsyncSocket&&) = delete;
+    AsyncSocket& operator=(AsyncSocket&&) = delete;
 
     bool clientAvailable() const;
     std::unique_ptr<AsyncSocketClient> accept(const AsyncSocketClient::SocketClientCallback& clientReadReadyCb = {},

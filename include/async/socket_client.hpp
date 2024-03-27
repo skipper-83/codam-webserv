@@ -13,8 +13,8 @@ class AsyncSocketClient : public AsyncIO {
     AsyncSocketClient(const AsyncSocketClient&) = delete;
     AsyncSocketClient& operator=(const AsyncSocketClient&) = delete;
 
-    AsyncSocketClient(AsyncSocketClient&&) = default;
-    AsyncSocketClient& operator=(AsyncSocketClient&&) = default;
+    AsyncSocketClient(AsyncSocketClient&&) = delete;
+    AsyncSocketClient& operator=(AsyncSocketClient&&) = delete;
 
     uint16_t getPort() const;
 

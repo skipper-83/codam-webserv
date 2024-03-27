@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <logging.hpp>
+#include <unistd.h>
 
 static CPPLog::Instance logD = logOut.instance(CPPLog::Level::DEBUG, "Async");
 static CPPLog::Instance logI = logOut.instance(CPPLog::Level::INFO, "Async");

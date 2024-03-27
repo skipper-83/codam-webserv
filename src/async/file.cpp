@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <logging.hpp>
 #include <stdexcept>
+#include <cstring>
 
 #include "async/fd.hpp"
 

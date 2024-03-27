@@ -103,7 +103,7 @@ void Client::_returnHttpErrorToClient(int code, std::string message) {
         if (error_path.empty())
             error_path = DEFAULT_ROOT + error_page;
         if (std::filesystem::exists(error_path)) {
-            _localFd = AsyncFile::create(error_path);
+            _localFd = AsyncInFile::create(error_path);
             _addLocalFdToPollArray(_localFd);
         }
     } else {

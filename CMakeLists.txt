@@ -11,11 +11,14 @@ set (SRCS_MAIN
 set (SRCS
 	src/logging.cpp
 	src/async/fd.cpp
-	src/async/iofd.cpp
+	src/async/input.cpp
+	src/async/output.cpp
+	src/async/io.cpp
 	src/async/socket.cpp
-	src/async/socketclient.cpp
+	src/async/socket_client.cpp
+	src/async/in_file.cpp
 	src/async/pollarray.cpp
-	src/async/file.cpp
+	src/file_handler.cpp
 	src/client/client.cpp
 	src/client/client_callbacks.cpp
 	src/config/config_extractors.cpp

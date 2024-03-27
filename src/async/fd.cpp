@@ -4,14 +4,15 @@
 #include <poll.h>
 #include <unistd.h>
 
+#include <cstring>
 #include <logging.hpp>
 #include <stdexcept>
 
-static CPPLog::Instance logI = logOut.instance(CPPLog::Level::INFO, "AsyncFD");
-static CPPLog::Instance logD = logOut.instance(CPPLog::Level::DEBUG, "AsyncFD");
-static CPPLog::Instance logW = logOut.instance(CPPLog::Level::WARNING, "AsyncFD");
-static CPPLog::Instance logE = logOut.instance(CPPLog::Level::ERROR, "AsyncFD");
-static CPPLog::Instance logF = logOut.instance(CPPLog::Level::FATAL, "AsyncFD");
+static CPPLog::Instance logI = logOut.instance(CPPLog::Level::INFO, "Async");
+static CPPLog::Instance logD = logOut.instance(CPPLog::Level::DEBUG, "Async");
+static CPPLog::Instance logW = logOut.instance(CPPLog::Level::WARNING, "Async");
+static CPPLog::Instance logE = logOut.instance(CPPLog::Level::ERROR, "Async");
+static CPPLog::Instance logF = logOut.instance(CPPLog::Level::FATAL, "Async");
 
 const std::map<int, AsyncFD::EventTypes> AsyncFD::pollToEventType = {
     {POLLIN, EventTypes::IN},
@@ -28,65 +29,78 @@ const std::map<AsyncFD::EventTypes, int> AsyncFD::eventTypeToPoll = {
 };
 
 AsyncFD::AsyncFD(int fd, const std::map<EventTypes, EventCallback>& eventCallbacks) : _fd(fd), _eventCallbacks(eventCallbacks) {
+    logD << "AsyncFD::AsyncFD(int, const std::map<EventTypes, EventCallback>&) called";
     setAsyncFlags();
 }
 
-AsyncFD::AsyncFD(const std::map<EventTypes, EventCallback>& eventCallbacks) : _fd(-1), _eventCallbacks(eventCallbacks) {}
+AsyncFD::AsyncFD(const std::map<EventTypes, EventCallback>& eventCallbacks) : _fd(-1), _eventCallbacks(eventCallbacks) {
+    logD << "AsyncFD::AsyncFD(const std::map<EventTypes, EventCallback>&) called";
+}
 
-AsyncFD::AsyncFD() : _fd(-1) {}
+AsyncFD::AsyncFD() : _fd(-1) {
+    logD << "AsyncFD::AsyncFD() called";
+}
 
 std::unique_ptr<AsyncFD> AsyncFD::create(int fd, const std::map<EventTypes, EventCallback>& eventCallbacks) {
+    logD << "AsyncFD::create(int, const std::map<EventTypes, EventCallback>&) called";
     return std::make_unique<AsyncFD>(fd, eventCallbacks);
 }
 
 std::unique_ptr<AsyncFD> AsyncFD::create(const std::map<EventTypes, EventCallback>& eventCallbacks) {
+    logD << "AsyncFD::create(const std::map<EventTypes, EventCallback>&) called";
     return std::make_unique<AsyncFD>(eventCallbacks);
 }
 
 AsyncFD::~AsyncFD() {
+    logD << "AsyncFD::~AsyncFD() called";
+    if (!isValid())
+        return;
     try {
-        if (isValid())
-            close();
+        close();
     } catch (std::exception& e) {
         logF << "exception in destructor (ignore): " << e.what();
     }
 }
 
 void AsyncFD::close() {
+    logD << "AsyncFD::close() called";
     if (_fd < 0) {
-        logI << "cannot close, invalid fd";
+        logW << "AsyncFD::close() called on invalid fd";
         return;
     }
     int ret = ::close(_fd);
     _fd = -1;
     if (ret < 0) {
-        logF << "close failed";
-        throw std::runtime_error("close failed");
+        logF << "AsyncFD::close() close(fd) failed: " << std::strerror(errno);
+        throw std::runtime_error(std::strerror(errno));
     }
 }
 
 bool AsyncFD::isValid() const {
+    logD << "AsyncFD::isValid() called";
     return _fd >= 0;
 }
 
 AsyncFD::operator bool() const {
+    logD << "AsyncFD::operator bool() called";
     return isValid();
 }
 
 void AsyncFD::setAsyncFlags() {
+    logD << "AsyncFD::setAsyncFlags() called";
     int flags = fcntl(_fd, F_GETFL, 0);
     if (flags < 0) {
-        logF << "fcntl(F_GETFL) failed";
-        throw std::runtime_error("fcntl(F_GETFL) failed");
+        logF << "AsyncFD::setAsyncFlags() fcntl(F_GETFL) failed: " << std::strerror(errno);
+        throw std::runtime_error(std::strerror(errno));
     }
-    flags |= O_NONBLOCK;
-    if (fcntl(_fd, F_SETFL, flags) < 0) {
-        logF << "fcntl(F_SETFL) failed";
-        throw std::runtime_error("fcntl(F_SETFL) failed");
+    if (fcntl(_fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+        logF << "AsyncFD::setAsyncFlags() fcntl(F_SETFL, flags | O_NONBLOCK) failed: " << std::strerror(errno);
+        throw std::runtime_error(std::strerror(errno));
     }
 }
 
 void AsyncFD::poll() {
+    logD << "AsyncFD::poll() called";
     struct pollfd pfd;
     pfd.fd = _fd;
     pfd.events = pfd.revents = 0;
@@ -95,8 +109,8 @@ void AsyncFD::poll() {
     }
     int ret = ::poll(&pfd, 1, -1);
     if (ret < 0) {
-        logF << "poll failed";
-        throw std::runtime_error("poll failed");
+        logF << "AsyncFD::poll() poll failed: " << std::strerror(errno);
+        throw std::runtime_error(std::strerror(errno));
     }
     for (auto [pollType, eventType] : pollToEventType) {
         if (pfd.revents & pollType) {
@@ -106,9 +120,9 @@ void AsyncFD::poll() {
 }
 
 void AsyncFD::eventCb(EventTypes type) {
+    logD << "AsyncFD::eventCb(EventTypes) called";
     if (!_eventCallbacks.contains(type)) {
-        logW << "no callback for event: " << static_cast<int>(type);
-        // _fd.close();
+        logW << "AsyncFD::eventCb(EventTypes) called with unregistered event type";
         if (type == EventTypes::ERROR || type == EventTypes::HANGUP)
             this->close();
         return;

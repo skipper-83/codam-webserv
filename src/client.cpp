@@ -4,9 +4,11 @@
 #include "logging.hpp"
 #include "util.hpp"
 
+static CPPLog::Instance clientLogD = logOut.instance(CPPLog::Level::DEBUG, "client");
 static CPPLog::Instance clientLogI = logOut.instance(CPPLog::Level::INFO, "client");
 static CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "client");
-static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "client");
+static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::ERROR, "client");
+static CPPLog::Instance clientLogF = logOut.instance(CPPLog::Level::FATAL, "client");
 
 extern MainConfig mainConfig;
 

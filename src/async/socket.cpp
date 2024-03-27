@@ -6,7 +6,7 @@
 
 #include <cstring>
 
-#include "async/fd.hpp"
+#include "async/socket.hpp"
 
 using namespace std::placeholders;
 AsyncSocket::AsyncSocket(uint16_t port, const SocketCallback &clientAvailableCb, int backlog)
@@ -51,7 +51,7 @@ std::unique_ptr<AsyncSocketClient> AsyncSocket::accept(const AsyncSocketClient::
 }
 
 void AsyncSocket::_internalClientAvailableCb(AsyncFD &fd) {
-    AsyncSocket &socket = static_cast<AsyncSocket &>(fd);
+    AsyncSocket &socket = dynamic_cast<AsyncSocket &>(fd);
     socket._hasPendingAccept = true;
     if (socket._clientAvailableCb)
         socket._clientAvailableCb(socket);

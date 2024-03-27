@@ -30,6 +30,7 @@ void AsyncPollArray::cleanup() {
 }
 
 void AsyncPollArray::poll(int timeout) {
+    cleanup();
     std::vector<std::shared_ptr<AsyncFD>> fds;
     fds.reserve(_weakFDs.size());
     for (const auto& wfd : _weakFDs) {

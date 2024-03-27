@@ -1,4 +1,4 @@
-#include "async/fd.hpp"
+#include "async/socket_client.hpp"
 
 AsyncSocketClient::AsyncSocketClient(int fd, uint16_t port, const SocketClientCallback &clientReadReadyCb,
                                      const SocketClientCallback &clientWriteReadyCb)
@@ -19,14 +19,14 @@ uint16_t AsyncSocketClient::getPort() const {
 }
 
 void AsyncSocketClient::_internalReadReadyCb(AsyncFD &fd) {
-    auto &client = static_cast<AsyncSocketClient &>(fd);
+    auto &client = dynamic_cast<AsyncSocketClient &>(fd);
     if (client._clientReadReadyCb) {
         client._clientReadReadyCb(client);
     }
 }
 
 void AsyncSocketClient::_internalWriteReadyCb(AsyncFD &fd) {
-    auto &client = static_cast<AsyncSocketClient &>(fd);
+    auto &client = dynamic_cast<AsyncSocketClient &>(fd);
     if (client._clientWriteReadyCb) {
         client._clientWriteReadyCb(client);
     }

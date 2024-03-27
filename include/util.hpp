@@ -16,5 +16,5 @@ class WebServUtil {
     static std::string getContentTypeFromPath(const std::string &path);
     static std::string timeStamp(void);
     static bool isRequestWithoutBody(std::string requestType);
-    static std::string directoryIndexList(const std::string &path);
+    static std::string directoryIndexList(const std::string &path, const std::string &request_adress);
 };

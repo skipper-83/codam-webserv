@@ -1,8 +1,12 @@
 #include "util.hpp"
-#include "config.hpp"
+
 #include <ctime>
-#include <unordered_map>
 #include <filesystem>
+#include <sstream>
+#include <iomanip>
+#include <unordered_map>
+
+#include "config.hpp"
 
 std::string WebServUtil::codeDescription(int httpCode) {
     std::string ret = "Unknown HTTP Status Code";
@@ -15,48 +19,60 @@ std::string WebServUtil::codeDescription(int httpCode) {
 
 std::string WebServUtil::getContentTypeFromPath(const std::string& path) {
     const std::unordered_map<std::string, std::string> mimeTypes = _getFileTypes();
-	std::string extension = std::filesystem::path(path).extension().string();
-	auto it = mimeTypes.find(extension);
-	if (it != mimeTypes.end())
-		return it->second;
-	return (DEFAULT_MIMETYPE);
+    std::string extension = std::filesystem::path(path).extension().string();
+    auto it = mimeTypes.find(extension);
+    if (it != mimeTypes.end())
+        return it->second;
+    return (DEFAULT_MIMETYPE);
 }
 
-bool WebServUtil::_compareDirectoryContents(const std::filesystem::path &one, const std::filesystem::path &two)
-{
-	bool oneIsDir = std::filesystem::is_directory(one);
-	bool twoIsDir = std::filesystem::is_directory(two);
+bool WebServUtil::_compareDirectoryContents(const std::filesystem::path& one, const std::filesystem::path& two) {
+    bool oneIsDir = std::filesystem::is_directory(one);
+    bool twoIsDir = std::filesystem::is_directory(two);
 
-	if (oneIsDir == twoIsDir)
-		return one.filename().string() < two.filename().string();
-	return oneIsDir > twoIsDir;
+    if (oneIsDir == twoIsDir)
+        return one.filename().string() < two.filename().string();
+    return oneIsDir > twoIsDir;
 }
 
-std::string WebServUtil::directoryIndexList(const std::string &path)
-{
-	std::vector<std::filesystem::path> entries;
-	std::string ret_string, title, up;
+std::string WebServUtil::directoryIndexList(const std::string& path, const std::string& request_adress) {
+    std::vector<std::filesystem::path> entries;
+    std::string title, filename;
+    std::stringstream index_listing;
+	char* formatted_time;
+	std::time_t cformat_time;
 
-		title = "Index of " + path;
-		up = path.substr(0, path.substr(0, path.length() - 1).find_last_of('/') + 1);
-		ret_string.append("<html><head><title>").append(title).append("</title></head><body>\n");
-		ret_string.append("<h1>" + title + "</h1><hr><pre>\n");
-		ret_string.append("up: " + up + "\n");
-		for (const auto& it : std::filesystem::directory_iterator(path))
-			entries.push_back(it.path());
-		std::sort(entries.begin(), entries.end(), _compareDirectoryContents);
-		for (const auto& it : entries)
-		{
-			ret_string.append(it.filename().string());
-			if (std::filesystem::is_directory(it))
-				ret_string.append("/");
-			else
-				ret_string.append("\t" + std::to_string(std::filesystem::file_size(it)));
-			ret_string.append("\n");
-		}
-		ret_string.append("</pre><hr></body></html>");
-		std::cerr << ret_string;
-		return ret_string;
+
+    title = "Index of " + request_adress;
+    index_listing << "<html><head><title>" << title << "</title></head><body>\n";
+    index_listing << "<h1>" << title << "</h1><hr><pre>\n";
+    index_listing << ("<a href=\"../\">../</a>\n");
+    for (const auto& it : std::filesystem::directory_iterator(path))
+        entries.push_back(it.path());
+    std::sort(entries.begin(), entries.end(), _compareDirectoryContents);
+    for (const auto& it : entries) {
+		auto last_write_time = std::filesystem::last_write_time(it);	
+        filename = it.filename().string();
+        if (std::filesystem::is_directory(it))
+            filename += "/";
+		if (filename.length() > DEFAULT_MAX_FILENAME_DISPLAY)
+			filename = filename.substr(0, DEFAULT_MAX_FILENAME_DISPLAY) + "..>";
+		index_listing << "<a href=\"" << it.filename().string() << "\">" << std::setw(DEFAULT_MAX_FILENAME_DISPLAY) << std::left << filename + "</a>";
+		cformat_time = decltype(last_write_time)::clock::to_time_t(last_write_time);
+		formatted_time = std::ctime(&cformat_time);
+		formatted_time[std::strlen(formatted_time) - 1] = '\0';
+		index_listing << "\t" << formatted_time;
+		if (!std::filesystem::is_directory(it))
+			index_listing << "\t" << std::filesystem::file_size(it);
+		else
+			index_listing << "\t" << "-";
+		// index_listing << std::setw(30) << std::filesystem::file_size(it) << std::left << std::endl;
+		index_listing << "\n";
+        // ret_string.append("\t" + std::to_string(std::filesystem::file_size(it)));
+        // ret_string.append("\n");
+    }
+    index_listing << "</pre><hr></body></html>";
+    return index_listing.str();
 }
 
 std::string WebServUtil::timeStamp(void) {
@@ -76,11 +92,14 @@ bool WebServUtil::isRequestWithoutBody(std::string requestType) {
 
 const std::unordered_map<std::string, std::string> WebServUtil::_getFileTypes(void) {
     const std::unordered_map<std::string, std::string> mimeTypes = {
-        {".html", "text/html"},  {".htm", "text/html"}, {".jpg", "image/jpeg"},
-        {".jpeg", "image/jpeg"}, {".png", "image/png"}, {".pdf", "application/pdf"},
-		{".txt", "text/plain"},  {".css", "text/css"},  {".js", "text/javascript"},
-		{"", "application/octet-stream"}, {".ico", "image/x-icon"}, {".gif", "image/gif"},
-		{".svg", "image/svg+xml"}, {".xml", "application/xml"}, {".json", "application/json"}
+        {".html", "text/html"},       {".htm", "text/html"},
+        {".jpg", "image/jpeg"},       {".jpeg", "image/jpeg"},
+        {".png", "image/png"},        {".pdf", "application/pdf"},
+        {".txt", "text/plain"},       {".css", "text/css"},
+        {".js", "text/javascript"},   {"", "application/octet-stream"},
+        {".ico", "image/x-icon"},     {".gif", "image/gif"},
+        {".svg", "image/svg+xml"},    {".xml", "application/xml"},
+        {".json", "application/json"}
         // Add more mappings here as needed
     };
     return mimeTypes;

@@ -202,15 +202,19 @@ std::istream& operator>>(std::istream& is, Location& rhs) {
     while (is >> word) {
         if (!is)
             throw(std::invalid_argument("Wrong input for location"));
-        if (word.find('}') != std::string::npos) {
+        else if (word.find('}') != std::string::npos) {
             if (rhs.root == "")
                 throw(std::invalid_argument("No root for location"));
             break;
         }
-        if (word == "root")
+        else if (word == "root")
             setLocationRoot(is, rhs);
-        if (word == "index")
+        else if (word == "index")
             setLocationIndex(is, rhs);
+		else if (word == "location")
+			throw(std::invalid_argument("Nested location blocks are not allowed"));
+		else
+			throw(std::invalid_argument("Unexpected input for location: " + word));
     }
     return is;
 }
@@ -370,6 +374,7 @@ std::istream& operator>>(std::istream& is, ServerConfig& rhs) {
         rhs.ports.push_back(new_port);
     }
     rhs.rank = rank++;
+	rhs.sortLocations();
     return is;
 }
 

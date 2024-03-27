@@ -10,10 +10,12 @@ extern MainConfig mainConfig;
 
 class httpRequest : public httpMessage {
    private:
+   // PARSERS
     void _parseHttpHeaders(std::istream &fs);
     void _parseHttpStartLine(std::istream &fs);
     void _checkHttpHeaders(void);
-    void _setVars(void);
+    
+	// HELPERS
     void _addToFixedContentSize(std::istream &fs);
     void _addChunkedContent(std::istream &fs);
     void _addUntilNewline(std::istream &fs);
@@ -21,6 +23,11 @@ class httpRequest : public httpMessage {
     std::string _getLineWithCRLF(std::istream &is);
     std::string _readNumberOfBytesFromFileStream(std::istream &fs, size_t amountOfBytes);
     std::streampos _remainingLength(std::istream &fs);
+	
+	// SETTERS AND RESOLVERS
+	void _resolvePathAndLocationBlock(void);
+	void _setVars(void);
+
     std::string _httpAdress;
     std::string _httpRequestType;
     size_t _contentLength = 0;
@@ -29,10 +36,13 @@ class httpRequest : public httpMessage {
     bool _chunkedRequest = false;
     bool _contentSizeSet = false;
     const ServerConfig *_server = nullptr;
-    int _port = -1;
+	const Location *_location = nullptr;
+    uint16_t _port = -1;
+	std::string _path;
     size_t _clientMaxBodySize = DEFAULT_CLIENT_BODY_SIZE;
 
    public:
+   // CONSTRUCTORS
     httpRequest();
     explicit httpRequest(std::istream &fs);
     httpRequest(const httpRequest &src);
@@ -40,18 +50,25 @@ class httpRequest : public httpMessage {
 
     httpRequest &operator=(const httpRequest &rhs);
 
+   // GETTERS
     std::string getAdress(void) const;
     std::string getRequestType(void) const;
     std::string getErrorPage(int errorCode) const;
     bool bodyComplete(void) const;
     bool headerComplete(void) const;
-    void parseHeader(std::istream &fs);
-    void parse(std::string &input, uint16_t port);
-    void setServer(MainConfig &config, uint16_t port);
 	const ServerConfig* getServer(void) const;
-    void parseBody(std::istream &fs);
-    void clear(void);
 	uint16_t getPort(void) const;
+	const Location* getLocation(void) const;
+	std::string getPath(void) const;
+
+	// PARSERS
+    void parseHeader(std::istream &fs); // only called internally and for testing
+    void parseBody(std::istream &fs); // only called internally and for testing
+    void parse(std::string &input, uint16_t port);
+
+	// SETTERS
+    void setServer(MainConfig &config, uint16_t port);
+    void clear(void); // clears the request
 
     class httpRequestException : public std::exception {
        private:

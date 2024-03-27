@@ -73,10 +73,8 @@ httpMessage::httpRequestListT httpMessage::getHeaderList(std::string const &key)
 
 std::string httpMessage::getHeaderListAsString(void) const {
     std::string ret;
-    std::cout << "getHeaderListAsString" << std::endl;
     for (httpRequestT::const_iterator element = _httpHeaders.begin(); element != _httpHeaders.end(); element++)
         ret.append(element->first + ": " + element->second + "\r\n");
-    std::cout << "getHeaderListAsString done" << ret << ";" << std::endl;
     return ret;
 }
 httpMessage::~httpMessage(void) {}

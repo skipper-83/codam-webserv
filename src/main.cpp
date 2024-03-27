@@ -5,7 +5,7 @@
 #include <memory>
 #include <stdexcept>
 #include <vector>
-
+#include <unistd.h>
 #include "async/socket.hpp"
 #include "async/pollarray.hpp"
 #include "client.hpp"

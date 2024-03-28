@@ -3,7 +3,7 @@
 #include <ctime>
 #include <cstring>
 #include <chrono>
-#include <format>
+// #include <format>
 #include <filesystem>
 #include <sstream>
 #include <iomanip>
@@ -55,11 +55,8 @@ std::string fileTimeToString(const std::filesystem::file_time_type& fileTime) {
 
     // Converting to tm structure
     std::tm tm;
-#ifdef _WIN32
-    localtime_s(&tm, &time_t_point);
-#else
+
     localtime_r(&time_t_point, &tm);
-#endif
 
     // Formatting time
     std::stringstream ss;

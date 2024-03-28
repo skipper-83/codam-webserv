@@ -7,6 +7,7 @@
 #include "async/in_file.hpp"
 #include "http_request.hpp"
 #include "http_response.hpp"
+#include "file_handler.hpp"
 
 enum class ClientState {
     READY_FOR_INPUT,
@@ -54,6 +55,7 @@ class Client {
 
     std::shared_ptr<AsyncSocketClient> _socketFd;
     std::shared_ptr<AsyncInFile> _localFd = nullptr;
+	std::shared_ptr<InFileHandler> _inputFile = nullptr;
 
     uint16_t _port = 0;
 

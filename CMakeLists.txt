@@ -35,8 +35,8 @@ set (SRCS
 set (EXEC_NAME webserv)
 
 # Compiler settings
-set (CMAKE_CXX_STANDARD 20)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
+set (CMAKE_CXX_STANDARD 20)
 set (CMAKE_CXX_FLAGS "-Wall -Werror -Wextra")
 set (CMAKE_CXX_FLAGS_DEBUG "-g -fsanitize=address") #cmake -DCMAKE_BUILD_TYPE=DEBUG to add debug flags
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON) #vscode include path checking

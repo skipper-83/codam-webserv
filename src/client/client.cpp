@@ -100,17 +100,22 @@ void Client::_returnHttpErrorToClient(int code, std::string message) {
                 break;
             }
         }
+		clientLogI << "Error page found: " << error_path << CPPLog::end;
         if (error_path.empty())
             error_path = DEFAULT_ROOT + error_page;
         if (std::filesystem::exists(error_path)) {
-            // _localFd = AsyncInFile::create(error_path);
-            // _addLocalFdToPollArray(_localFd);
+			clientLogI << "Opening error page: " << error_path << CPPLog::end;
+            _inputFile = std::make_shared<InFileHandler>(error_path, 1024);
+            _addLocalFdToPollArray(_inputFile->operator std::shared_ptr<AsyncFD>());
         }
+		else
+			_inputFile = nullptr;
     } else {
         this->_localWriteBuffer = this->_response.getFixedBodyResponseAsString();
     }
     this->_localReadBuffer.clear();
     this->_request.clear();
     this->_state = ClientState::WRITE_RESPONSE;
+	// this->_inputFile = nullptr;
     clientLogW << "HTTP error " << code << ": " << WebServUtil::codeDescription(code);
 }

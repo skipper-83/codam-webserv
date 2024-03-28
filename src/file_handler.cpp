@@ -53,7 +53,7 @@ std::size_t InFileHandler::readBufferLength() const {
 }
 
 bool InFileHandler::readBufferFull() const {
-    logD << "InFileHandler::readBufferFull() called";
+    logD << "InFileHandler::readBufferFull() called: " << _readbuffer.length() << " >= " << _bufferSize << " = " << (_readbuffer.length() >= _bufferSize);
     return _readbuffer.length() >= _bufferSize;
 }
 

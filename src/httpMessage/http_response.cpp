@@ -23,6 +23,7 @@ httpResponse& httpResponse::operator=(const httpResponse& rhs) {
     this->_bodyComplete = rhs._bodyComplete;
     this->_responseCode = rhs._responseCode;
     this->_bodyComplete = rhs._bodyComplete;
+	this->_chunked = rhs._chunked;
     this->_responseCodeDescription = rhs._responseCodeDescription;
     this->_precedingRequest = rhs._precedingRequest;
     return *this;
@@ -81,6 +82,7 @@ std::string httpResponse::_getStartLine(void) const {
 std::string httpResponse::getHeadersForChunkedResponse(void) {
     std::string ret;
 
+	_chunked = true;
     deleteHeader("Date");
     setHeader("Date", WebServUtil::timeStamp());
     deleteHeader("Content-Length");
@@ -94,6 +96,8 @@ std::string httpResponse::getHeadersForChunkedResponse(void) {
 std::string httpResponse::transformLineForChunkedResponse(std::string line) {
     std::stringstream ret;
 
+	if (line.empty())
+		_bodyComplete = true;
     ret << std::hex << line.size() << "\r\n" << line << "\r\n";
     return (ret.str());
 }
@@ -111,6 +115,10 @@ std::string httpResponse::getFixedBodyResponseAsString(void) {
 
 bool httpResponse::isBodyComplete(void) const {
     return _bodyComplete;
+}
+
+bool httpResponse::isChunked(void) const {
+    return _chunked;
 }
 
 void httpResponse::clear(void) {

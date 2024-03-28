@@ -8,49 +8,74 @@ static CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "cl
 static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "client");
 
 void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
+    // _inputFile->read();
+    if (_inputFile) {
+        clientLogI << "I have an inputfile" << CPPLog::end;
 
-	// _inputFile->read();
-	if(_inputFile) {
-		clientLogI << "I have an inputfile" << CPPLog::end;
-	
-	if (_inputFile && _inputFile->eof()) {
-		clientLogI << "file is at eof" << CPPLog::end;
-		std::string tempFileBuffer = _inputFile->read();
-		clientLogI << "file buffer: " << tempFileBuffer << CPPLog::end;
-		_response.setFixedSizeBody(tempFileBuffer);
-		// clientLogI << "file buffer: " << _inputFile->read() << CPPLog::end;
-		_inputFile = nullptr;
-		_localWriteBuffer = _response.getFixedBodyResponseAsString();
-		return ;
-		// _response.setFixedSizeBody(_inputFile->read());
-		// _inputFile.reset();
-		// _inputFile = nullptr;
-		// _localWriteBuffer = _response.getFixedBodyResponseAsString();
-	}
-	}
+		if (_inputFile->readBufferFull()) 
+		{
+			clientLogI << "file buffer full" << CPPLog::end;
+			_response.setCode(200);
+			if (!_response.isChunked())
+				_localWriteBuffer = _response.getHeadersForChunkedResponse();
+			_localWriteBuffer += _response.transformLineForChunkedResponse(_inputFile->read());
+			clientLogI << "file buffer: " << _localWriteBuffer << "size:" << _localWriteBuffer.size() << CPPLog::end;
+		}
 
-	// if (_localFd != nullptr && _localFd->hasPendingRead()) {
-	//     clientLogI << "I have a pending read" << CPPLog::end;
-	//     if (_localFd->eof()) {
-	//         clientLogI << "file is at eof" << CPPLog::end;
-	//         _localFd->close();
-	//         _localFd = nullptr;
-	//         _response.setFixedSizeBody(tempFileBuffer);
-	//         _localWriteBuffer = _response.getFixedBodyResponseAsString();
-	//         tempFileBuffer.clear();
-	//     } else {
-	//         tempFileBuffer += _localFd->read(1024);
-	//         clientLogI << "file buffer: " << tempFileBuffer << CPPLog::end;
-	//     }
-	// }
+        if (_inputFile->eof()) {
+            clientLogI << "file is at eof" << CPPLog::end;
+            std::string tempFileBuffer = _inputFile->read();
+			_inputFile = nullptr;
+            clientLogI << "file buffer: " << tempFileBuffer << "size:" << tempFileBuffer.size() << CPPLog::end;
+			if (!_response.isChunked())
+			{
+				_response.setCode(200);
+				_response.setFixedSizeBody(tempFileBuffer);
+            	_localWriteBuffer = _response.getFixedBodyResponseAsString();
+			}
+			else
+			{
+				_localWriteBuffer += _response.transformLineForChunkedResponse(tempFileBuffer);
+				_localWriteBuffer += _response.transformLineForChunkedResponse("");
+			}
+		}
+	// 	} else {
+	// 		clientLogI << "file buffer not full" << CPPLog::end;
+	// 		std::string tempFileBuffer = _inputFile->read();
+	// 		clientLogI << "file buffer: " << tempFileBuffer << "size:" << tempFileBuffer.size() << CPPLog::end;
+	// 		}
+    //         // clientLogI << "file buffer: " << _inputFile->read() << CPPLog::end;
+    //         _inputFile = nullptr;
+    //         // return;
+    //         // _response.setFixedSizeBody(_inputFile->read());
+    //         // _inputFile.reset();
+    //         // _inputFile = nullptr;
+    //         // _localWriteBuffer = _response.getFixedBodyResponseAsString();
+    //     }
+    }
 
-	// If the buffer is empty, return
-	if (_localWriteBuffer.empty())
-		return;
+    // if (_localFd != nullptr && _localFd->hasPendingRead()) {
+    //     clientLogI << "I have a pending read" << CPPLog::end;
+    //     if (_localFd->eof()) {
+    //         clientLogI << "file is at eof" << CPPLog::end;
+    //         _localFd->close();
+    //         _localFd = nullptr;
+    //         _response.setFixedSizeBody(tempFileBuffer);
+    //         _localWriteBuffer = _response.getFixedBodyResponseAsString();
+    //         tempFileBuffer.clear();
+    //     } else {
+    //         tempFileBuffer += _localFd->read(1024);
+    //         clientLogI << "file buffer: " << tempFileBuffer << CPPLog::end;
+    //     }
+    // }
 
-	// size_t bytesWritten = 0;
-	// std::string writeBuffer;
-	// }
+    // If the buffer is empty, return
+    if (_localWriteBuffer.empty())
+        return;
+
+    // size_t bytesWritten = 0;
+    // std::string writeBuffer;
+    // }
     // this bit should probably be done in the FileHandler class
     // ****************************************************** //
     // static std::string tempFileBuffer;
@@ -80,8 +105,11 @@ void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
     // TODO: action if the response is too large
     if (_localWriteBuffer.size() + _bytesWrittenCounter > DEFAULT_MAX_WRITE_SIZE) {
         clientLogE << "clientWriteCb: response too large: " << _bytesWrittenCounter + _localWriteBuffer.size() << "fd: " << _socketFd << CPPLog::end;
-        _socketFd->close();
-        changeState(ClientState::DONE);
+        // _socketFd->close();
+        _localWriteBuffer.clear();
+        _returnHttpErrorToClient(413);
+        // _request.clear();
+        // changeState(ClientState::DONE);
         return;
     }
 
@@ -118,7 +146,7 @@ void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
         this->_response.clear();
         this->_request.clear();
         _bytesWrittenCounter = 0;
-		clientLogI << "clientWriteCb: client ready for input" << CPPLog::end;
+        clientLogI << "clientWriteCb: client ready for input" << CPPLog::end;
         changeState(ClientState::READY_FOR_INPUT);
     }
 }
@@ -135,6 +163,8 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
 
     clientLogI << "read: " << _localReadBuffer.size() << " bytes from " << this->_port << CPPLog::end;
     clientLogI << "read: " << _localReadBuffer << CPPLog::end;
+    if (_localReadBuffer.size() == 0)
+        return;
 
     // Try to parse the buffer as http request. If request is incomplete, parse will leave the buffer in place. On error, it will reply with a http
     // error response
@@ -160,11 +190,11 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
         }
         if (std::filesystem::is_directory(this->_request.getPath())) {
             _response.setFixedSizeBody(WebServUtil::directoryIndexList(this->_request.getPath(), _request.getAdress()));
-			
+
             _response.setHeader("Content-Type", "text/html; charset=UTF-8");
-			_response.setCode(200);
+            _response.setCode(200);
             _localWriteBuffer = _response.getFixedBodyResponseAsString();
-			_request.clear();
+            _request.clear();
         }
         // ****************************************************** //
 
@@ -181,14 +211,16 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
         clientLogI << "Body: [" << this->_request.getBody() << "] " << CPPLog::end;
         clientLogI << "request address: " << this->_request.getAdress() << CPPLog::end;
 
-		clientLogI << "making Infilehandler" << CPPLog::end;
-		_inputFile = std::make_shared<InFileHandler>(this->_request.getPath(), 1024);
-		_addLocalFdToPollArray(_inputFile->getFD());
-		// std::shared_ptr<AsyncFD> _localFd = ;
+        clientLogI << "making Infilehandler" << CPPLog::end;
+        _inputFile = std::make_shared<InFileHandler>(this->_request.getPath(), 1024);
+        // _addLocalFdToPollArray(_inputFile->getFD());
+		_addLocalFdToPollArray(_inputFile->operator std::shared_ptr<AsyncFD>());
+		_response.setHeader("Content-Type", WebServUtil::getContentTypeFromPath(_request.getPath()));
+        // std::shared_ptr<AsyncFD> _localFd = ;
         // _localFd = AsyncInFile::create(_request.getPath());
         // if (_localFd) {
         //     _response.setCode(200);
-		// 	_response.setHeader("Content-Type", WebServUtil::getContentTypeFromPath(_request.getPath()));
+        // 	_response.setHeader("Content-Type", WebServUtil::getContentTypeFromPath(_request.getPath()));
         //     _addLocalFdToPollArray(_localFd);
         // } else
         //     _returnHttpErrorToClient(500);  // right now it returns a 500 when the file has incorrect permissions

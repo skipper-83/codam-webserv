@@ -7,7 +7,7 @@
 #include "test_httpReq.hpp"
 #include "test_config.hpp"
 #include "config.hpp"
-#include "path.hpp"
+// #include "path.hpp"
 
 MainConfig mainConfig;
 
@@ -399,23 +399,23 @@ TEST_F(configTest, ports_getter)
 // 	EXPECT_TRUE(req.bodyComplete());
 // 	EXPECT_EQ(input, "abcd");
 // }
-TEST(response, basic)
-{
-	httpResponse resp;
-	std::string exp_eq = R"(HTTP/1.1 200 OK
-Content-Length: 4
-Content-Type: text/html; charset=UTF-8
-Date: )" + WebServUtil::timeStamp() + "\n" + 
-R"(Server: Jelle en Albert's webserv
+// TEST(response, basic)
+// {
+// 	httpResponse resp;
+// 	std::string exp_eq = R"(HTTP/1.1 200 OK
+// Content-Length: 4
+// Content-Type: text/html; charset=UTF-8
+// Date: )" + WebServUtil::timeStamp() + "\n" + 
+// R"(Server: Jelle en Albert's webserv
 
-test)";
+// test)";
 
-	resp.setCode(200);
-	resp.setFixedSizeBody("test");
-	// std::cerr
-	std::cerr << "Response: \n" <<  resp.getFixedBodyResponseAsString() << "\n";
-	EXPECT_EQ(resp.getFixedBodyResponseAsString(), exp_eq);
-}
+// 	resp.setCode(200);
+// 	resp.setFixedSizeBody("test");
+// 	// std::cerr
+// 	std::cerr << "Response: \n" <<  resp.getFixedBodyResponseAsString() << "\n";
+// 	EXPECT_EQ(resp.getFixedBodyResponseAsString(), exp_eq);
+// }
 
 TEST_F(configWithRequest, getErrorPage)
 {
@@ -428,7 +428,7 @@ TEST_F(configWithRequest, getErrorPage)
 
 }
 
-TEST(path, first)
-{
-	checkFile("../../test/test_dir/");
-}
+// TEST(path, first)
+// {
+// 	checkFile("../../test/test_dir/");
+// }

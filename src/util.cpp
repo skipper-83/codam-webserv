@@ -1,6 +1,8 @@
 #include "util.hpp"
 
 #include <ctime>
+#include <cstring>
+#include <chrono>
 #include <filesystem>
 #include <sstream>
 #include <iomanip>

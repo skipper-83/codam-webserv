@@ -41,8 +41,6 @@ std::string WebServUtil::directoryIndexList(const std::string& path, const std::
     std::vector<std::filesystem::path> entries;
     std::string title, filename;
     std::stringstream index_listing;
-	char* formatted_time;
-	std::time_t cformat_time;
 
 
     title = "Index of " + request_adress;
@@ -53,25 +51,22 @@ std::string WebServUtil::directoryIndexList(const std::string& path, const std::
         entries.push_back(it.path());
     std::sort(entries.begin(), entries.end(), _compareDirectoryContents);
     for (const auto& it : entries) {
-		auto last_write_time = std::filesystem::last_write_time(it);	
         filename = it.filename().string();
         if (std::filesystem::is_directory(it))
             filename += "/";
 		if (filename.length() > DEFAULT_MAX_FILENAME_DISPLAY)
 			filename = filename.substr(0, DEFAULT_MAX_FILENAME_DISPLAY) + "..>";
 		index_listing << "<a href=\"" << it.filename().string() << "\">" << std::setw(DEFAULT_MAX_FILENAME_DISPLAY) << std::left << filename + "</a>";
-		cformat_time = decltype(last_write_time)::clock::to_time_t(last_write_time);
-		formatted_time = std::ctime(&cformat_time);
-		formatted_time[std::strlen(formatted_time) - 1] = '\0';
+		auto last_write_time = std::filesystem::last_write_time(it);	
+std::time_t cformat_time = decltype(last_write_time)::clock::to_time_t(last_write_time);
+    char* formatted_time = std::ctime(&cformat_time);
+    formatted_time[std::strlen(formatted_time) - 1] = '\0';
 		index_listing << "\t" << formatted_time;
 		if (!std::filesystem::is_directory(it))
 			index_listing << "\t" << std::filesystem::file_size(it);
 		else
 			index_listing << "\t" << "-";
-		// index_listing << std::setw(30) << std::filesystem::file_size(it) << std::left << std::endl;
 		index_listing << "\n";
-        // ret_string.append("\t" + std::to_string(std::filesystem::file_size(it)));
-        // ret_string.append("\n");
     }
     index_listing << "</pre><hr></body></html>";
     return index_listing.str();

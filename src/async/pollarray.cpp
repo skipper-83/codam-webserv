@@ -13,41 +13,41 @@ static CPPLog::Instance logD = logOut.instance(CPPLog::Level::DEBUG, "AsyncPollA
 static CPPLog::Instance logW = logOut.instance(CPPLog::Level::WARNING, "AsyncPollArray");
 static CPPLog::Instance logE = logOut.instance(CPPLog::Level::ERROR, "AsyncPollArray");
 
-void AsyncPollArray::add(std::shared_ptr<AsyncFD> fd) {
-    _fds.insert(fd);
+void AsyncPollArray::add(std::weak_ptr<AsyncFD> fd) {
+    _weakFDs.push_back(fd);
 }
 
-void AsyncPollArray::remove(std::shared_ptr<AsyncFD> fd) {
-    _fds.erase(fd);
+void AsyncPollArray::remove(std::weak_ptr<AsyncFD> fd) {
+    _weakFDs.remove_if([fd](const std::weak_ptr<AsyncFD>& wfd) {
+        if (wfd.expired())
+            return true;
+        return wfd.lock() == fd.lock();
+    });
 }
 
 void AsyncPollArray::cleanup() {
-    std::erase_if(_fds, [](const std::shared_ptr<AsyncFD>& fd) { 
-		if (!fd->isValid()) {
-			logI << "removing invalid fd" << CPPLog::end;
-		}
-		return !fd->isValid();
-		});
+    _weakFDs.remove_if([](const std::weak_ptr<AsyncFD>& wfd) { return wfd.expired(); });
 }
 
-void AsyncPollArray::poll(int timeout) {	
+void AsyncPollArray::poll(int timeout) {
     cleanup();
-
-    std::unordered_map<int, std::shared_ptr<AsyncFD>> fdMap;
-    fdMap.reserve(_fds.size());
-
-    std::transform(_fds.begin(), _fds.end(), std::inserter(fdMap, fdMap.end()),
-                   [](const std::shared_ptr<AsyncFD>& fd) { return std::make_pair(fd->_fd, fd); });
+    std::vector<std::shared_ptr<AsyncFD>> fds;
+    fds.reserve(_weakFDs.size());
+    for (const auto& wfd : _weakFDs) {
+        if (auto fd = wfd.lock()) {
+            fds.push_back(fd);
+        }
+    }
 
     std::vector<pollfd> pollfds;
-    pollfds.reserve(_fds.size());
+    pollfds.reserve(fds.size());
 
-    for (auto [fd, asyncFD] : fdMap) {
+    for (const auto& fd : fds) {
         pollfd pfd;
-        pfd.fd = fd;
+        pfd.fd = fd->_fd;
         pfd.events = 0;
         pfd.revents = 0;
-        for (auto [eventType, cb] : asyncFD->_eventCallbacks) {
+        for (auto [eventType, cb] : fd->_eventCallbacks) {
             pfd.events |= AsyncFD::eventTypeToPoll.at(eventType);
         }
         pollfds.push_back(pfd);
@@ -55,6 +55,7 @@ void AsyncPollArray::poll(int timeout) {
 
     int ret = ::poll(pollfds.data(), pollfds.size(), timeout);
     if (ret < 0) {
+        logE << "poll failed";
         throw std::runtime_error("poll failed");
     }
 
@@ -62,13 +63,17 @@ void AsyncPollArray::poll(int timeout) {
         return;
     }
 
-    for (const auto& pollfd : pollfds) {
-        if (pollfd.revents == 0) {
-            continue;
-        }
-        for (auto [pollType, eventType] : AsyncFD::pollToEventType) {
-            if (pollfd.revents & pollType) {
-                fdMap[pollfd.fd]->eventCb(eventType);
+    if (fds.size() != pollfds.size()) {
+        logE << "fds.size() != pollfds.size()";
+        throw std::runtime_error("poll returned different number of fds than expected");
+    }
+
+    for (size_t i = 0; i < pollfds.size(); i++) {
+        for (auto [event, eventType] : AsyncFD::pollToEventType) {
+            if (pollfds[i].revents & event) {
+                if (auto cb = fds[i]->_eventCallbacks[eventType]) {
+                    cb(*fds[i]);
+                }
             }
         }
     }

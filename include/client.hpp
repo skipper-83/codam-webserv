@@ -3,8 +3,8 @@
 // #include <memory>
 
 #include <chrono>
-
-#include "async/fd.hpp"
+#include "async/socket_client.hpp"
+#include "async/in_file.hpp"
 #include "http_request.hpp"
 #include "http_response.hpp"
 
@@ -53,7 +53,7 @@ class Client {
     httpResponse _response;
 
     std::shared_ptr<AsyncSocketClient> _socketFd;
-    std::shared_ptr<AsyncFile> _localFd = nullptr;
+    std::shared_ptr<AsyncInFile> _localFd = nullptr;
 
     uint16_t _port = 0;
 

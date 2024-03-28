@@ -1,18 +1,21 @@
 #pragma once
 
+#include <poll.h>
+
+#include <list>
 #include <unordered_set>
 
 #include "async/fd.hpp"
 
 class AsyncPollArray {
    public:
-    void add(std::shared_ptr<AsyncFD> fd);
-    void remove(std::shared_ptr<AsyncFD> fd);
+    void add(std::weak_ptr<AsyncFD> fd);
+    void remove(std::weak_ptr<AsyncFD> fd);
 
     void cleanup();
 
     void poll(int timeout);
 
    private:
-    std::unordered_set<std::shared_ptr<AsyncFD>> _fds;
+    std::list<std::weak_ptr<AsyncFD>> _weakFDs;
 };

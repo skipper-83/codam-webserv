@@ -5,8 +5,8 @@
 #include <memory>
 #include <stdexcept>
 #include <vector>
-
-#include "async/fd.hpp"
+#include <unistd.h>
+#include "async/socket.hpp"
 #include "async/pollarray.hpp"
 #include "client.hpp"
 #include "config.hpp"
@@ -47,7 +47,7 @@ void parseConfig(int argc, char** argv) {
     }
 }
 
-void initiateSockets(AsyncPollArray& pollArray, std::vector<Client>& clients) {
+void initiateSockets(AsyncPollArray& pollArray, std::vector<Client>& clients, std::vector<std::shared_ptr<AsyncSocket>>& sockets) {
 	for (uint16_t port : mainConfig.getPorts()) {
 		mainLogI << "creating socket on port " << port << CPPLog::end;
 		std::shared_ptr<AsyncSocket> socket = AsyncSocket::create(port, std::bind(mainClientAvailableCb, std::placeholders::_1, std::ref(pollArray), std::ref(clients)), DEFAULT_FD_BACKLOG_SIZE);
@@ -56,16 +56,18 @@ void initiateSockets(AsyncPollArray& pollArray, std::vector<Client>& clients) {
 		} catch (const std::exception& e) {
 			throw std::runtime_error(std::string("failed to add socket to pollArray: ") + e.what());
 		}
+        sockets.push_back(socket);
 	}
 }
 
 int main(int argc, char** argv) {
     AsyncPollArray pollArray;
     std::vector<Client> clients;
+    std::vector<std::shared_ptr<AsyncSocket>> sockets;
 
     try {
         parseConfig(argc, argv);
-		initiateSockets(pollArray, clients);
+		initiateSockets(pollArray, clients, sockets);
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
         return 1;

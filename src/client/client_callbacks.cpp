@@ -136,7 +136,7 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
         clientLogI << "Body: [" << this->_request.getBody() << "] " << CPPLog::end;
         clientLogI << "request address: " << this->_request.getAdress() << CPPLog::end;
 
-        _localFd = AsyncFile::create(_request.getPath(), nullptr);
+        _localFd = AsyncInFile::create(_request.getPath());
         if (_localFd) {
             _response.setCode(200);
 			_response.setHeader("Content-Type", WebServUtil::getContentTypeFromPath(_request.getPath()));

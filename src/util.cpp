@@ -38,7 +38,7 @@ bool WebServUtil::_compareDirectoryContents(const std::filesystem::path& one, co
     return oneIsDir > twoIsDir;
 }
 
-std::string fileTimeToString(const std::filesystem::file_time_type& fileTime) {
+std::string WebServUtil::_fileTimeToString(const std::filesystem::file_time_type& fileTime) {
     using namespace std::chrono;
 
     // Extracting the duration since the epoch
@@ -83,16 +83,7 @@ std::string WebServUtil::directoryIndexList(const std::string& path, const std::
 		if (filename.length() > DEFAULT_MAX_FILENAME_DISPLAY)
 			filename = filename.substr(0, DEFAULT_MAX_FILENAME_DISPLAY) + "..>";
 		index_listing << "<a href=\"" << it.filename().string() << "\">" << std::setw(DEFAULT_MAX_FILENAME_DISPLAY) << std::left << filename + "</a>";
-	
-	auto last_write_time = std::filesystem::last_write_time(it);	
-	// auto system_time = std::chrono::clock_cast<std::chrono::system_clock>(last_write_time);
-	// auto cformat_time = std::chrono::system_clock::to_time_t(system_time);
-
-	//
-	// std::time_t cformat_time = decltype(last_write_time)::clock::to_time_t(last_write_time);
-    // char* formatted_time = std::ctime(&cformat_time);
-    // formatted_time[std::strlen(formatted_time) - 1] = '\0';
-		index_listing << "\t" << fileTimeToString(last_write_time);
+		index_listing << "\t" << _fileTimeToString(std::filesystem::last_write_time(it));
 		if (!std::filesystem::is_directory(it))
 			index_listing << "\t" << std::filesystem::file_size(it);
 		else

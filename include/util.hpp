@@ -10,6 +10,7 @@ class WebServUtil {
     static const std::map<int, std::string> &_getStatusCodes();
     static const std::unordered_map<std::string, std::string> _getFileTypes(void);
     static bool _compareDirectoryContents(const std::filesystem::path &one, const std::filesystem::path &two);
+	static	std::string _fileTimeToString(const std::filesystem::file_time_type& fileTime);
 
    public:
     static std::string codeDescription(int httpCode);

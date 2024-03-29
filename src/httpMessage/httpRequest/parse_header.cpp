@@ -123,6 +123,8 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
             _location = &location;
 
             // resolve path if it is a directory
+			if (!std::filesystem::exists(path))
+				throw(httpRequestException(404, "File not found"));
             if (std::filesystem::is_directory(path)) {
                 infoLog << "Path is a directory, request: [" << _httpAdress << "] ref: [" << _location->ref << "]" << CPPLog::end;
 				if (path[path.size() - 1] != '/') // if the path does not end with a slash, redirect
@@ -142,6 +144,7 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
 				infoLog << "No index files found, checking if autoindex is on" << CPPLog::end;
 				if (_server->autoIndex.on) {
 					infoLog << "Autoindex is on" << CPPLog::end;
+					_returnAutoIndex = true;
 					_path = path;
 					return;
 				}

@@ -93,7 +93,7 @@ void Client::_returnHttpErrorToClient(int code, std::string message) {
 	this->_response.deleteHeader("Content-Type");
 	if (code == 301)  // if the """error""" is a redirect, set the location header
 		_response.setHeader("Location", message);
-    else if (_request.getServer() && !(error_page = _request.getServer()->getErrorPage(code)).empty()) {
+    if (_request.getServer() && !(error_page = _request.getServer()->getErrorPage(code)).empty()) {
 		this->_response.setHeader("Content-Type", "text/html; charset=UTF-8");
         clientLogI << "Error page found: " << error_path << CPPLog::end;
         // root path for server is to be prependended to the error path

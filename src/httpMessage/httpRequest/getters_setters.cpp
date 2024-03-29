@@ -44,6 +44,10 @@ bool httpRequest::headerComplete(void) const {
     return _headerParseComplete;
 }
 
+bool httpRequest::returnAutoIndex(void) const {
+    return _returnAutoIndex;
+}
+
 /**
  * @brief Sets the server for the request.
  *

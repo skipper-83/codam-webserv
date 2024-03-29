@@ -143,10 +143,10 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
 
         // this should be done in the FileHandler class
         // ****************************************************** //
-        if (!std::filesystem::exists(this->_request.getPath())) {
-            _returnHttpErrorToClient(404);
-        }
-        if (std::filesystem::is_directory(this->_request.getPath())) {
+        // if (!std::filesystem::exists(this->_request.getPath())) {
+        //     _returnHttpErrorToClient(404);
+        // }
+        if (_request.returnAutoIndex()) {
             _response.setFixedSizeBody(WebServUtil::directoryIndexList(this->_request.getPath(), _request.getAdress()));
 
             _response.setHeader("Content-Type", "text/html; charset=UTF-8");

@@ -13,8 +13,9 @@ InFileHandler::InFileHandler(std::string path, std::size_t bufferSize) : _buffer
     try {
         _fd = AsyncInFile::create(path, std::bind(&InFileHandler::_readCb, this, std::placeholders::_1));
     } catch (const std::exception& e) {
-        logF << "InFileHandler::InFileHandler(std::string, std::size_t) failed: " << e.what();
+        logF << "InFileHandler::InFileHandler(std::string, std::size_t) failed: " << e.what() << " errno: " << errno;
         _bad = true;
+		_badCode = errno;
     }
 }
 
@@ -92,4 +93,8 @@ bool InFileHandler::eof() const {
 bool InFileHandler::bad() const {
     logD << "InFileHandler::bad() called";
     return _bad;
+}
+
+int InFileHandler::badCode() const {
+    return _badCode;
 }

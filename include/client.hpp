@@ -63,12 +63,12 @@ class Client {
 
     std::string _clientReadBuffer;
     std::string _clientWriteBuffer;
-    std::string _localReadBuffer;
-    std::string _localWriteBuffer;
+    // std::string _localReadBuffer;
+    // std::string _localWriteBuffer;
     std::chrono::time_point<std::chrono::steady_clock> _lastActivityTime = std::chrono::steady_clock::now();
 
     std::function<void(std::shared_ptr<AsyncFD>)> _addLocalFdToPollArray;
     void _registerCallbacks();
     void _returnHttpErrorToClient(int code, std::string message = "");
-    std::string _resolvePath();
+    // std::string _resolvePath();
 };

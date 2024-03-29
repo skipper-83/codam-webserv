@@ -89,12 +89,12 @@ void Client::_returnHttpErrorToClient(int code, std::string message) {
     // if custom error page is set, use it
 	this->_clientWriteBuffer.clear();
     this->_clientReadBuffer.clear();
-	this->_response.setCode(code);
 	this->_response.deleteHeader("Content-Type");
+	this->_response.setCode(code);
+	clientLogI << _response.getFixedBodyResponseAsString() << CPPLog::end;
 	if (code == 301)  // if the """error""" is a redirect, set the location header
 		_response.setHeader("Location", message);
     if (_request.getServer() && !(error_page = _request.getServer()->getErrorPage(code)).empty()) {
-		this->_response.setHeader("Content-Type", "text/html; charset=UTF-8");
         clientLogI << "Error page found: " << error_path << CPPLog::end;
         // root path for server is to be prependended to the error path
         for (auto& it : _request.getServer()->locations) {
@@ -112,7 +112,10 @@ void Client::_returnHttpErrorToClient(int code, std::string message) {
             _addLocalFdToPollArray(_inputFile->operator std::shared_ptr<AsyncFD>());
         }
 		else
+		{
+			this->_clientWriteBuffer = this->_response.getFixedBodyResponseAsString();
 			_inputFile = nullptr;
+		}
     } else {
         this->_clientWriteBuffer = this->_response.getFixedBodyResponseAsString();
     }

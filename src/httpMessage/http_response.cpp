@@ -47,11 +47,11 @@ void httpResponse::_setErrorBody() {
     infoLog << "Setting up error page for " << this->_responseCode << CPPLog::end;
 	// check if the server has a custom error page for this response code, this is slightly ugly as the calling
 	// function already knows this information, we could omit this and then the body will be set for no reason
-    if (this->_precedingRequest != nullptr && this->_precedingRequest->getServer() != nullptr) {
-        if(!this->_precedingRequest->getServer()->getErrorPage(this->_responseCode).empty())
-			return;
-    }
-    if (error_page.empty()) {
+    // if (this->_precedingRequest != nullptr && this->_precedingRequest->getServer() != nullptr) {
+    //     if(!this->_precedingRequest->getServer()->getErrorPage(this->_responseCode).empty())
+	// 		return;
+    // }
+    // if (error_page.empty()) {
         error_page.append("<html><head><title>")
             .append(std::to_string(this->_responseCode))
             .append(" " + this->_responseCodeDescription)
@@ -61,7 +61,7 @@ void httpResponse::_setErrorBody() {
             .append("</h1></center><hr><center>")
             .append(DEFAULT_SERVER_NAME)
             .append("</center>");
-    }
+    // }
     setHeader("Content-Type", "text/html; charset=UTF-8");
     this->setFixedSizeBody(error_page);
     infoLog << "Error page set to: " << error_page << CPPLog::end;

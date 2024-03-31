@@ -8,50 +8,8 @@ static CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "cl
 static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "client");
 
 void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
-    // _inputFile->read();
-    if (_inputFile) {
-        clientLogI << "I have an inputfile" << CPPLog::end;
-
-		if (_inputFile->bad()) {
-			clientLogE << "file is bad" << CPPLog::end;
-			if (_inputFile->badCode() == EACCES)
-			{
-				_inputFile = nullptr;
-				_returnHttpErrorToClient(403);
-			}
-			else
-				_returnHttpErrorToClient(500);
-			return;
-		}
-
-		if (_inputFile->readBufferFull()) 
-		{
-			clientLogI << "file buffer full" << CPPLog::end;
-			_response.setCode(200);
-			if (!_response.isChunked())
-				_clientWriteBuffer = _response.getHeadersForChunkedResponse();
-			_clientWriteBuffer += _response.transformLineForChunkedResponse(_inputFile->read());
-			clientLogI << "file buffer: " << _clientWriteBuffer << "size:" << _clientWriteBuffer.size() << CPPLog::end;
-		}
-
-        if (_inputFile->eof()) {
-            clientLogI << "file is at eof" << CPPLog::end;
-            std::string tempFileBuffer = _inputFile->read();
-			_inputFile = nullptr;
-            clientLogI << "file buffer: " << tempFileBuffer << "size:" << tempFileBuffer.size() << CPPLog::end;
-			if (!_response.isChunked())
-			{
-				_response.setCode(200);
-				_response.setFixedSizeBody(tempFileBuffer);
-            	_clientWriteBuffer = _response.getFixedBodyResponseAsString();
-			}
-			else
-			{
-				_clientWriteBuffer += _response.transformLineForChunkedResponse(tempFileBuffer);
-				_clientWriteBuffer += _response.transformLineForChunkedResponse("");
-			}
-		}
-	}
+    // read from file (if available)
+    _readFromFile();
 
     // If the buffer is empty, return
     if (_clientWriteBuffer.empty())
@@ -60,16 +18,23 @@ void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
     size_t bytesWrittenInCycle = 0;
     std::string writeCycleBuffer;
 
-    // TODO: action if the response is too large
-    if (_clientWriteBuffer.size() + _bytesWrittenCounter > DEFAULT_MAX_WRITE_SIZE) {
-        clientLogE << "clientWriteCb: response too large: " << _bytesWrittenCounter + _clientWriteBuffer.size() << "fd: " << _socketFd << CPPLog::end;
-        _clientWriteBuffer.clear();
-		if (_response.isChunked())
-			_clientWriteBuffer = _response.transformLineForChunkedResponse("");
-		
-        _returnHttpErrorToClient(413);
-        return;
-    }
+	// ************************************************ //
+	// LOGIC FOR ABORTING RESPONSE IF TOO LARGE			//
+	// OMITTED FOR NOW AS LONGER RESPONSES ARE CHUNKED	//
+	// ************************************************ //
+
+    // if (_clientWriteBuffer.size() + _bytesWrittenCounter > DEFAULT_MAX_WRITE_SIZE) {  // not sure if we need this, as longer responses are chunked
+    //     clientLogE << "clientWriteCb: response too large: " << _bytesWrittenCounter + _clientWriteBuffer.size() << "fd: " << _socketFd << CPPLog::end;
+    //     _clientWriteBuffer.clear();
+    //     if (_response.isChunked()) {  // if the response is chunked, we need to send an empty chunk to signal the end of the response
+    //         _clientWriteBuffer = "\r\n" + _response.transformLineForChunkedResponse("");
+    //         _inputFile = nullptr;
+    //     } else
+    //         _returnHttpErrorToClient(413);
+    //     return;
+    // }
+
+	// ************************************************ //
 
     // If the buffer is too large, write only a part of it
     if (_clientWriteBuffer.size() > DEFAULT_WRITE_SIZE) {
@@ -96,7 +61,6 @@ void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
     // If the response is complete, clear the response and the write counter
     if (_clientWriteBuffer.empty() && this->_response.isBodyComplete()) {
         clientLogI << "respnse Connection type: " << this->_request.getHeader("Connection") << CPPLog::end;
-
         if (this->_request.getHeader("Connection") == "close") {
             _socketFd->close();
             clientLogI << "Closing connection by request" << CPPLog::end;
@@ -127,8 +91,8 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
     // Try to parse the buffer as http request. If request is incomplete, parse will leave the buffer in place. On error, it will reply with a http
     // error response
     try {
-        this->_request.parse(this->_clientReadBuffer, this->_port);
         changeState(ClientState::READ_REQUEST);
+        this->_request.parse(this->_clientReadBuffer, this->_port);
     } catch (const httpRequest::httpRequestException& e) {
         this->_returnHttpErrorToClient(e.errorNo(), e.what());
     }
@@ -141,20 +105,13 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
     if (this->_request.headerComplete()) {
         changeState(ClientState::READ_BODY);
 
-        // this should be done in the FileHandler class
-        // ****************************************************** //
-        // if (!std::filesystem::exists(this->_request.getPath())) {
-        //     _returnHttpErrorToClient(404);
-        // }
         if (_request.returnAutoIndex()) {
             _response.setFixedSizeBody(WebServUtil::directoryIndexList(this->_request.getPath(), _request.getAdress()));
-
             _response.setHeader("Content-Type", "text/html; charset=UTF-8");
             _response.setCode(200);
             _clientWriteBuffer = _response.getFixedBodyResponseAsString();
             _request.clear();
         }
-        // ****************************************************** //
     }
 
     // Request is complete, handle it
@@ -165,9 +122,8 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
         clientLogI << "request address: " << this->_request.getAdress() << CPPLog::end;
 
         clientLogI << "making Infilehandler" << CPPLog::end;
-        _inputFile = std::make_shared<InFileHandler>(this->_request.getPath(), 1024);
-		_addLocalFdToPollArray(_inputFile->operator std::shared_ptr<AsyncFD>());
-		_response.setHeader("Content-Type", WebServUtil::getContentTypeFromPath(_request.getPath()));
+        _openFileAndAddToPollArray(this->_request.getPath());
+        _response.setHeader("Content-Type", WebServUtil::getContentTypeFromPath(_request.getPath()));
         clientLogI << "body complete part done" << CPPLog::end;
     }
 }

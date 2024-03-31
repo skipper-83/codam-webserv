@@ -29,7 +29,7 @@ class httpRequest : public httpMessage {
 	void _setVars(void);
 
     std::string _httpAdress;
-    std::string _httpRequestType;
+    std::string _httpMethod;
     size_t _contentLength = 0;
     bool _headerParseComplete = false;
     bool _bodyComplete = false;

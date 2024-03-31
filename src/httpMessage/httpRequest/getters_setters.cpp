@@ -15,7 +15,7 @@ std::string httpRequest::getAdress(void) const {
  * @return std::string
  */
 std::string httpRequest::getRequestType(void) const {
-    return this->_httpRequestType;
+    return this->_httpMethod;
 }
 
 std::string httpRequest::getErrorPage(int errorCode) const {

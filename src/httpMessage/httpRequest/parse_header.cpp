@@ -28,7 +28,7 @@ void httpRequest::_parseHttpStartLine(std::istream &fs) {
         throw httpRequestException(400, "Invalid HTTP start line");
     request_type_pos = line.find(' ');
     address_pos = line.find(' ', request_type_pos + 1);
-    this->_httpRequestType = line.substr(0, request_type_pos);
+    this->_httpMethod = line.substr(0, request_type_pos);
     this->_httpAdress = line.substr(request_type_pos + 1, address_pos - request_type_pos - 1);
     this->_httpProtocol = line.substr(address_pos + 1, request_type_pos - address_pos - 1);
     infoLog << "Start Line parsed" << CPPLog::end;
@@ -123,7 +123,7 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
             _location = &location;
 
             // resolve path if it is a directory
-			if (!std::filesystem::exists(path))
+			if (!std::filesystem::exists(path) && !(_httpMethod == "PUT"))
 				throw(httpRequestException(404, "File not found"));
             if (std::filesystem::is_directory(path)) {
                 infoLog << "Path is a directory, request: [" << _httpAdress << "] ref: [" << _location->ref << "]" << CPPLog::end;

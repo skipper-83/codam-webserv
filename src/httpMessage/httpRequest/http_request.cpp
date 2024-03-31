@@ -50,7 +50,7 @@ httpRequest &httpRequest::operator=(const httpRequest &rhs) {
 
     // static_cast<httpMessage &>(*this) = rhs;
     httpMessageAssign(rhs);
-    this->_httpRequestType = rhs._httpRequestType;
+    this->_httpMethod = rhs._httpMethod;
     this->_httpAdress = rhs._httpAdress;
     this->_headerParseComplete = rhs._headerParseComplete;
     this->_bodyComplete = rhs._bodyComplete;

@@ -49,8 +49,6 @@ Client& Client::operator=(const Client& rhs) {
     _port = rhs._port;
     _request = rhs._request;
     _response = rhs._response;
-    // _localReadBuffer = rhs._localReadBuffer;
-    // _localWriteBuffer = rhs._localWriteBuffer;
     _bytesWrittenCounter = rhs._bytesWrittenCounter;
     _state = rhs._state;
     _clientReadBuffer = rhs._clientReadBuffer;
@@ -82,46 +80,3 @@ std::chrono::time_point<std::chrono::steady_clock> Client::getLastActivityTime()
     return _lastActivityTime;
 }
 
-// Write an error response to the client
-void Client::_returnHttpErrorToClient(int code, std::string message) {
-    std::string error_path, error_page;
-
-    // if custom error page is set, use it
-	this->_clientWriteBuffer.clear();
-    this->_clientReadBuffer.clear();
-	this->_response.deleteHeader("Content-Type");
-	this->_response.setCode(code);
-	clientLogI << _response.getFixedBodyResponseAsString() << CPPLog::end;
-	if (code == 301)  // if the """error""" is a redirect, set the location header
-		_response.setHeader("Location", message);
-    if (_request.getServer() && !(error_page = _request.getServer()->getErrorPage(code)).empty()) {
-        clientLogI << "Error page found: " << error_path << CPPLog::end;
-        // root path for server is to be prependended to the error path
-        for (auto& it : _request.getServer()->locations) {
-            if (it.ref == "/") {
-                error_path = it.root + error_page;
-                break;
-            }
-        }
-		clientLogI << "Error page found: " << error_path << CPPLog::end;
-        if (error_path.empty())
-            error_path = DEFAULT_ROOT + error_page;
-        if (std::filesystem::exists(error_path)) {
-			clientLogI << "Opening error page: " << error_path << CPPLog::end;
-            _inputFile = std::make_shared<InFileHandler>(error_path, 1024);
-            _addLocalFdToPollArray(_inputFile->operator std::shared_ptr<AsyncFD>());
-        }
-		else
-		{
-			this->_clientWriteBuffer = this->_response.getFixedBodyResponseAsString();
-			_inputFile = nullptr;
-		}
-    } else {
-        this->_clientWriteBuffer = this->_response.getFixedBodyResponseAsString();
-    }
-    this->_request.clear();
-    changeState(ClientState::ERROR);
-	clientLogI << "Buffer from error now: " << this->_clientWriteBuffer << CPPLog::end;
-	// this->_inputFile = nullptr;
-    clientLogW << "HTTP error " << code << ": " << WebServUtil::codeDescription(code);
-}

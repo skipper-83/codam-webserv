@@ -21,6 +21,8 @@ set (SRCS
 	src/file_handler.cpp
 	src/client/client.cpp
 	src/client/client_callbacks.cpp
+	src/client/client_util.cpp
+	src/client/client_file_handling.cpp
 	src/config/config_extractors.cpp
 	src/config/config_insertions.cpp
 	src/config/config.cpp

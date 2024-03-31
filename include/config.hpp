@@ -64,18 +64,25 @@ struct ErrorPage {
     std::string page;
 };
 
+struct Cgi {
+    std::vector<std::string> extensions;
+    std::string executor;
+};
+
 class ServerConfig {
    public:
     ServerNames names;
     AllowedMethods allowed;
-    std::vector<ListenPort> ports;
-    std::vector<Location> locations;
-    std::vector<ErrorPage> errorPages;
+    std::vector<ListenPort> ports = {};
+    std::vector<Location> locations = {};
+    std::vector<ErrorPage> errorPages = {};
+    std::vector<Cgi> cgis = {};
     AutoIndex autoIndex;
     BodySize clientMaxBodySize;
     int rank;  // deprecated, used for sorting, still used in tests
 
     std::string getErrorPage(int errorCode) const;
+	std::string getCgiExectorFromPath(std::string path) const;
 
    private:
     void sortLocations(void);
@@ -89,13 +96,11 @@ class MainConfig {
     AllowedMethods _allowed;
     AutoIndex _autoIndex;
     BodySize clientMaxBodySize;
-    std::unordered_map<uint16_t, ServerConfig*> _portsToServers;  // todo: change to multimap to allow for multiple servers on same port
-    std::map<std::pair<uint16_t, std::string>, ServerConfig*>
-        _portsNamesToServers;  // todo: change to multimap to allow for multiple servers on same port
+    std::unordered_map<uint16_t, ServerConfig*> _portsToServers;
+    std::map<std::pair<uint16_t, std::string>, ServerConfig*> _portsNamesToServers;
     std::vector<uint16_t> _ports;
     void _overrideDefaults(void);
     void _setServerNameAndPortArrays(void);
-    // auto _timeOutDuration;
 
    public:
     const std::chrono::seconds _timeOutDuration = std::chrono::seconds(DEFAULT_TIMEOUT_SECONDS);
@@ -112,6 +117,7 @@ class MainConfig {
     friend std::istream& operator>>(std::istream& is, Location& rhs);
     friend std::istream& operator>>(std::istream& is, BodySize& rhs);
     friend std::istream& operator>>(std::istream& is, ListenPort& rhs);
+    friend std::istream& operator>>(std::istream& is, Cgi& rhs);
     friend std::istream& operator>>(std::istream& is, ServerConfig& rhs);
     friend std::istream& operator>>(std::istream& is, MainConfig& rhs);
 

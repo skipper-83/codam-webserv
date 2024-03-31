@@ -276,6 +276,39 @@ std::istream& operator>>(std::istream& is, ListenPort& rhs) {
     return is;
 }
 
+std::istream & operator>>(std::istream & is, Cgi & rhs)
+{
+// TODO: insert return statement here
+	std::string line, word;
+	std::stringstream lineStream;
+
+	checkTerminator(is, line, "cgi");
+	lineStream.str(line);
+	while (lineStream >> word)
+	{
+		if (!lineStream)
+			throw(std::invalid_argument("Unexpected input for cgi"));
+		if (word.find(';') != std::string::npos)
+		{
+			if (word.length() > 1)
+				word = word.substr(0, word.length() - 1);
+		}
+		if (word[0] == '.'	&& word[1] != '/')
+			rhs.extensions.push_back(word);
+		else
+		{
+			if (rhs.extensions.size() < 1)
+				throw(std::invalid_argument("No extensions given for cgi"));
+			if (word.find(';') != std::string::npos)
+				word = word.substr(0, word.length() - 1);
+			rhs.executor = word;
+			break;
+		}
+	}
+	return is;
+
+}
+
 /**
  * @brief Extractor for Errorpage
  *
@@ -337,7 +370,12 @@ static void setServerSubparsers(SubParsers& subParsers, ServerConfig& rhs) {
                        ErrorPage new_errorPage;
                        is >> new_errorPage;
                        rhs.errorPages.push_back(new_errorPage);
-                   }}};
+                   }},
+				   {"cgi", [&rhs](std::istream& is) {
+					Cgi new_cgi;
+					is >> new_cgi;
+					rhs.cgis.push_back(new_cgi);
+				   }}};
 }
 
 /**

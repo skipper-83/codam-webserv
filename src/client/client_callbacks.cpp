@@ -105,25 +105,41 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
     if (this->_request.headerComplete()) {
         changeState(ClientState::READ_BODY);
 
+    }
+
+    // Request is complete, handle it
+    if (this->_request.bodyComplete()) {
+        changeState(ClientState::BUILDING_RESPONSE);
+		std::string cgiExecutor;
+
+		// If the request is for a CGI script, execute the script
+		if ((cgiExecutor = _request.getServer()->getCgiExectorFromPath(_request.getPath())).empty() == false){
+			clientLogI << "CGI request: " << _request.getPath() << "; executor: " << cgiExecutor << CPPLog::end;
+			_response.setFixedSizeBody("CGI not implemented yet, this script would be executed by: " + cgiExecutor);
+			_response.setHeader("Content-Type", "text/html; charset=UTF-8");
+			_response.setCode(200);
+			_clientWriteBuffer = _response.getFixedBodyResponseAsString();
+			_request.clear();
+			return ;
+		}
+
+		// If the request is for a directory, return the directory index
         if (_request.returnAutoIndex()) {
             _response.setFixedSizeBody(WebServUtil::directoryIndexList(this->_request.getPath(), _request.getAdress()));
             _response.setHeader("Content-Type", "text/html; charset=UTF-8");
             _response.setCode(200);
             _clientWriteBuffer = _response.getFixedBodyResponseAsString();
             _request.clear();
+			return ;
         }
-    }
 
-    // Request is complete, handle it
-    if (this->_request.bodyComplete()) {
-        changeState(ClientState::BUILDING_RESPONSE);
-        clientLogI << "request body complete" << CPPLog::end;
-        clientLogI << "Body: [" << this->_request.getBody() << "] " << CPPLog::end;
-        clientLogI << "request address: " << this->_request.getAdress() << CPPLog::end;
+		// ************************************************ //
+		// HERE SWICTH BLOCK FOR STATIC FILE SERVING		//
+		// WITH DIFFERENT LOGIC FOR EACHT METHOD			//
+		// ************************************************ //
 
-        clientLogI << "making Infilehandler" << CPPLog::end;
+		// If the request is for a file, open the file and add it to the poll array
         _openFileAndAddToPollArray(this->_request.getPath());
         _response.setHeader("Content-Type", WebServUtil::getContentTypeFromPath(_request.getPath()));
-        clientLogI << "body complete part done" << CPPLog::end;
     }
 }

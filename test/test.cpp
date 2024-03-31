@@ -269,6 +269,17 @@ TEST_F(configTest, config_happy)
 	EXPECT_EQ(config.getServer(8080, "blabla")->rank, 0);
 }
 
+TEST_F(configTest, cgi)
+{
+
+	config_input >> config;
+	EXPECT_EQ(config.getServerFromPortAndName(8080, "*.j-projects.nl")->cgis.at(0).executor, "/usr/bin/php-cgi");
+	EXPECT_EQ(config.getServerFromPortAndName(8080, "*.j-projects.nl")->cgis.at(1).executor, "/usr/bin/python3");
+	EXPECT_EQ(config.getServerFromPortAndName(8080, "*.j-projects.nl")->cgis.at(0).extensions.at(0), ".php");
+	EXPECT_EQ(config.getServerFromPortAndName(8080, "*.j-projects.nl")->cgis.at(0).extensions.at(1), ".phtml");
+	EXPECT_EQ(config.getServerFromPortAndName(8080, "*.j-projects.nl")->cgis.at(1).extensions.at(0), ".py");
+}
+
 TEST_F(configTestStub, test_defaults)
 {
 	const ServerConfig* server;

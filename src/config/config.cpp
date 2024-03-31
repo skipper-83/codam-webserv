@@ -99,6 +99,20 @@ std::string ServerConfig::getErrorPage(int errorCode) const {
     return std::string();
 }
 
+std::string ServerConfig::getCgiExectorFromPath(std::string path) const {
+	size_t extensionPos = path.find_last_of('.');
+	if (this->cgis.empty() || extensionPos == std::string::npos)
+		return std::string();
+	std::string extension = path.substr(extensionPos);
+	for (auto it : this->cgis) {
+		for (size_t i = 0; i < it.extensions.size(); ++i) {
+			if (path.find(it.extensions[i]) != std::string::npos)
+				return it.executor;
+		}
+	}
+    return std::string();
+}
+
 void ServerConfig::sortLocations(void) {
 	std::sort(this->locations.begin(), this->locations.end(), [](const Location &a, const Location &b) {
 		return a.ref.size() > b.ref.size();

@@ -76,6 +76,8 @@ server {
 		}
 		autoindex on;
 	client_max_body_size 0.91g;
+	cgi .php .phtml /usr/bin/php-cgi;
+	cgi .py /usr/bin/python3;
 }
 
 

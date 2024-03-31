@@ -6,10 +6,10 @@ static CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "cl
 static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "client");
 
 void Client::_readFromFile() {
-    clientLogI << "I have an inputfile" << CPPLog::end;
 	if (!_inputFile)
 		return;
 
+    clientLogI << "I have an inputfile" << CPPLog::end;
     if (_inputFile->bad()) {
         clientLogE << "file is bad" << CPPLog::end;
         if (_inputFile->badCode() == EACCES) {

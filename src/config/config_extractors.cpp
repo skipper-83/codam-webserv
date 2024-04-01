@@ -43,6 +43,7 @@ static void checkTerminator(std::istream& is, std::string& line, std::string ref
 std::istream& operator>>(std::istream& is, AllowedMethods& rhs) {
     std::string line, word;
     std::stringstream lineStream;
+	WebServUtil::HttpMethod method;
 
     checkTerminator(is, line, "allowed_methods");
     lineStream.str(line);
@@ -55,9 +56,10 @@ std::istream& operator>>(std::istream& is, AllowedMethods& rhs) {
             if (word.length() > 1)
                 word = word.substr(0, word.length() - 1);
         }
-        if (rhs.methods.find(word) == rhs.methods.end())
+		method = WebServUtil::stringToHttpMethod(word);
+		if (method == WebServUtil::HttpMethod::UNKNOWN)
             throw(std::invalid_argument("Invalid method in allowed_methods: [" + word + "]"));
-        rhs.methods[word] = true;
+        rhs.methods[method] = true;
         infoLog << word << " method allowed";
     }
     rhs.defaultValue = false;

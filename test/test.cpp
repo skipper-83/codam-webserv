@@ -101,7 +101,7 @@ TEST_F(httpRequestTest, get_adress) {
 }
 
 TEST_F(httpRequestTest, get_request_type) {
-    EXPECT_EQ(req.getRequestType(), "GET");
+    EXPECT_EQ(WebServUtil::httpMethodToString(req.getRequestType()), "GET");
 }
 
 TEST_F(httpRequestTest, get_protocol) {

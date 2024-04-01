@@ -29,7 +29,7 @@ class httpRequest : public httpMessage {
 	void _setVars(void);
 
     std::string _httpAdress;
-    std::string _httpMethod;
+    WebServUtil::HttpMethod _httpMethod;
     size_t _contentLength = 0;
     bool _headerParseComplete = false;
     bool _bodyComplete = false;
@@ -53,7 +53,7 @@ class httpRequest : public httpMessage {
 
    // GETTERS
     std::string getAdress(void) const;
-    std::string getRequestType(void) const;
+    WebServUtil::HttpMethod getRequestType(void) const;
     std::string getErrorPage(int errorCode) const;
     bool bodyComplete(void) const;
     bool headerComplete(void) const;

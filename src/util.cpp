@@ -94,6 +94,43 @@ std::string WebServUtil::directoryIndexList(const std::string& path, const std::
     return index_listing.str();
 }
 
+WebServUtil::HttpMethod WebServUtil::stringToHttpMethod(std::string method) {
+	static const std::unordered_map<std::string, HttpMethod> methods = {
+		{"GET", HttpMethod::GET},
+		{"POST", HttpMethod::POST},
+		{"HEAD", HttpMethod::HEAD},
+		{"PUT", HttpMethod::PUT},
+		{"DELETE", HttpMethod::DELETE},
+		{"CONNECT", HttpMethod::CONNECT},
+		{"OPTIONS", HttpMethod::OPTIONS},
+		{"TRACE", HttpMethod::TRACE},
+		{"PATCH", HttpMethod::PATCH},
+	};
+
+	auto it = methods.find(method);
+	if (it != methods.end())
+		return it->second;
+	return HttpMethod::UNKNOWN;
+}
+
+std::string WebServUtil::httpMethodToString(HttpMethod method) {
+	static const std::unordered_map<HttpMethod, std::string> methods = {
+		{HttpMethod::GET, "GET"},
+		{HttpMethod::POST, "POST"},
+		{HttpMethod::HEAD, "HEAD"},
+		{HttpMethod::PUT, "PUT"},
+		{HttpMethod::DELETE, "DELETE"},
+		{HttpMethod::CONNECT, "CONNECT"},
+		{HttpMethod::OPTIONS, "OPTIONS"},
+		{HttpMethod::TRACE, "TRACE"},
+		{HttpMethod::PATCH, "PATCH"},
+	};
+	auto it = methods.find(method);
+	if (it != methods.end())
+		return it->second;
+	return "";
+}
+
 std::string WebServUtil::timeStamp(void) {
     std::time_t currentTime = std::time(nullptr);
     std::tm* gmtTime = std::gmtime(&currentTime);
@@ -102,9 +139,8 @@ std::string WebServUtil::timeStamp(void) {
     return buffer;
 }
 
-bool WebServUtil::isRequestWithoutBody(std::string requestType) {
-    if (requestType == "GET" || requestType == "HEAD" || requestType == "DELETE" || requestType == "OPTIONS" || requestType == "TRACE" ||
-        requestType == "CONNECT")
+bool WebServUtil::isRequestWithoutBody(HttpMethod requestType) {
+	if (requestType == HttpMethod::GET || requestType == HttpMethod::HEAD || requestType == HttpMethod::DELETE || requestType == HttpMethod::OPTIONS || requestType == HttpMethod::TRACE || requestType == HttpMethod::CONNECT)
         return true;
     return false;
 }

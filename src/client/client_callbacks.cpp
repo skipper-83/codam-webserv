@@ -135,8 +135,10 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
 
 		// ************************************************ //
 		// HERE SWICTH BLOCK FOR STATIC FILE SERVING		//
-		// WITH DIFFERENT LOGIC FOR EACHT METHOD			//
+		// WITH DIFFERENT LOGIC FOR EACH METHOD				//
 		// ************************************************ //
+
+		
 
 		// If the request is for a file, open the file and add it to the poll array
         _openFileAndAddToPollArray(this->_request.getPath());

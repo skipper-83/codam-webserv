@@ -17,8 +17,6 @@ class InFileHandler {
 
     operator std::shared_ptr<AsyncFD>() const;
 
-	std::shared_ptr<AsyncInFile> getFD() const;
-
     std::string read(std::size_t size = std::numeric_limits<std::size_t>::max());
     bool readBufferEmpty() const;
     std::size_t readBufferLength() const;

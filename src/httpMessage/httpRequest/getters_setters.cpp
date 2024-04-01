@@ -14,7 +14,7 @@ std::string httpRequest::getAdress(void) const {
  *
  * @return std::string
  */
-WebServUtil::HttpMethod httpRequest::getRequestType(void) const {
+WebServUtil::HttpMethod httpRequest::getMethod(void) const {
     return this->_httpMethod;
 }
 

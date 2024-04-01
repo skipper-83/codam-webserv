@@ -18,15 +18,15 @@ void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
     size_t bytesWrittenInCycle = 0;
     std::string writeCycleBuffer;
 
-	// ************************************************ //
-	// LOGIC FOR ABORTING RESPONSE IF TOO LARGE			//
-	// OMITTED FOR NOW AS LONGER RESPONSES ARE CHUNKED	//
-	// ************************************************ //
+    // ************************************************ //
+    // LOGIC FOR ABORTING RESPONSE IF TOO LARGE			//
+    // OMITTED FOR NOW AS LONGER RESPONSES ARE CHUNKED	//
+    // ************************************************ //
 
     // if (_clientWriteBuffer.size() + _bytesWrittenCounter > DEFAULT_MAX_WRITE_SIZE) {  // not sure if we need this, as longer responses are chunked
-    //     clientLogE << "clientWriteCb: response too large: " << _bytesWrittenCounter + _clientWriteBuffer.size() << "fd: " << _socketFd << CPPLog::end;
-    //     _clientWriteBuffer.clear();
-    //     if (_response.isChunked()) {  // if the response is chunked, we need to send an empty chunk to signal the end of the response
+    //     clientLogE << "clientWriteCb: response too large: " << _bytesWrittenCounter + _clientWriteBuffer.size() << "fd: " << _socketFd <<
+    //     CPPLog::end; _clientWriteBuffer.clear(); if (_response.isChunked()) {  // if the response is chunked, we need to send an empty chunk to
+    //     signal the end of the response
     //         _clientWriteBuffer = "\r\n" + _response.transformLineForChunkedResponse("");
     //         _inputFile = nullptr;
     //     } else
@@ -34,7 +34,7 @@ void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
     //     return;
     // }
 
-	// ************************************************ //
+    // ************************************************ //
 
     // If the buffer is too large, write only a part of it
     if (_clientWriteBuffer.size() > DEFAULT_WRITE_SIZE) {
@@ -67,6 +67,7 @@ void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
         }
         this->_response.clear();
         this->_request.clear();
+		_inputFile = nullptr;
         _bytesWrittenCounter = 0;
         clientLogI << "clientWriteCb: client ready for input" << CPPLog::end;
         changeState(ClientState::READY_FOR_INPUT);
@@ -104,44 +105,67 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
 
     if (this->_request.headerComplete()) {
         changeState(ClientState::READ_BODY);
-
     }
 
     // Request is complete, handle it
     if (this->_request.bodyComplete()) {
         changeState(ClientState::BUILDING_RESPONSE);
-		std::string cgiExecutor;
+        std::string cgiExecutor;
 
-		// If the request is for a CGI script, execute the script
-		if ((cgiExecutor = _request.getServer()->getCgiExectorFromPath(_request.getPath())).empty() == false){
-			clientLogI << "CGI request: " << _request.getPath() << "; executor: " << cgiExecutor << CPPLog::end;
-			_response.setFixedSizeBody("CGI not implemented yet, this script would be executed by: " + cgiExecutor);
-			_response.setHeader("Content-Type", "text/html; charset=UTF-8");
-			_response.setCode(200);
-			_clientWriteBuffer = _response.getFixedBodyResponseAsString();
-			_request.clear();
-			return ;
-		}
+        // If the request is for a CGI script, execute the script
+        if ((cgiExecutor = _request.getServer()->getCgiExectorFromPath(_request.getPath())).empty() == false) {
+            clientLogI << "CGI request: " << _request.getPath() << "; executor: " << cgiExecutor << CPPLog::end;
+            _response.setFixedSizeBody("CGI not implemented yet, this script would be executed by: " + cgiExecutor);
+            _response.setHeader("Content-Type", "text/html; charset=UTF-8");
+            _response.setCode(200);
+            _clientWriteBuffer = _response.getFixedBodyResponseAsString();
+            _request.clear();
+            return;
+        }
 
-		// If the request is for a directory, return the directory index
+        // If the request is for a directory, return the directory index
         if (_request.returnAutoIndex()) {
             _response.setFixedSizeBody(WebServUtil::directoryIndexList(this->_request.getPath(), _request.getAdress()));
             _response.setHeader("Content-Type", "text/html; charset=UTF-8");
             _response.setCode(200);
             _clientWriteBuffer = _response.getFixedBodyResponseAsString();
             _request.clear();
-			return ;
+            return;
         }
 
-		// ************************************************ //
-		// HERE SWICTH BLOCK FOR STATIC FILE SERVING		//
-		// WITH DIFFERENT LOGIC FOR EACH METHOD				//
-		// ************************************************ //
+        // ************************************************ //
+        // HERE SWICTH BLOCK FOR STATIC FILE SERVING		//
+        // WITH DIFFERENT LOGIC FOR EACH METHOD				//
+        // ************************************************ //
+        switch (this->_request.getMethod()) {
+            case WebServUtil::HttpMethod::GET:
+            case WebServUtil::HttpMethod::POST:
+            case WebServUtil::HttpMethod::HEAD: {
+                // If the request is for a file, open the file and add it to the poll array
+                _openFileAndAddToPollArray(this->_request.getPath());
+                _response.setHeader("Content-Type", WebServUtil::getContentTypeFromPath(_request.getPath()));
+                break;
+            }
+			case WebServUtil::HttpMethod::PUT: {
+				// PUT logic here
+				break;
+			}
+			case WebServUtil::HttpMethod::DELETE: {
+				// DELETE logic here
+				break;
+			}
+			case WebServUtil::HttpMethod::OPTIONS: {
+				// OPTIONS logic here
+				break;
+			}
+			default: {
+				_returnHttpErrorToClient(405);
+				break;
+			}
+        }
 
-		
-
-		// If the request is for a file, open the file and add it to the poll array
-        _openFileAndAddToPollArray(this->_request.getPath());
-        _response.setHeader("Content-Type", WebServUtil::getContentTypeFromPath(_request.getPath()));
+        // If the request is for a file, open the file and add it to the poll array
+        // _openFileAndAddToPollArray(this->_request.getPath());
+        // _response.setHeader("Content-Type", WebServUtil::getContentTypeFromPath(_request.getPath()));
     }
 }

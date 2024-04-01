@@ -77,7 +77,7 @@ uint16_t httpRequest::getPort(void) const {
 
 std::ostream &operator<<(std::ostream &os, httpRequest const &t) {
     os << "Protocol:" << t.getProtocol() << "\n"
-       << "Type: " << WebServUtil::httpMethodToString(t.getRequestType()) << "\n"
+       << "Type: " << WebServUtil::httpMethodToString(t.getMethod()) << "\n"
        << "Adress: " << t.getAdress() << "\n"
        << t.getHeaderListAsString() << "\n"
        << t.getBody() << "\n";

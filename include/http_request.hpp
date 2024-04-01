@@ -53,7 +53,7 @@ class httpRequest : public httpMessage {
 
    // GETTERS
     std::string getAdress(void) const;
-    WebServUtil::HttpMethod getRequestType(void) const;
+    WebServUtil::HttpMethod getMethod(void) const;
     std::string getErrorPage(int errorCode) const;
     bool bodyComplete(void) const;
     bool headerComplete(void) const;

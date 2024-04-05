@@ -34,7 +34,8 @@ void AsyncPollArray::poll(int timeout) {
     std::vector<std::shared_ptr<AsyncFD>> fds;
     fds.reserve(_weakFDs.size());
     for (const auto& wfd : _weakFDs) {
-        if (auto fd = wfd.lock()) {
+        std::shared_ptr<AsyncFD> fd = wfd.lock();
+        if (fd && fd->isValid() && !fd->_eventCallbacks.empty()) {
             fds.push_back(fd);
         }
     }

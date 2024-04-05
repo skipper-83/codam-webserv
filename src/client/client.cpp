@@ -15,7 +15,7 @@ void Client::_registerCallbacks() {
     _socketFd->registerWriteReadyCb(std::bind(&Client::clientWriteCb, this, std::placeholders::_1));
 }
 
-Client::Client(std::shared_ptr<AsyncSocketClient>& socketFd, std::function<void(std::shared_ptr<AsyncFD>)> addLocalFdToPollArray)
+Client::Client(std::shared_ptr<AsyncSocketClient>& socketFd, const std::function<void(std::weak_ptr<AsyncFD>)> &addLocalFdToPollArray)
     : _response(&this->_request), _socketFd(socketFd), _addLocalFdToPollArray(addLocalFdToPollArray) {
     // addLocalFdToPollArray(_socketFd);
     this->_port = this->_socketFd->getPort();

@@ -21,7 +21,7 @@ enum class ClientState {
 class Client {
    public:
     using SocketClientCallback = AsyncSocketClient::SocketClientCallback;
-    Client(std::shared_ptr<AsyncSocketClient> &socketFd, std::function<void(std::shared_ptr<AsyncFD>)> addLocalFdToPollArray);
+    Client(std::shared_ptr<AsyncSocketClient> &socketFd, const std::function<void(std::weak_ptr<AsyncFD>)> &addLocalFdToPollArray);
     ~Client();
 
     Client(const Client &rhs);

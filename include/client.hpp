@@ -8,6 +8,7 @@
 #include "http_request.hpp"
 #include "http_response.hpp"
 #include "file_handler.hpp"
+#include "session.hpp"
 
 enum class ClientState {
     READY_FOR_INPUT,
@@ -22,7 +23,7 @@ enum class ClientState {
 class Client {
    public:
     using SocketClientCallback = AsyncSocketClient::SocketClientCallback;
-    Client(std::shared_ptr<AsyncSocketClient> &socketFd, std::function<void(std::shared_ptr<AsyncFD>)> addLocalFdToPollArray);
+    Client(std::shared_ptr<AsyncSocketClient> &socketFd, std::function<void(std::shared_ptr<AsyncFD>)> addLocalFdToPollArray, WebServSessionList &sessionList);
     ~Client();
 
     Client(const Client &rhs);
@@ -44,9 +45,10 @@ class Client {
     ClientState _state;
     httpRequest _request;
     httpResponse _response;
+	WebServSessionList &_sessionList;
+	std::shared_ptr<WebServSession> _session = nullptr;
 
     std::shared_ptr<AsyncSocketClient> _socketFd;
-    std::shared_ptr<AsyncInFile> _localFd = nullptr;
 	std::shared_ptr<InFileHandler> _inputFile = nullptr;
 
     uint16_t _port = 0;
@@ -63,4 +65,6 @@ class Client {
 
 	void _openFileAndAddToPollArray(std::string path);
 	void _readFromFile();
+
+	bool _sessionSet = false;
 };

@@ -6,6 +6,7 @@
 static CPPLog::Instance clientLogI = logOut.instance(CPPLog::Level::INFO, "client");
 static CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "client");
 static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "client");
+static CPPLog::Instance sessionLogI = logOut.instance(CPPLog::Level::DEBUG, "WebServSession");
 
 void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
     // read from file (if available)
@@ -17,24 +18,6 @@ void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
 
     size_t bytesWrittenInCycle = 0;
     std::string writeCycleBuffer;
-
-    // ************************************************ //
-    // LOGIC FOR ABORTING RESPONSE IF TOO LARGE			//
-    // OMITTED FOR NOW AS LONGER RESPONSES ARE CHUNKED	//
-    // ************************************************ //
-
-    // if (_clientWriteBuffer.size() + _bytesWrittenCounter > DEFAULT_MAX_WRITE_SIZE) {  // not sure if we need this, as longer responses are chunked
-    //     clientLogE << "clientWriteCb: response too large: " << _bytesWrittenCounter + _clientWriteBuffer.size() << "fd: " << _socketFd <<
-    //     CPPLog::end; _clientWriteBuffer.clear(); if (_response.isChunked()) {  // if the response is chunked, we need to send an empty chunk to
-    //     signal the end of the response
-    //         _clientWriteBuffer = "\r\n" + _response.transformLineForChunkedResponse("");
-    //         _inputFile = nullptr;
-    //     } else
-    //         _returnHttpErrorToClient(413);
-    //     return;
-    // }
-
-    // ************************************************ //
 
     // If the buffer is too large, write only a part of it
     if (_clientWriteBuffer.size() > DEFAULT_WRITE_SIZE) {
@@ -67,7 +50,7 @@ void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
         }
         this->_response.clear();
         this->_request.clear();
-		_inputFile = nullptr;
+        _inputFile = nullptr;
         _bytesWrittenCounter = 0;
         clientLogI << "clientWriteCb: client ready for input" << CPPLog::end;
         changeState(ClientState::READY_FOR_INPUT);
@@ -104,14 +87,35 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
     }
 
     if (this->_request.headerComplete()) {
-        changeState(ClientState::READ_BODY);
+		sessionLogI << "Trying to find session" << CPPLog::end;
+		sessionLogI << "Cookie Header: " << _request.getHeader("Cookie") << CPPLog::end;
+        if (_session == nullptr) {
+			sessionLogI << "No session yet" << CPPLog::end;
+            if (!_request.getCookie(SESSION_COOKIE_NAME).empty()) {
+                try {
+                    _session = _sessionList.getSession(_request.getCookie(SESSION_COOKIE_NAME));
+					sessionLogI << "Session found in list: " << _session->getSessionId() << CPPLog::end;
+                } catch (const std::exception& e) {
+					sessionLogI << "Session not foun in list: " << e.what() << CPPLog::end;
+                    _session = _sessionList.createSession();
+                    _session->setSessionIdToResponse(_response);
+					sessionLogI << "Session added: " << _session->getSessionId() << CPPLog::end;
+                }
+            } else {
+				sessionLogI << "No session cookie" << CPPLog::end;
+                _session = _sessionList.createSession();
+                _session->setSessionIdToResponse(_response);
+				sessionLogI << "Session added: " << _session->getSessionId() << CPPLog::end;
+            }
+            changeState(ClientState::READ_BODY);
+        }
+		else
+			sessionLogI << "Session already exists" << CPPLog::end;
     }
-
     // Request is complete, handle it
     if (this->_request.bodyComplete()) {
         changeState(ClientState::BUILDING_RESPONSE);
         std::string cgiExecutor;
-
         // If the request is for a CGI script, execute the script
         if ((cgiExecutor = _request.getServer()->getCgiExectorFromPath(_request.getPath())).empty() == false) {
             clientLogI << "CGI request: " << _request.getPath() << "; executor: " << cgiExecutor << CPPLog::end;
@@ -146,22 +150,22 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
                 _response.setHeader("Content-Type", WebServUtil::getContentTypeFromPath(_request.getPath()));
                 break;
             }
-			case WebServUtil::HttpMethod::PUT: {
-				// PUT logic here
-				break;
-			}
-			case WebServUtil::HttpMethod::DELETE: {
-				// DELETE logic here
-				break;
-			}
-			case WebServUtil::HttpMethod::OPTIONS: {
-				// OPTIONS logic here
-				break;
-			}
-			default: {
-				_returnHttpErrorToClient(405);
-				break;
-			}
+            case WebServUtil::HttpMethod::PUT: {
+                // PUT logic here
+                break;
+            }
+            case WebServUtil::HttpMethod::DELETE: {
+                // DELETE logic here
+                break;
+            }
+            case WebServUtil::HttpMethod::OPTIONS: {
+                // OPTIONS logic here
+                break;
+            }
+            default: {
+                _returnHttpErrorToClient(405);
+                break;
+            }
         }
 
         // If the request is for a file, open the file and add it to the poll array

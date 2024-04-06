@@ -16,6 +16,7 @@ class httpResponse : public httpMessage {
 	bool _chunked = false;
 	void _setBody(std::string body);
 	void _setErrorBody();
+	bool _sessionSet = false;
 
    public:
     httpResponse();

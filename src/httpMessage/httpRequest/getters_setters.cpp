@@ -69,6 +69,16 @@ std::string httpRequest::getPath(void) const {
     return _path;
 }
 
+std::map<std::string, std::string> httpRequest::getCookies(void) const {
+    return (_cookies);
+}
+
+std::string httpRequest::getCookie(std::string key) const {
+	if (_cookies.find(key) == _cookies.end())
+		return std::string();
+	return _cookies.at(key);
+}
+
 const Location *httpRequest::getLocation(void) const {
     return _location;
 }

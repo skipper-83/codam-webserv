@@ -52,6 +52,7 @@ httpRequest &httpRequest::operator=(const httpRequest &rhs) {
     httpMessageAssign(rhs);
     this->_httpMethod = rhs._httpMethod;
     this->_httpAdress = rhs._httpAdress;
+	this->_cookies = rhs._cookies;
     this->_headerParseComplete = rhs._headerParseComplete;
     this->_bodyComplete = rhs._bodyComplete;
     this->_contentLength = rhs._contentLength;

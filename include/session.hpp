@@ -20,11 +20,13 @@ class WebServSession {
 		void setSessionIdToResponse(httpResponse &response);
 		// void setSessionDataToResponse(httpResponse &response);
 		void updateSessionTimeout();
+		void addPathToTrail(std::string path);
 
 	private:
 		std::string generateSessionId();
 		std::string _sessionId;
-		std::map<std::string, std::string> _sessionData;
+		std::string _pathTrail = "";
+		// std::map<std::string, std::string> _sessionData;
 		std::chrono::time_point<std::chrono::steady_clock> _lastActivityTime = std::chrono::steady_clock::now();		
 };
 
@@ -35,8 +37,8 @@ class WebServSessionList {
 		WebServSessionList(const WebServSessionList &rhs);
 		WebServSessionList &operator=(const WebServSessionList &rhs);
 
-		std::shared_ptr<WebServSession> getSession(std::string sessionId);
-		std::shared_ptr<WebServSession> createSession();
+		WebServSession* getSession(std::string sessionId);
+		WebServSession* createSession();
 		void removeSession(std::string sessionId);
 		void removeExpiredSessions(std::chrono::time_point<std::chrono::steady_clock> now);
 

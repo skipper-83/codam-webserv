@@ -111,6 +111,7 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
         }
 		else
 			sessionLogI << "Session already exists" << CPPLog::end;
+		_session->addPathToTrail(_request.getAdress());
     }
     // Request is complete, handle it
     if (this->_request.bodyComplete()) {

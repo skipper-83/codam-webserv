@@ -85,7 +85,7 @@ class ServerConfig {
     int rank;  // deprecated, used for sorting, still used in tests
 
     std::string getErrorPage(int errorCode) const;
-    std::string getCgiExectorFromPath(std::string path) const;
+    std::string getCgiExecutorFromPath(std::string path) const;
 
    private:
     void sortLocations(void);

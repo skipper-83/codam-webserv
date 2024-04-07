@@ -6,6 +6,7 @@
 #include <unordered_set>
 
 #include "async/fd.hpp"
+#include "async/program.hpp"
 
 class AsyncPollArray {
    public:

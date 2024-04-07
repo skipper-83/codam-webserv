@@ -5,6 +5,7 @@
 #include <chrono>
 #include "async/socket_client.hpp"
 #include "async/in_file.hpp"
+#include "async/program.hpp"
 #include "http_request.hpp"
 #include "http_response.hpp"
 #include "file_handler.hpp"
@@ -34,8 +35,6 @@ class Client {
     AsyncIO &socketFd() const;
     uint16_t port() const;
 
-    void clientReadCb(AsyncSocketClient &client);
-    void clientWriteCb(AsyncSocketClient &client);
 
     void changeState(ClientState newState);
     void setLastActivityTime();
@@ -50,6 +49,7 @@ class Client {
 
     std::shared_ptr<AsyncSocketClient> _socketFd;
 	std::shared_ptr<InFileHandler> _inputFile = nullptr;
+	std::shared_ptr<AsyncProgram> _cgi = nullptr;
 
     uint16_t _port = 0;
 
@@ -62,6 +62,13 @@ class Client {
     std::function<void(std::shared_ptr<AsyncFD>)> _addLocalFdToPollArray;
     void _registerCallbacks();
     void _returnHttpErrorToClient(int code, std::string message = "");
+    
+	void _clientReadCb(AsyncSocketClient &client);
+    void _clientWriteCb(AsyncSocketClient &client);
+
+	std::string _requestBodyForCgi = "";
+	void _cgiReadCb(AsyncProgram &cgi);
+	void _cgiWriteCb(AsyncProgram &cgi);
 
 	void _openFileAndAddToPollArray(std::string path);
 	void _readFromFile();

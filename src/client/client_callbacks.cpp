@@ -8,7 +8,7 @@ static CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "cl
 static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "client");
 static CPPLog::Instance sessionLogI = logOut.instance(CPPLog::Level::DEBUG, "WebServSession");
 
-void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
+void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
     // read from file (if available)
     _readFromFile();
 
@@ -30,16 +30,16 @@ void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
         changeState(ClientState::WRITE_RESPONSE);
         bytesWrittenInCycle = asyncSocketClient.write(writeCycleBuffer);
     } catch (const std::exception& e) {
-        clientLogE << "clientWriteCb: " << e.what() << CPPLog::end;
+        clientLogE << "_clientWriteCb: " << e.what() << CPPLog::end;
         changeState(ClientState::ERROR);
         return;
     }
     _clientWriteBuffer.erase(0, bytesWrittenInCycle);
     _bytesWrittenCounter += bytesWrittenInCycle;
-    clientLogI << "clientWriteCb: wrote " << bytesWrittenInCycle << " bytes to " << this->_port << CPPLog::end;
-    clientLogI << "clientWriteCb: " << _clientWriteBuffer.size() << " bytes left to write" << CPPLog::end;
-    clientLogI << "clientWriteCb: " << _bytesWrittenCounter << " bytes written in total" << CPPLog::end;
-    clientLogI << "clientWriteCb: response body complete? " << this->_response.isBodyComplete() << CPPLog::end;
+    clientLogI << "_clientWriteCb: wrote " << bytesWrittenInCycle << " bytes to " << this->_port << CPPLog::end;
+    clientLogI << "_clientWriteCb: " << _clientWriteBuffer.size() << " bytes left to write" << CPPLog::end;
+    clientLogI << "_clientWriteCb: " << _bytesWrittenCounter << " bytes written in total" << CPPLog::end;
+    clientLogI << "_clientWriteCb: response body complete? " << this->_response.isBodyComplete() << CPPLog::end;
 
     // If the response is complete, clear the response and the write counter
     if (_clientWriteBuffer.empty() && this->_response.isBodyComplete()) {
@@ -52,18 +52,28 @@ void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
         this->_request.clear();
         _inputFile = nullptr;
         _bytesWrittenCounter = 0;
-        clientLogI << "clientWriteCb: client ready for input" << CPPLog::end;
+        clientLogI << "_clientWriteCb: client ready for input" << CPPLog::end;
         changeState(ClientState::READY_FOR_INPUT);
     }
 }
 
-void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
+void Client::_cgiReadCb(AsyncProgram& cgi) {
+	clientLogI << "_cgiReadCb: " << cgi.read(DEFAULT_READ_SIZE) << CPPLog::end;
+	
+}
+
+void Client::_cgiWriteCb(AsyncProgram& cgi) {
+	if (_requestBodyForCgi.empty() == false)
+		clientLogI << "_cgiWriteCb: " << cgi.write(_requestBodyForCgi) << CPPLog::end;
+}
+
+void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
     // Read from the socket and append to the local buffer
-    clientLogI << "clientReadCb" << CPPLog::end;
+    clientLogI << "_clientReadCb" << CPPLog::end;
     try {
         _clientReadBuffer += asyncSocketClient.read(DEFAULT_READ_SIZE);
     } catch (const std::exception& e) {
-        clientLogE << "clientReadCb: " << e.what() << CPPLog::end;
+        clientLogE << "_clientReadCb: " << e.what() << CPPLog::end;
         return;
     }
 
@@ -120,12 +130,15 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
         changeState(ClientState::BUILDING_RESPONSE);
         std::string cgiExecutor;
         // If the request is for a CGI script, execute the script
-        if ((cgiExecutor = _request.getServer()->getCgiExectorFromPath(_request.getPath())).empty() == false) {
+        if ((cgiExecutor = _request.getServer()->getCgiExecutorFromPath(_request.getPath())).empty() == false) {
             clientLogI << "CGI request: " << _request.getPath() << "; executor: " << cgiExecutor << CPPLog::end;
             _response.setFixedSizeBody("CGI not implemented yet, this script would be executed by: " + cgiExecutor);
             _response.setHeader("Content-Type", "text/html; charset=UTF-8");
             _response.setCode(200);
             _clientWriteBuffer = _response.getFixedBodyResponseAsString();
+			_cgi = AsyncProgram::create(cgiExecutor, _request.getPath(), {}, std::bind(&Client::_cgiReadCb, this, std::placeholders::_1), std::bind(&Client::_cgiWriteCb, this, std::placeholders::_1));
+			_cgi->addToPollArray(_addLocalFdToPollArray);
+			_requestBodyForCgi = _request.getBody();
             _request.clear();
             return;
         }
@@ -141,7 +154,7 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
         }
 
         // ************************************************ //
-        // HERE SWICTH BLOCK FOR STATIC FILE SERVING		//
+        // HERE SWITCH BLOCK FOR STATIC FILE SERVING		//
         // WITH DIFFERENT LOGIC FOR EACH METHOD				//
         // ************************************************ //
         switch (this->_request.getMethod()) {

@@ -12,8 +12,8 @@ static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "cl
 extern MainConfig mainConfig;
 
 void Client::_registerCallbacks() {
-    _socketFd->registerReadReadyCb(std::bind(&Client::clientReadCb, this, std::placeholders::_1));
-    _socketFd->registerWriteReadyCb(std::bind(&Client::clientWriteCb, this, std::placeholders::_1));
+    _socketFd->registerReadReadyCb(std::bind(&Client::_clientReadCb, this, std::placeholders::_1));
+    _socketFd->registerWriteReadyCb(std::bind(&Client::_clientWriteCb, this, std::placeholders::_1));
 }
 
 Client::Client(std::shared_ptr<AsyncSocketClient>& socketFd, std::function<void(std::shared_ptr<AsyncFD>)> addLocalFdToPollArray,  WebServSessionList &sessionList)

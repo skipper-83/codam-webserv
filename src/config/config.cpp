@@ -65,9 +65,9 @@ const ServerConfig *MainConfig::getServerFromPort(uint16_t port) {
  */
 const ServerConfig *MainConfig::getServerFromPortAndName(uint16_t port, std::string name) {
     auto pos = this->_portsNamesToServers.find({port, name});
-	infoLog << "getServerFromPortAndName: " << pos->second->names.name_vec[0] << CPPLog::end;
     if (pos != this->_portsNamesToServers.end())
-        return pos->second;
+		{infoLog << "getServerFromPortAndName: " << pos->second->names.name_vec[0] << CPPLog::end;
+        return pos->second;}
     return nullptr;
 }
 
@@ -104,7 +104,7 @@ std::string ServerConfig::getErrorPage(int errorCode) const {
     return std::string();
 }
 
-std::string ServerConfig::getCgiExectorFromPath(std::string path) const {
+std::string ServerConfig::getCgiExecutorFromPath(std::string path) const {
 	size_t extensionPos = path.find_last_of('.');
 	if (this->cgis.empty() || extensionPos == std::string::npos)
 		return std::string();

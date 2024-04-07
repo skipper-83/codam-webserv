@@ -46,7 +46,7 @@ class Client {
     httpRequest _request;
     httpResponse _response;
 	WebServSessionList &_sessionList;
-	WebServSession* _session = nullptr;
+	std::shared_ptr<WebServSession> _session = nullptr;
 
     std::shared_ptr<AsyncSocketClient> _socketFd;
 	std::shared_ptr<InFileHandler> _inputFile = nullptr;

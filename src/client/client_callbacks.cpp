@@ -98,6 +98,8 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
                 } catch (const std::exception& e) {
 					sessionLogI << "Session not foun in list: " << e.what() << CPPLog::end;
                     _session = _sessionList.createSession();
+					sessionLogI << "Session added: " << CPPLog::end;
+					sessionLogI << _session->getSessionId() << CPPLog::end;
                     _session->setSessionIdToResponse(_response);
 					sessionLogI << "Session added: " << _session->getSessionId() << CPPLog::end;
                 }

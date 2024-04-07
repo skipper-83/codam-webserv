@@ -37,12 +37,12 @@ class WebServSessionList {
 		WebServSessionList(const WebServSessionList &rhs);
 		WebServSessionList &operator=(const WebServSessionList &rhs);
 
-		WebServSession* getSession(std::string sessionId);
-		WebServSession* createSession();
+		std::shared_ptr<WebServSession> getSession(std::string sessionId);
+		std::shared_ptr<WebServSession> createSession();
 		void removeSession(std::string sessionId);
 		void removeExpiredSessions(std::chrono::time_point<std::chrono::steady_clock> now);
 
 	private:
-		std::vector<WebServSession> _sessions;
+		std::vector<std::shared_ptr<WebServSession>> _sessions;
 };
 

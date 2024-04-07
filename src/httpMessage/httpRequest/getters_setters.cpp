@@ -1,5 +1,8 @@
 #include "http_request.hpp"
+#include "logging.hpp"
 
+
+static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest parser");
 /**
  * @brief Returns address of request
  *
@@ -55,6 +58,7 @@ bool httpRequest::returnAutoIndex(void) const {
  * @param port port from select()
  */
 void httpRequest::setServer(MainConfig &config, uint16_t port) {
+	infoLog << "setServer: " << port << " host:" << this->getHeader("Host") << CPPLog::end;
     this->_server = config.getServer(port, this->getHeader("Host"));
     if (this->_server == nullptr)
         throw httpRequestException(500, "No server match found");

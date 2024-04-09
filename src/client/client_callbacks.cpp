@@ -1,5 +1,5 @@
 #include <filesystem>
-
+// #include "httpMessage/cgi_message.hpp"
 #include "client.hpp"
 #include "logging.hpp"
 
@@ -12,6 +12,17 @@ void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
     // read from file (if available)
     _readFromFile();
 
+    if (_cgiMessage && _cgiMessage->isBodyComplete()) {
+		clientLogI << "_clientWriteCb: CGI response complete" << CPPLog::end;
+		clientLogI << "_clientWriteCb: CGI response: " << _cgiMessage->getBody() << CPPLog::end;
+        _response.setHeader("Content-Type", "text/html; charset=UTF-8");
+        _response.setCode(200);
+		_response.setFixedSizeBody(_cgiMessage->getBody());
+		_clientWriteBuffer = _response.getFixedBodyResponseAsString();
+		_cgiMessage = nullptr;
+		_request.clear();
+		return;
+    }
     // If the buffer is empty, return
     if (_clientWriteBuffer.empty())
         return;
@@ -58,13 +69,30 @@ void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
 }
 
 void Client::_cgiReadCb(AsyncProgram& cgi) {
-	clientLogI << "_cgiReadCb: " << cgi.read(DEFAULT_READ_SIZE) << CPPLog::end;
-	
+    if (cgi.eof()) {
+        // clientLogI << "_cgiReadCb: EOF" << CPPLog::end;
+        return;
+    }
+
+    std::string cgiReadCycleBuffer;
+
+    try {
+        cgiReadCycleBuffer = cgi.read(DEFAULT_READ_SIZE);
+    } catch (const std::exception& e) {
+        clientLogE << "_cgiReadCb: " << e.what() << CPPLog::end;
+        _returnHttpErrorToClient(500);
+        return;
+    }
+
+    if (cgiReadCycleBuffer.empty())
+        return;
+
+    clientLogI << "_cgiReadCb: " << cgiReadCycleBuffer << CPPLog::end;
 }
 
 void Client::_cgiWriteCb(AsyncProgram& cgi) {
-	if (_requestBodyForCgi.empty() == false)
-		clientLogI << "_cgiWriteCb: " << cgi.write(_requestBodyForCgi) << CPPLog::end;
+    if (_requestBodyForCgi.empty() == false)
+        clientLogI << "_cgiWriteCb: " << cgi.write(_requestBodyForCgi) << CPPLog::end;
 }
 
 void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
@@ -97,33 +125,32 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
     }
 
     if (this->_request.headerComplete()) {
-		sessionLogI << "Trying to find session" << CPPLog::end;
-		sessionLogI << "Cookie Header: " << _request.getHeader("Cookie") << CPPLog::end;
+        sessionLogI << "Trying to find session" << CPPLog::end;
+        sessionLogI << "Cookie Header: " << _request.getHeader("Cookie") << CPPLog::end;
         if (_session == nullptr) {
-			sessionLogI << "No session yet" << CPPLog::end;
+            sessionLogI << "No session yet" << CPPLog::end;
             if (!_request.getCookie(SESSION_COOKIE_NAME).empty()) {
                 try {
                     _session = _sessionList.getSession(_request.getCookie(SESSION_COOKIE_NAME));
-					sessionLogI << "Session found in list: " << _session->getSessionId() << CPPLog::end;
+                    sessionLogI << "Session found in list: " << _session->getSessionId() << CPPLog::end;
                 } catch (const std::exception& e) {
-					sessionLogI << "Session not foun in list: " << e.what() << CPPLog::end;
+                    sessionLogI << "Session not foun in list: " << e.what() << CPPLog::end;
                     _session = _sessionList.createSession();
-					sessionLogI << "Session added: " << CPPLog::end;
-					sessionLogI << _session->getSessionId() << CPPLog::end;
+                    sessionLogI << "Session added: " << CPPLog::end;
+                    sessionLogI << _session->getSessionId() << CPPLog::end;
                     _session->setSessionIdToResponse(_response);
-					sessionLogI << "Session added: " << _session->getSessionId() << CPPLog::end;
+                    sessionLogI << "Session added: " << _session->getSessionId() << CPPLog::end;
                 }
             } else {
-				sessionLogI << "No session cookie" << CPPLog::end;
+                sessionLogI << "No session cookie" << CPPLog::end;
                 _session = _sessionList.createSession();
                 _session->setSessionIdToResponse(_response);
-				sessionLogI << "Session added: " << _session->getSessionId() << CPPLog::end;
+                sessionLogI << "Session added: " << _session->getSessionId() << CPPLog::end;
             }
             changeState(ClientState::READ_BODY);
-        }
-		else
-			sessionLogI << "Session already exists" << CPPLog::end;
-		_session->addPathToTrail(_request.getAdress());
+        } else
+            sessionLogI << "Session already exists" << CPPLog::end;
+        _session->addPathToTrail(_request.getAdress());
     }
     // Request is complete, handle it
     if (this->_request.bodyComplete()) {
@@ -132,14 +159,15 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
         // If the request is for a CGI script, execute the script
         if ((cgiExecutor = _request.getServer()->getCgiExecutorFromPath(_request.getPath())).empty() == false) {
             clientLogI << "CGI request: " << _request.getPath() << "; executor: " << cgiExecutor << CPPLog::end;
-            _response.setFixedSizeBody("CGI not implemented yet, this script would be executed by: " + cgiExecutor);
-            _response.setHeader("Content-Type", "text/html; charset=UTF-8");
-            _response.setCode(200);
-            _clientWriteBuffer = _response.getFixedBodyResponseAsString();
-			_cgi = AsyncProgram::create(cgiExecutor, _request.getPath(), {}, std::bind(&Client::_cgiReadCb, this, std::placeholders::_1), std::bind(&Client::_cgiWriteCb, this, std::placeholders::_1));
-			_cgi->addToPollArray(_addLocalFdToPollArray);
-			_requestBodyForCgi = _request.getBody();
-            _request.clear();
+            // _response.setFixedSizeBody("CGI not implemented yet, this script would be executed by: " + cgiExecutor);
+            // _response.setHeader("Content-Type", "text/html; charset=UTF-8");
+            // _response.setCode(200);
+            // _clientWriteBuffer = _response.getFixedBodyResponseAsString();
+            // _cgi = AsyncProgram::create(cgiExecutor, _request.getPath(), {}, std::bind(&Client::_cgiReadCb, this, std::placeholders::_1),
+            // std::bind(&Client::_cgiWriteCb, this, std::placeholders::_1)); _cgi->addToPollArray(_addLocalFdToPollArray);
+            _cgiMessage = std::make_shared<cgiMessage>(cgiExecutor, &_request, _addLocalFdToPollArray);
+            // _requestBodyForCgi = _request.getBody();
+            // _request.clear();
             return;
         }
 

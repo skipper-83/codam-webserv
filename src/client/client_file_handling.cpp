@@ -28,26 +28,18 @@ void Client::_readFromFile() {
             _clientWriteBuffer = _response.getHeadersForChunkedResponse();
 			if (_request.getMethod() == WebServUtil::HttpMethod::HEAD){
 				clientLogI << "HEAD request" << CPPLog::end;
-				// _inputFile->close();
 				_response.transformLineForChunkedResponse("");
-				clientLogI << "zetting inputfile to nullptr" << CPPLog::end;
-				// _inputFile = nullptr;
+				clientLogI << "setting inputfile to nullptr" << CPPLog::end;
             	return;
 			}
 		}
-        // if (_request.getMethod() == WebServUtil::HttpMethod::HEAD) {
-            // _inputFile = nullptr;
-            // _request.clear();
-        // }
         _clientWriteBuffer += _response.transformLineForChunkedResponse(_inputFile->read());
         clientLogI << "file buffer: " << _clientWriteBuffer << "size:" << _clientWriteBuffer.size() << CPPLog::end;
     }
 
     if (_inputFile->eof()) {
         clientLogI << "file is at eof" << CPPLog::end;
-        // std::string tempFileBuffer;
-		// if (_request.getMethod() != WebServUtil::HttpMethod::HEAD)
-		 	std::string tempFileBuffer = _inputFile->read();
+		std::string tempFileBuffer = _inputFile->read();
         _inputFile = nullptr;
         clientLogI << "file buffer: " << tempFileBuffer << "size:" << tempFileBuffer.size() << CPPLog::end;
         if (!_response.isChunked()) {

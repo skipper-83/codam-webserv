@@ -35,6 +35,7 @@ set (SRCS
 	src/httpMessage/httpRequest/helpers.cpp
 	src/httpMessage/http_message.cpp
 	src/httpMessage/http_response.cpp
+	src/httpMessage/cgi_message.cpp
 	src/session.cpp
 	src/util.cpp
 )

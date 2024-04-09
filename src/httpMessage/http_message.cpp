@@ -1,7 +1,6 @@
-
-#include "http_message.hpp"
-
-#include "http_request.hpp"
+#include "httpMessage/http_message.hpp"
+#include "httpMessage/http_request.hpp"
+#include <regex>
 
 /**
  * @brief Returns protocol of request (ie HTTP1.1)
@@ -80,9 +79,46 @@ std::string httpMessage::getHeaderListAsString(void) const {
 httpMessage::~httpMessage(void) {}
 httpMessage::httpMessage(void) {}
 
-void httpMessage::httpMessageAssign(const httpMessage &rhs) {
+void httpMessage::_httpMessageAssign(const httpMessage &rhs) {
     this->_httpProtocol = rhs._httpProtocol;
     this->_httpHeaders = httpRequestT(rhs._httpHeaders);
     this->_httpBody = rhs._httpBody;
     this->_bodyLength = rhs._bodyLength;
+}
+
+std::string httpMessage::_getLineWithCRLF(std::istream &is) {
+    std::string line;
+
+    std::getline(is, line);
+    if (!line.empty() && line.back() == '\r')
+        line.pop_back();
+    return line;
+}
+
+std::string httpMessage::_getLineWithCRLF(std::string &input) {
+    std::string::size_type pos = input.find("\n");
+	std::string line;
+	if (pos == std::string::npos)
+		return "";
+	line = input.substr(0, pos);
+	if (line[line.size() - 1] == '\r')
+		line.pop_back(); // remove \r
+	input = input.substr(pos + 1, input.size()); // remove line from input
+    return line;
+}
+
+std::pair<std::string, std::string> httpMessage::_parseHeaderLine(std::string line) {
+    // std::string key, value;
+    // std::string::size_type key_end, val_start;
+
+std::regex pattern("^([^\\s:]+):\\s*(.*)");
+    std::smatch match;
+
+    if (std::regex_match(line, match, pattern)) {
+        std::cout << "Header Name: " << match[1] << std::endl;
+        std::cout << "Header Value: " << match[2] << std::endl;
+    } else {
+        throw std::runtime_error("Invalid header line");
+    }
+    return std::make_pair(match[1], match[2]);
 }

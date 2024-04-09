@@ -1,7 +1,7 @@
 #include <filesystem>
 #include <regex>
 
-#include "http_request.hpp"
+#include "httpMessage/http_request.hpp"
 #include "logging.hpp"
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest header parser");
@@ -36,24 +36,22 @@ void httpRequest::_parseHttpStartLine(std::istream &fs) {
 }
 
 void httpRequest::_parseHttpHeaders(std::istream &fs) {
-    std::string line, key, value;
-    std::string::size_type key_end, val_start;
+    std::string line;
+    std::pair<std::string, std::string> key_value;
 
     while (fs) {
         line = _getLineWithCRLF(fs);
         if (line.empty())
             break;
-        key_end = line.find(':', 0);
-        if (key_end == std::string::npos)
-            throw httpRequestException(400, "Invalid HTTP key/value pair");
-        val_start = line.find_first_not_of(' ', key_end + 1);
-        if (val_start == std::string::npos)
-            val_start = line.size();
-		key = line.substr(0, key_end);
-		value = line.substr(val_start, line.size() - 1);
-        this->setHeader(key, value);
-		if (key == "Cookie")
-			{parseCookieHeader(value);}
+        try {
+            key_value = _parseHeaderLine(line);
+        } catch (const std::exception &e) {
+            throw httpRequestException(400, "Invalid HTTP header");
+        }
+        this->setHeader(key_value.first, key_value.second);
+        if (key_value.first == "Cookie") {
+            parseCookieHeader(key_value.second);
+        }
     }
     _checkHttpHeaders();
     _setVars();
@@ -126,12 +124,12 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
             _location = &location;
 
             // resolve path if it is a directory
-			if (!std::filesystem::exists(path) && !(_httpMethod == WebServUtil::HttpMethod::PUT))
-				throw(httpRequestException(404, "File not found"));
+            if (!std::filesystem::exists(path) && !(_httpMethod == WebServUtil::HttpMethod::PUT))
+                throw(httpRequestException(404, "File not found"));
             if (std::filesystem::is_directory(path)) {
                 infoLog << "Path is a directory, request: [" << _httpAdress << "] ref: [" << _location->ref << "]" << CPPLog::end;
-				if (path[path.size() - 1] != '/') // if the path does not end with a slash, redirect
-					throw(httpRequestException(301, _httpAdress + '/'));
+                if (path[path.size() - 1] != '/')  // if the path does not end with a slash, redirect
+                    throw(httpRequestException(301, _httpAdress + '/'));
                 if (_httpAdress == _location->ref)  // if the requested adress is the location root
                 {
                     if (!_location->index_vec.empty()) {
@@ -144,15 +142,15 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
                         }
                     }
                 }
-				infoLog << "No index files found, checking if autoindex is on" << CPPLog::end;
-				if (_server->autoIndex.on) {
-					infoLog << "Autoindex is on" << CPPLog::end;
-					_returnAutoIndex = true;
-					_path = path;
-					return;
-				}
-				infoLog << "Autoindex is off, returning 403 Forbidden" << CPPLog::end;
-				throw(httpRequestException(403, "No directory index, and autoindex is off"));
+                infoLog << "No index files found, checking if autoindex is on" << CPPLog::end;
+                if (_server->autoIndex.on) {
+                    infoLog << "Autoindex is on" << CPPLog::end;
+                    _returnAutoIndex = true;
+                    _path = path;
+                    return;
+                }
+                infoLog << "Autoindex is off, returning 403 Forbidden" << CPPLog::end;
+                throw(httpRequestException(403, "No directory index, and autoindex is off"));
             }
             return;
         }
@@ -186,6 +184,6 @@ void httpRequest::parseCookieHeader(std::string cookieHeader) {
 
             _cookies[name] = value;
         }
-		 pos = semicolonPos + 1;
-	}
+        pos = semicolonPos + 1;
+    }
 }

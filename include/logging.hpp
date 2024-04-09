@@ -4,7 +4,7 @@
 #include <iostream>
 
 #define MINIMUM_LOG_LEVEL CPPLog::Level::INFO
-#define LOGGING_SCOPES {"main", "parse config", "httpRequest parser", "httpRequest header parser", "httpRequest body parser", "httpResponse", "AsyncPollArray", "client", "fileHandler", "FileHandler", "WebServSession", "Async"}
+#define LOGGING_SCOPES {"main", "parse config", "httpRequest parser", "httpRequest header parser", "httpRequest body parser", "httpResponse", "AsyncPollArray", "client", "fileHandler", "FileHandler", "WebServSession", "cgi"}
 // #define LOGGING_SCOPES	{"WebServSession"}
 
 extern CPPLog logOut;

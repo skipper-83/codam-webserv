@@ -1,4 +1,4 @@
-#include "http_request.hpp"
+#include "httpMessage/http_request.hpp"
 #include "logging.hpp"
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest parser");
@@ -19,7 +19,7 @@ void httpRequest::parse(std::string &input, uint16_t port) {
     }
     if (this->_server)
         _resolvePathAndLocationBlock();
-    infoLog << "Checking method if method " << WebServUtil::httpMethodToString( _httpMethod) << " allowed" << CPPLog::end;
+    infoLog << "Checking method if method " << WebServUtil::httpMethodToString(_httpMethod) << " allowed" << CPPLog::end;
     if (this->_server->allowed.methods.find(_httpMethod)->second == false) {
         infoLog << "Method not allowed" << CPPLog::end;
         throw httpRequestException(405, "Method Not Allowed");

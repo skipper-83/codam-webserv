@@ -1,14 +1,14 @@
 #pragma once
 
-// #include <memory>
-
 #include <chrono>
-#include "async/socket_client.hpp"
+
 #include "async/in_file.hpp"
 #include "async/program.hpp"
-#include "http_request.hpp"
-#include "http_response.hpp"
+#include "async/socket_client.hpp"
 #include "file_handler.hpp"
+#include "httpMessage/http_request.hpp"
+#include "httpMessage/http_response.hpp"
+#include "httpMessage/cgi_message.hpp"
 #include "session.hpp"
 
 enum class ClientState {
@@ -24,7 +24,8 @@ enum class ClientState {
 class Client {
    public:
     using SocketClientCallback = AsyncSocketClient::SocketClientCallback;
-    Client(std::shared_ptr<AsyncSocketClient> &socketFd, std::function<void(std::shared_ptr<AsyncFD>)> addLocalFdToPollArray, WebServSessionList &sessionList);
+    Client(std::shared_ptr<AsyncSocketClient> &socketFd, std::function<void(std::shared_ptr<AsyncFD>)> addLocalFdToPollArray,
+           WebServSessionList &sessionList);
     ~Client();
 
     Client(const Client &rhs);
@@ -35,7 +36,6 @@ class Client {
     AsyncIO &socketFd() const;
     uint16_t port() const;
 
-
     void changeState(ClientState newState);
     void setLastActivityTime();
     std::chrono::time_point<std::chrono::steady_clock> getLastActivityTime() const;
@@ -44,12 +44,13 @@ class Client {
     ClientState _state;
     httpRequest _request;
     httpResponse _response;
-	WebServSessionList &_sessionList;
-	std::shared_ptr<WebServSession> _session = nullptr;
+    WebServSessionList &_sessionList;
+    std::shared_ptr<WebServSession> _session = nullptr;
 
     std::shared_ptr<AsyncSocketClient> _socketFd;
-	std::shared_ptr<InFileHandler> _inputFile = nullptr;
-	std::shared_ptr<AsyncProgram> _cgi = nullptr;
+    std::shared_ptr<InFileHandler> _inputFile = nullptr;
+    std::shared_ptr<AsyncProgram> _cgi = nullptr;
+	std::shared_ptr<cgiMessage> _cgiMessage;
 
     uint16_t _port = 0;
 
@@ -62,16 +63,16 @@ class Client {
     std::function<void(std::shared_ptr<AsyncFD>)> _addLocalFdToPollArray;
     void _registerCallbacks();
     void _returnHttpErrorToClient(int code, std::string message = "");
-    
-	void _clientReadCb(AsyncSocketClient &client);
+
+    void _clientReadCb(AsyncSocketClient &client);
     void _clientWriteCb(AsyncSocketClient &client);
 
-	std::string _requestBodyForCgi = "";
-	void _cgiReadCb(AsyncProgram &cgi);
-	void _cgiWriteCb(AsyncProgram &cgi);
+    std::string _requestBodyForCgi = "";
+    void _cgiReadCb(AsyncProgram &cgi);
+    void _cgiWriteCb(AsyncProgram &cgi);
 
-	void _openFileAndAddToPollArray(std::string path);
-	void _readFromFile();
+    void _openFileAndAddToPollArray(std::string path);
+    void _readFromFile();
 
-	bool _sessionSet = false;
+    bool _sessionSet = false;
 };

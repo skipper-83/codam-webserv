@@ -2,8 +2,8 @@
 
 #include <sstream>
 
-#include "http_request.hpp"
-#include "http_response.hpp"
+#include "httpMessage/http_request.hpp"
+#include "httpMessage/http_response.hpp"
 #include "test_httpReq.hpp"
 #include "test_config.hpp"
 #include "config.hpp"

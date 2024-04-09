@@ -1,7 +1,5 @@
-#include "http_response.hpp"
-
+#include "httpMessage/http_response.hpp"
 #include <sstream>
-
 #include "logging.hpp"
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpResponse");
@@ -19,11 +17,11 @@ httpResponse::httpResponse(httpRequest* callingRequest) : httpResponse() {
 httpResponse& httpResponse::operator=(const httpResponse& rhs) {
     if (this == &rhs)
         return *this;
-    httpMessageAssign(rhs);
+    _httpMessageAssign(rhs);
     this->_bodyComplete = rhs._bodyComplete;
     this->_responseCode = rhs._responseCode;
     this->_bodyComplete = rhs._bodyComplete;
-	this->_chunked = rhs._chunked;
+    this->_chunked = rhs._chunked;
     this->_responseCodeDescription = rhs._responseCodeDescription;
     this->_precedingRequest = rhs._precedingRequest;
     return *this;
@@ -45,15 +43,15 @@ void httpResponse::_setErrorBody() {
     std::string error_page;
 
     infoLog << "Setting up error page for " << this->_responseCode << CPPLog::end;
-        error_page.append("<html><head><title>")
-            .append(std::to_string(this->_responseCode))
-            .append(" " + this->_responseCodeDescription)
-            .append("</title></head><body><center><h1>")
-            .append(std::to_string(this->_responseCode))
-            .append(" " + this->_responseCodeDescription)
-            .append("</h1></center><hr><center>")
-            .append(DEFAULT_SERVER_NAME)
-            .append("</center>");
+    error_page.append("<html><head><title>")
+        .append(std::to_string(this->_responseCode))
+        .append(" " + this->_responseCodeDescription)
+        .append("</title></head><body><center><h1>")
+        .append(std::to_string(this->_responseCode))
+        .append(" " + this->_responseCodeDescription)
+        .append("</h1></center><hr><center>")
+        .append(DEFAULT_SERVER_NAME)
+        .append("</center>");
     // }
     setHeader("Content-Type", "text/html; charset=UTF-8");
     this->setFixedSizeBody(error_page);
@@ -75,7 +73,7 @@ std::string httpResponse::getStartLine(void) const {
 std::string httpResponse::getHeadersForChunkedResponse(void) {
     std::string ret;
 
-	_chunked = true;
+    _chunked = true;
     deleteHeader("Date");
     setHeader("Date", WebServUtil::timeStamp());
     deleteHeader("Content-Length");
@@ -89,8 +87,8 @@ std::string httpResponse::getHeadersForChunkedResponse(void) {
 std::string httpResponse::transformLineForChunkedResponse(std::string line) {
     std::stringstream ret;
 
-	if (line.empty())
-		_bodyComplete = true;
+    if (line.empty())
+        _bodyComplete = true;
     ret << std::hex << line.size() << "\r\n" << line << "\r\n";
     return (ret.str());
 }

@@ -57,7 +57,7 @@ class Client {
 
     uint16_t _port = 0;
 
-    size_t _bytesWrittenCounter;
+    size_t _bytesWrittenCounter = 0;
 
     std::string _clientReadBuffer;
     std::string _clientWriteBuffer;

@@ -25,6 +25,7 @@
 #define DEFAULT_SERVER_NAME "Jelle en Alberts webserv 1.0"
 #define DEFAULT_MIMETYPE "text/plain"
 #define DEFAULT_ROOT "./"
+#define DEFAULT_MAX_FILENAME_DISPLAY 20
 
 using SubParsers = std::map<std::string, std::function<void(std::istream&)> >;
 

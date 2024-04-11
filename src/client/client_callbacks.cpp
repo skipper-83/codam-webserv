@@ -66,7 +66,7 @@ void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
 
     // If the response is complete, clear the response and the write counter
     if (_localWriteBuffer.empty() && this->_response.isBodyComplete()) {
-        clientLogI << "respnse Connection type" << this->_request.getHeader("Connection") << CPPLog::end;
+        clientLogI << "respnse Connection type: " << this->_request.getHeader("Connection") << CPPLog::end;
 
         if (this->_request.getHeader("Connection") == "close") {
             _socketFd->close();
@@ -115,7 +115,8 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
             _returnHttpErrorToClient(404);
         }
         if (std::filesystem::is_directory(this->_request.getPath())) {
-            _response.setFixedSizeBody(WebServUtil::directoryIndexList(this->_request.getPath()));
+            _response.setFixedSizeBody(WebServUtil::directoryIndexList(this->_request.getPath(), _request.getAdress()));
+			
             _response.setHeader("Content-Type", "text/html; charset=UTF-8");
 			_response.setCode(200);
             _localWriteBuffer = _response.getFixedBodyResponseAsString();
@@ -138,6 +139,7 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
         _localFd = AsyncInFile::create(_request.getPath());
         if (_localFd) {
             _response.setCode(200);
+			_response.setHeader("Content-Type", WebServUtil::getContentTypeFromPath(_request.getPath()));
             _addLocalFdToPollArray(_localFd);
         } else
             _returnHttpErrorToClient(500);  // right now it returns a 500 when the file has incorrect permissions

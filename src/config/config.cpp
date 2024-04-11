@@ -65,7 +65,6 @@ const ServerConfig *MainConfig::getServerFromPort(uint16_t port) {
  */
 const ServerConfig *MainConfig::getServerFromPortAndName(uint16_t port, std::string name) {
     auto pos = this->_portsNamesToServers.find({port, name});
-	infoLog << "getServerFromPortAndName: " << pos->second->names.name_vec[0] << CPPLog::end;
     if (pos != this->_portsNamesToServers.end())
         return pos->second;
     return nullptr;

@@ -16,7 +16,6 @@ class httpResponse : public httpMessage {
 	bool _chunked = false;
 	void _setBody(std::string body);
 	void _setErrorBody();
-	std::string _getStartLine(void) const;
 
    public:
     httpResponse();
@@ -26,6 +25,7 @@ class httpResponse : public httpMessage {
     void setCode(int code);
     void setFixedSizeBody(std::string body);
 	void setPrecedingRequest(httpRequest* const callingRequest);
+	std::string getStartLine(void) const;
 	std::string getFixedBodyResponseAsString(void);
 	std::string getHeadersForChunkedResponse(void);
 	std::string transformLineForChunkedResponse(std::string line);

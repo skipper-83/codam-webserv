@@ -45,13 +45,6 @@ void httpResponse::_setErrorBody() {
     std::string error_page;
 
     infoLog << "Setting up error page for " << this->_responseCode << CPPLog::end;
-	// check if the server has a custom error page for this response code, this is slightly ugly as the calling
-	// function already knows this information, we could omit this and then the body will be set for no reason
-    // if (this->_precedingRequest != nullptr && this->_precedingRequest->getServer() != nullptr) {
-    //     if(!this->_precedingRequest->getServer()->getErrorPage(this->_responseCode).empty())
-	// 		return;
-    // }
-    // if (error_page.empty()) {
         error_page.append("<html><head><title>")
             .append(std::to_string(this->_responseCode))
             .append(" " + this->_responseCodeDescription)
@@ -75,7 +68,7 @@ void httpResponse::setFixedSizeBody(std::string body) {
     this->_bodyComplete = true;
 }
 
-std::string httpResponse::_getStartLine(void) const {
+std::string httpResponse::getStartLine(void) const {
     return this->getProtocol() + " " + std::to_string(this->_responseCode) + " " + this->_responseCodeDescription + "\r\n";
 }
 
@@ -87,7 +80,7 @@ std::string httpResponse::getHeadersForChunkedResponse(void) {
     setHeader("Date", WebServUtil::timeStamp());
     deleteHeader("Content-Length");
     setHeader("Transfer-Encoding", "chunked");
-    ret.append(this->_getStartLine());
+    ret.append(this->getStartLine());
     ret.append(getHeaderListAsString());
     ret.append("\r\n");
     return ret;
@@ -107,7 +100,7 @@ std::string httpResponse::getFixedBodyResponseAsString(void) {
 
     deleteHeader("Date");
     setHeader("Date", WebServUtil::timeStamp());
-    ret.append(this->_getStartLine());
+    ret.append(this->getStartLine());
     ret.append(getHeaderListAsString());
     ret.append("\r\n").append(_httpBody).append("\r\n\r\n");
     return ret;

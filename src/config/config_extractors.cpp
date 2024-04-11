@@ -43,6 +43,7 @@ static void checkTerminator(std::istream& is, std::string& line, std::string ref
 std::istream& operator>>(std::istream& is, AllowedMethods& rhs) {
     std::string line, word;
     std::stringstream lineStream;
+	WebServUtil::HttpMethod method;
 
     checkTerminator(is, line, "allowed_methods");
     lineStream.str(line);
@@ -55,9 +56,10 @@ std::istream& operator>>(std::istream& is, AllowedMethods& rhs) {
             if (word.length() > 1)
                 word = word.substr(0, word.length() - 1);
         }
-        if (rhs.methods.find(word) == rhs.methods.end())
+		method = WebServUtil::stringToHttpMethod(word);
+		if (method == WebServUtil::HttpMethod::UNKNOWN)
             throw(std::invalid_argument("Invalid method in allowed_methods: [" + word + "]"));
-        rhs.methods[word] = true;
+        rhs.methods[method] = true;
         infoLog << word << " method allowed";
     }
     rhs.defaultValue = false;
@@ -276,6 +278,39 @@ std::istream& operator>>(std::istream& is, ListenPort& rhs) {
     return is;
 }
 
+std::istream & operator>>(std::istream & is, Cgi & rhs)
+{
+// TODO: insert return statement here
+	std::string line, word;
+	std::stringstream lineStream;
+
+	checkTerminator(is, line, "cgi");
+	lineStream.str(line);
+	while (lineStream >> word)
+	{
+		if (!lineStream)
+			throw(std::invalid_argument("Unexpected input for cgi"));
+		if (word.find(';') != std::string::npos)
+		{
+			if (word.length() > 1)
+				word = word.substr(0, word.length() - 1);
+		}
+		if (word[0] == '.'	&& word[1] != '/')
+			rhs.extensions.push_back(word);
+		else
+		{
+			if (rhs.extensions.size() < 1)
+				throw(std::invalid_argument("No extensions given for cgi"));
+			if (word.find(';') != std::string::npos)
+				word = word.substr(0, word.length() - 1);
+			rhs.executor = word;
+			break;
+		}
+	}
+	return is;
+
+}
+
 /**
  * @brief Extractor for Errorpage
  *
@@ -337,7 +372,12 @@ static void setServerSubparsers(SubParsers& subParsers, ServerConfig& rhs) {
                        ErrorPage new_errorPage;
                        is >> new_errorPage;
                        rhs.errorPages.push_back(new_errorPage);
-                   }}};
+                   }},
+				   {"cgi", [&rhs](std::istream& is) {
+					Cgi new_cgi;
+					is >> new_cgi;
+					rhs.cgis.push_back(new_cgi);
+				   }}};
 }
 
 /**

@@ -9,6 +9,7 @@ void Client::_readFromFile() {
     if (!_inputFile)
         return;
 
+
     clientLogI << "I have an inputfile" << CPPLog::end;
     if (_inputFile->bad()) {
         clientLogE << "file is bad" << CPPLog::end;

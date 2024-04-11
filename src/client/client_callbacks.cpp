@@ -18,24 +18,6 @@ void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
     size_t bytesWrittenInCycle = 0;
     std::string writeCycleBuffer;
 
-    // ************************************************ //
-    // LOGIC FOR ABORTING RESPONSE IF TOO LARGE			//
-    // OMITTED FOR NOW AS LONGER RESPONSES ARE CHUNKED	//
-    // ************************************************ //
-
-    // if (_clientWriteBuffer.size() + _bytesWrittenCounter > DEFAULT_MAX_WRITE_SIZE) {  // not sure if we need this, as longer responses are chunked
-    //     clientLogE << "clientWriteCb: response too large: " << _bytesWrittenCounter + _clientWriteBuffer.size() << "fd: " << _socketFd <<
-    //     CPPLog::end; _clientWriteBuffer.clear(); if (_response.isChunked()) {  // if the response is chunked, we need to send an empty chunk to
-    //     signal the end of the response
-    //         _clientWriteBuffer = "\r\n" + _response.transformLineForChunkedResponse("");
-    //         _inputFile = nullptr;
-    //     } else
-    //         _returnHttpErrorToClient(413);
-    //     return;
-    // }
-
-    // ************************************************ //
-
     // If the buffer is too large, write only a part of it
     if (_clientWriteBuffer.size() > DEFAULT_WRITE_SIZE) {
         writeCycleBuffer = _clientWriteBuffer.substr(0, DEFAULT_WRITE_SIZE);

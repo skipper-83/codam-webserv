@@ -12,7 +12,9 @@ cgiMessage::cgiMessage(std::string const& cgiPath, const httpRequest* request, s
     _cgi->addToPollArray(_addAsyncFdToPollArray);
 }
 void cgiMessage::_cgiReadCb(AsyncProgram& cgi) {
+	infoLog << "Checking for EOF" << CPPLog::end;
     if (cgi.eof()) {
+		infoLog << "EOF found" << CPPLog::end;
         _bodyComplete = true;
         return;
     }
@@ -34,7 +36,7 @@ void cgiMessage::_cgiReadCb(AsyncProgram& cgi) {
                 } catch (std::exception& e) {
 
 					_readBuffer = headerLine + _readBuffer; // put back the line that was removed
-                    infoLog << "Cgi response has no headers" << CPPLog::end;
+                    infoLog << "Cgi response has no headers. Readbuffer now: " << _readBuffer << CPPLog::end;
                     _headersComplete = true;
 					return ;
                 }

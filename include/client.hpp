@@ -49,7 +49,7 @@ class Client {
 
     std::shared_ptr<AsyncSocketClient> _socketFd;
     std::shared_ptr<InFileHandler> _inputFile = nullptr;
-    std::shared_ptr<AsyncProgram> _cgi = nullptr;
+    // std::shared_ptr<AsyncProgram> _cgi = nullptr;
 	std::shared_ptr<cgiMessage> _cgiMessage;
 
     uint16_t _port = 0;

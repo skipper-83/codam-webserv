@@ -85,7 +85,7 @@ void Environment::_destroy() {
             _env[i] = nullptr;
         }
     }
-    delete _env;
+    delete [] _env;
     _env = nullptr;
 }
 
@@ -129,7 +129,7 @@ AsyncProgram::AsyncProgram(const std::string &exec, const std::string &file, con
     }
 
     pid_t pid = fork();
-    if (pid == -1) {
+    if (pid == -1) {    // if fork() fails
         _closePipeFds(pipeRead);
         _closePipeFds(pipeWrite);
         logE << "AsyncProgram::AsyncProgram(const std::string&, const std::map<std::string, std::string>&, const ProgramCallback&, const "
@@ -138,8 +138,7 @@ AsyncProgram::AsyncProgram(const std::string &exec, const std::string &file, con
         throw std::runtime_error(std::strerror(errno));
     }
 
-    if (pid == 0) {
-        // Child
+    if (pid == 0) { // Child
         if (dup2(pipeRead[1], STDOUT_FILENO) == -1) {
             logF << "AsyncProgram::AsyncProgram(const std::string&, const std::map<std::string, std::string>&, const ProgramCallback&, const "
                     "ProgramCallback&) failed: dup2() failed: "
@@ -155,8 +154,20 @@ AsyncProgram::AsyncProgram(const std::string &exec, const std::string &file, con
         _closePipeFds(pipeRead);
         _closePipeFds(pipeWrite);
 
-        char *const args[3] = {const_cast<char *>(exec.c_str()), const_cast<char *>(file.c_str()),  nullptr};
-        execve(exec.c_str(), args, env);
+        char *argv[3];
+        try {
+            argv[0] = new char[exec.length() + 1];
+            argv[1] = new char[file.length() + 1];
+            argv[2] = nullptr;
+        } catch (std::bad_alloc &e) {
+            logF << "AsyncProgram::AsyncProgram(const std::string&, const std::map<std::string, std::string>&, const ProgramCallback&, const "
+                    "ProgramCallback&) failed: " << e.what();
+            exit(EXIT_FAILURE);
+        }
+        std::strcpy(argv[0], exec.c_str());
+        std::strcpy(argv[1], file.c_str());
+
+        execvpe(exec.c_str(), argv, env);
 
         logF << "AsyncProgram::AsyncProgram(const std::string&, const std::map<std::string, std::string>&, const ProgramCallback&, const "
                 "ProgramCallback&) failed: execve() failed: " << std::strerror(errno);

@@ -31,6 +31,7 @@
 #define DEFAULT_ROOT "./"
 #define DEFAULT_MAX_FILENAME_DISPLAY 20
 #define SESSION_COOKIE_NAME "webserv_session"
+
 using SubParsers = std::map<std::string, std::function<void(std::istream&)> >;
 
 struct BodySize {

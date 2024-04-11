@@ -119,6 +119,7 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
     if (this->_request.bodyComplete()) {
         changeState(ClientState::BUILDING_RESPONSE);
         std::string cgiExecutor;
+      
         // If the request is for a CGI script, execute the script
         if ((cgiExecutor = _request.getServer()->getCgiExectorFromPath(_request.getPath())).empty() == false) {
             clientLogI << "CGI request: " << _request.getPath() << "; executor: " << cgiExecutor << CPPLog::end;

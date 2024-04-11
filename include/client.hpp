@@ -65,6 +65,5 @@ class Client {
 
 	void _openFileAndAddToPollArray(std::string path);
 	void _readFromFile();
-
 	bool _sessionSet = false;
 };

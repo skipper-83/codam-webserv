@@ -8,7 +8,7 @@ static CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "cl
 void Client::_openFileAndAddToPollArray(std::string path)
 {
 	_inputFile = std::make_shared<InFileHandler>(path, DEFAULT_LOCAL_FILE_READBUFFER);
-	_addLocalFdToPollArray(_inputFile->operator std::shared_ptr<AsyncFD>());
+	_addLocalFdToPollArray(*_inputFile);
 }
 
 // Write an error response to the client

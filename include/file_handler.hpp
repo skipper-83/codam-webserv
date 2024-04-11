@@ -17,6 +17,8 @@ class InFileHandler {
 
     operator std::shared_ptr<AsyncFD>() const;
 
+	std::shared_ptr<AsyncInFile> getFD() const;
+
     std::string read(std::size_t size = std::numeric_limits<std::size_t>::max());
     bool readBufferEmpty() const;
     std::size_t readBufferLength() const;
@@ -24,6 +26,7 @@ class InFileHandler {
     bool readBufferFull() const;
     bool eof() const;
     bool bad() const;
+	int badCode() const;
 
    private:
     void _readCb(AsyncInFile& file);
@@ -31,6 +34,7 @@ class InFileHandler {
     std::shared_ptr<AsyncInFile> _fd;
     std::size_t _bufferSize;
     std::string _readbuffer;
-    bool _bad;
-    bool _eof;
+    bool _bad = false;
+    bool _eof = false;
+	int	_badCode = -1;
 };

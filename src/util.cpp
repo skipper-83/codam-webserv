@@ -118,7 +118,10 @@ const std::unordered_map<std::string, std::string> WebServUtil::_getFileTypes(vo
         {".js", "text/javascript"},   {"", "application/octet-stream"},
         {".ico", "image/x-icon"},     {".gif", "image/gif"},
         {".svg", "image/svg+xml"},    {".xml", "application/xml"},
-        {".json", "application/json"}
+        {".json", "application/json"}, {".php", "application/x-httpd-php"},
+		{".zip", "application/zip"},  {".tar", "application/x-tar"},
+		{".gz", "application/gzip"},  {".rar", "application/x-rar-compressed"},
+		{".7z", "application/x-7z-compressed"}, {".tar.gz", "application/gzip"},		
         // Add more mappings here as needed
     };
     return mimeTypes;

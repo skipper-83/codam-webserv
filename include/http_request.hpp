@@ -29,12 +29,13 @@ class httpRequest : public httpMessage {
 	void _setVars(void);
 
     std::string _httpAdress;
-    std::string _httpRequestType;
+    std::string _httpMethod;
     size_t _contentLength = 0;
     bool _headerParseComplete = false;
     bool _bodyComplete = false;
     bool _chunkedRequest = false;
     bool _contentSizeSet = false;
+	bool _returnAutoIndex = false;
     const ServerConfig *_server = nullptr;
 	const Location *_location = nullptr;
     uint16_t _port = -1;
@@ -56,6 +57,7 @@ class httpRequest : public httpMessage {
     std::string getErrorPage(int errorCode) const;
     bool bodyComplete(void) const;
     bool headerComplete(void) const;
+	bool returnAutoIndex(void) const;
 	const ServerConfig* getServer(void) const;
 	uint16_t getPort(void) const;
 	const Location* getLocation(void) const;

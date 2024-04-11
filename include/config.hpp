@@ -17,6 +17,7 @@
 #define DEFAULT_MAX_WRITE_SIZE 32768
 #define DEFAULT_TIMEOUT_SECONDS 30
 #define DEFAULT_FD_BACKLOG_SIZE 50
+#define DEFAULT_LOCAL_FILE_READBUFFER 1024
 #define DEFAULT_ALLOWED_METHODS                                                                          \
     {"GET", true}, {"POST", true}, {"PUT", true}, {"DELETE", true}, {"HEAD", true}, {"OPTIONS", true}, { \
         "PATCH", true                                                                                    \

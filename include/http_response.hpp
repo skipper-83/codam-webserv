@@ -13,6 +13,8 @@ class httpResponse : public httpMessage {
 	bool _bodyComplete = false;
     std::string _responseCodeDescription;
 	const httpRequest* _precedingRequest;
+	bool _chunked = false;
+	void _setBody(std::string body);
 	void _setErrorBody();
 	std::string _getStartLine(void) const;
 
@@ -28,5 +30,6 @@ class httpResponse : public httpMessage {
 	std::string getHeadersForChunkedResponse(void);
 	std::string transformLineForChunkedResponse(std::string line);
 	bool isBodyComplete(void) const;
+	bool isChunked(void) const;
 	void clear();
 };

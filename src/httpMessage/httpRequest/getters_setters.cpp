@@ -15,7 +15,7 @@ std::string httpRequest::getAdress(void) const {
  * @return std::string
  */
 std::string httpRequest::getRequestType(void) const {
-    return this->_httpRequestType;
+    return this->_httpMethod;
 }
 
 std::string httpRequest::getErrorPage(int errorCode) const {
@@ -42,6 +42,10 @@ bool httpRequest::bodyComplete(void) const {
  */
 bool httpRequest::headerComplete(void) const {
     return _headerParseComplete;
+}
+
+bool httpRequest::returnAutoIndex(void) const {
+    return _returnAutoIndex;
 }
 
 /**

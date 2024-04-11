@@ -22,8 +22,9 @@ void mainClientAvailableCb(AsyncSocket& socket, AsyncPollArray& pollArray, std::
     mainLogI << "creating client" << CPPLog::end;
     std::shared_ptr<AsyncSocketClient> newSocketClient = socket.accept();
     clients.emplace_back(newSocketClient, [&pollArray](std::shared_ptr<AsyncFD> fd) {
-		mainLogI << "adding client to pollArray" << CPPLog::end;
+		mainLogI << "adding Fd to pollArray from CLIENT" << CPPLog::end;
 		pollArray.add(fd);
+		mainLogI << "added Fd to pollArray from CLIENT: " << pollArray.size() << CPPLog::end;
 	});
     mainLogI << "adding client to pollArray" << CPPLog::end;
     pollArray.add(newSocketClient);

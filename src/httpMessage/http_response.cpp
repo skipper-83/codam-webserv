@@ -23,6 +23,7 @@ httpResponse& httpResponse::operator=(const httpResponse& rhs) {
     this->_bodyComplete = rhs._bodyComplete;
     this->_responseCode = rhs._responseCode;
     this->_bodyComplete = rhs._bodyComplete;
+	this->_chunked = rhs._chunked;
     this->_responseCodeDescription = rhs._responseCodeDescription;
     this->_precedingRequest = rhs._precedingRequest;
     return *this;
@@ -46,11 +47,11 @@ void httpResponse::_setErrorBody() {
     infoLog << "Setting up error page for " << this->_responseCode << CPPLog::end;
 	// check if the server has a custom error page for this response code, this is slightly ugly as the calling
 	// function already knows this information, we could omit this and then the body will be set for no reason
-    if (this->_precedingRequest != nullptr && this->_precedingRequest->getServer() != nullptr) {
-        if(!this->_precedingRequest->getServer()->getErrorPage(this->_responseCode).empty())
-			return;
-    }
-    if (error_page.empty()) {
+    // if (this->_precedingRequest != nullptr && this->_precedingRequest->getServer() != nullptr) {
+    //     if(!this->_precedingRequest->getServer()->getErrorPage(this->_responseCode).empty())
+	// 		return;
+    // }
+    // if (error_page.empty()) {
         error_page.append("<html><head><title>")
             .append(std::to_string(this->_responseCode))
             .append(" " + this->_responseCodeDescription)
@@ -60,7 +61,7 @@ void httpResponse::_setErrorBody() {
             .append("</h1></center><hr><center>")
             .append(DEFAULT_SERVER_NAME)
             .append("</center>");
-    }
+    // }
     setHeader("Content-Type", "text/html; charset=UTF-8");
     this->setFixedSizeBody(error_page);
     infoLog << "Error page set to: " << error_page << CPPLog::end;
@@ -81,6 +82,7 @@ std::string httpResponse::_getStartLine(void) const {
 std::string httpResponse::getHeadersForChunkedResponse(void) {
     std::string ret;
 
+	_chunked = true;
     deleteHeader("Date");
     setHeader("Date", WebServUtil::timeStamp());
     deleteHeader("Content-Length");
@@ -94,6 +96,8 @@ std::string httpResponse::getHeadersForChunkedResponse(void) {
 std::string httpResponse::transformLineForChunkedResponse(std::string line) {
     std::stringstream ret;
 
+	if (line.empty())
+		_bodyComplete = true;
     ret << std::hex << line.size() << "\r\n" << line << "\r\n";
     return (ret.str());
 }
@@ -111,6 +115,10 @@ std::string httpResponse::getFixedBodyResponseAsString(void) {
 
 bool httpResponse::isBodyComplete(void) const {
     return _bodyComplete;
+}
+
+bool httpResponse::isChunked(void) const {
+    return _chunked;
 }
 
 void httpResponse::clear(void) {

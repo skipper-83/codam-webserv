@@ -7,6 +7,7 @@
 #include "async/in_file.hpp"
 #include "http_request.hpp"
 #include "http_response.hpp"
+#include "file_handler.hpp"
 
 enum class ClientState {
     READY_FOR_INPUT,
@@ -28,20 +29,12 @@ class Client {
     Client &operator=(const Client &);
 
     Client(Client &&);
-    // Client &operator=(Client &&) = delete;
 
     AsyncIO &socketFd() const;
-    // AsyncFile
     uint16_t port() const;
-    //
-    // SocketClientCallback clientReadCb;
-    void simpleReadCb(AsyncSocketClient &client);
-    void simpleWriteCb(AsyncSocketClient &client);
 
     void clientReadCb(AsyncSocketClient &client);
     void clientWriteCb(AsyncSocketClient &client);
-    void localReadCb();
-    void localWriteCb();
 
     void changeState(ClientState newState);
     void setLastActivityTime();
@@ -54,6 +47,7 @@ class Client {
 
     std::shared_ptr<AsyncSocketClient> _socketFd;
     std::shared_ptr<AsyncInFile> _localFd = nullptr;
+	std::shared_ptr<InFileHandler> _inputFile = nullptr;
 
     uint16_t _port = 0;
 
@@ -61,12 +55,12 @@ class Client {
 
     std::string _clientReadBuffer;
     std::string _clientWriteBuffer;
-    std::string _localReadBuffer;
-    std::string _localWriteBuffer;
     std::chrono::time_point<std::chrono::steady_clock> _lastActivityTime = std::chrono::steady_clock::now();
 
     std::function<void(std::shared_ptr<AsyncFD>)> _addLocalFdToPollArray;
     void _registerCallbacks();
     void _returnHttpErrorToClient(int code, std::string message = "");
-    std::string _resolvePath();
+
+	void _openFileAndAddToPollArray(std::string path);
+	void _readFromFile();
 };

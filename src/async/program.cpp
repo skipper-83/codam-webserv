@@ -3,6 +3,8 @@
 #include <unistd.h>
 
 #include <cstring>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include "logging.hpp"
 
@@ -106,10 +108,24 @@ static void _closePipeFds(int *pipeFds) {
 
 AsyncProgram::AsyncProgram(const std::string &exec, const std::string &file, const std::map<std::string, std::string> &environment,
                            const ProgramCallback &programReadReadyCb, const ProgramCallback &programWriteReadyCb)
-    : _pipeReadFD(nullptr), _pipeWriteFD(nullptr), _programReadReadyCb(programReadReadyCb), _programWriteReadyCb(programWriteReadyCb) {
+    : _pipeReadFD(nullptr), _pipeWriteFD(nullptr), _programReadReadyCb(programReadReadyCb), _programWriteReadyCb(programWriteReadyCb), _pid(-1), _running(false), _exitStatus(-1){
     logD << "AsyncProgram::AsyncProgram(const std::string&, const std::map<std::string, std::string>&, const ProgramCallback&, const "
             "ProgramCallback&) called";
     Environment env(environment);
+
+    if (exec.empty() || file.empty()) {
+        logE << "AsyncProgram::AsyncProgram(const std::string&, const std::map<std::string, std::string>&, const ProgramCallback&, const "
+                "ProgramCallback&) failed: exec or file is empty";
+        throw std::invalid_argument("exec or file is empty");
+    }
+
+    if (access(exec.c_str(), X_OK) < 0) {
+        logE << "AsyncProgram::AsyncProgram(const std::string&, const std::map<std::string, std::string>&, const ProgramCallback&, const "
+                "ProgramCallback&) failed: access() failed: "
+             << std::strerror(errno);
+        throw std::runtime_error(std::strerror(errno));
+    }
+
     int pipeRead[2] = {-1, -1};
     int pipeWrite[2] = {-1, -1};
 
@@ -129,6 +145,8 @@ AsyncProgram::AsyncProgram(const std::string &exec, const std::string &file, con
              << std::strerror(errno);
         throw std::runtime_error(std::strerror(errno));
     }
+
+
 
     pid_t pid = fork();
     if (pid == -1) {  // if fork() fails
@@ -170,6 +188,8 @@ AsyncProgram::AsyncProgram(const std::string &exec, const std::string &file, con
         std::strcpy(argv[0], exec.c_str());
         std::strcpy(argv[1], file.c_str());
 
+        logD << "execve(" << exec << ", " << file << ")";
+
         execve(exec.c_str(), argv, env);
 
         logF << "AsyncProgram::AsyncProgram(const std::string&, const std::map<std::string, std::string>&, const ProgramCallback&, const "
@@ -178,6 +198,9 @@ AsyncProgram::AsyncProgram(const std::string &exec, const std::string &file, con
 
         exit(EXIT_FAILURE);  // if execve() fails, we should exit
     }
+
+    _pid = pid;
+    _running = true;
     // Parent
     if (close(pipeRead[1]) < 0 || close(pipeWrite[0]) < 0) {
         logW << "AsyncProgram::AsyncProgram(const std::string&, const std::map<std::string, std::string>&, const ProgramCallback&, const "
@@ -202,6 +225,14 @@ std::unique_ptr<AsyncProgram> AsyncProgram::create(const std::string &exec, cons
 
 AsyncProgram::~AsyncProgram() {
     logD << "AsyncProgram::~AsyncProgram() called";
+
+    if (_pid >= 0 && _running) {
+        try {
+            kill();
+        } catch (std::runtime_error &e) {
+            logE << "AsyncProgram::~AsyncProgram() failed: " << e.what();
+        }
+    }
 }
 
 std::string AsyncProgram::read(size_t size) {
@@ -277,4 +308,68 @@ void AsyncProgram::_internalWriteReadyCb(AsyncFD &) {
 void AsyncProgram::addToPollArray(const std::function<void(std::weak_ptr<AsyncFD>)> &addCb) {
     addCb(_pipeReadFD);
     addCb(_pipeWriteFD);
+}
+
+bool AsyncProgram::isRunning() {
+    logD << "AsyncProgram::isRunning() called";
+
+    _updateProgramStatus();
+    return _running;
+}
+
+int AsyncProgram::getExitCode() {
+    logD << "AsyncProgram::getExitCode() called";
+
+    _updateProgramStatus();
+
+    if (_running) {
+        logE << "AsyncProgram::getExitCode() failed: Program is still running";
+        throw std::runtime_error("Program is still running");
+        return -1;
+    }
+    return _exitStatus;
+}
+
+void AsyncProgram::kill(int signal) {
+    logD << "AsyncProgram::kill(int) called";
+
+    if (_pid < 0) {
+        logW << "AsyncProgram::kill(int) failed: _pid < 0";
+        return;
+    }
+    if (::kill(_pid, signal) < 0) {
+        logE << "AsyncProgram::kill(int) failed: kill() failed: " << std::strerror(errno);
+        throw std::runtime_error(std::strerror(errno));
+    }
+    _updateProgramStatus();
+}
+
+void AsyncProgram::_updateProgramStatus() {
+    logD << "AsyncProgram::_updateProgramStatus() called";
+
+    if (!_running) {
+        return;
+    }
+
+    if (_pid < 0) {
+        logW << "AsyncProgram::_updateProgramStatus() failed: _pid < 0";
+        return;
+    }
+
+    int status;
+    int ret = waitpid(_pid, &status, WNOHANG);
+
+    if (ret < 0) {
+        logE << "AsyncProgram::_updateProgramStatus() failed: waitpid() failed: " << std::strerror(errno);
+        throw std::runtime_error(std::strerror(errno));
+    } else if (ret == 0) {
+        return;
+    }
+    if (WIFEXITED(status)) {
+        _exitStatus = WEXITSTATUS(status);
+        _running = false;
+    } else if (WIFSIGNALED(status)) {
+        _exitStatus = WTERMSIG(status) + 128;
+        _running = false;
+    }
 }

@@ -115,8 +115,8 @@ std::regex pattern("^([^\\s:]+):\\s*(.*)");
     std::smatch match;
 
     if (std::regex_match(line, match, pattern)) {
-        std::cout << "Header Name: " << match[1] << std::endl;
-        std::cout << "Header Value: " << match[2] << std::endl;
+        // std::cout << "Header Name: " << match[1] << std::endl;
+        // std::cout << "Header Value: " << match[2] << std::endl;
     } else {
         throw std::runtime_error("Invalid header line");
     }

@@ -77,8 +77,6 @@ void AsyncPollArray::poll(int timeout) {
     for (size_t i = 0; i < pollfds.size(); i++) {
         for (auto [event, eventType] : AsyncFD::pollToEventType) {
             if (pollfds[i].revents & event) {
-                // logD << "Event " << event << " on fd " << fds[i]->_fd;
-
                 std::shared_ptr<AsyncFD> fd = weakfds[i].lock();
                 if (!fd) 
                     continue;

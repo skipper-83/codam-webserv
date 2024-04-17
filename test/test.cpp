@@ -121,6 +121,11 @@ TEST_F(httpRequestTest, get_headerlist) {
     EXPECT_EQ(req.getHeaderList("Cookie").at(1), "user_pref=dark_mode");
 }
 
+TEST_F(httpRequestTest, parse_cookies) {
+	EXPECT_EQ(req.getCookie("session_id"), "123");
+	EXPECT_EQ(req.getCookie("user_pref"), "dark_mode");
+}
+
 TEST_F(httpBodyParseTest, with_content_length)
 {
 	

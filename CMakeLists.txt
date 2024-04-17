@@ -34,7 +34,7 @@ set (SRCS
 	src/httpMessage/httpRequest/helpers.cpp
 	src/httpMessage/http_message.cpp
 	src/httpMessage/http_response.cpp
-	src/path.cpp
+	src/session.cpp
 	src/util.cpp
 )
 set (EXEC_NAME webserv)

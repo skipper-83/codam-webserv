@@ -5,8 +5,9 @@
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "cgi");
 
-cgiMessage::cgiMessage(std::string const& cgiPath, const httpRequest* request, std::function<void(std::shared_ptr<AsyncFD>)> addAsyncFdToPollArray)
+cgiMessage::cgiMessage(std::string const& cgiPath, const httpRequest* request, std::function<void(std::weak_ptr<AsyncFD>)> addAsyncFdToPollArray)
     : _request(request), _addAsyncFdToPollArray(addAsyncFdToPollArray) {
+	infoLog << "Creating CGI Message" << CPPLog::end;
     _cgi = AsyncProgram::create(cgiPath, _request->getPath(), {}, std::bind(&cgiMessage::_cgiReadCb, this, std::placeholders::_1),
                                 std::bind(&cgiMessage::_cgiWriteCb, this, std::placeholders::_1));
     _cgi->addToPollArray(_addAsyncFdToPollArray);

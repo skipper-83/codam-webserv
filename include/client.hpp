@@ -24,7 +24,7 @@ enum class ClientState {
 class Client {
    public:
     using SocketClientCallback = AsyncSocketClient::SocketClientCallback;
-    Client(std::shared_ptr<AsyncSocketClient> &socketFd, std::function<void(std::shared_ptr<AsyncFD>)> addLocalFdToPollArray,
+    Client(std::shared_ptr<AsyncSocketClient> &socketFd, std::function<void(std::weak_ptr<AsyncFD>)> addLocalFdToPollArray,
            WebServSessionList &sessionList);
     ~Client();
 
@@ -60,7 +60,7 @@ class Client {
     std::string _clientWriteBuffer;
     std::chrono::time_point<std::chrono::steady_clock> _lastActivityTime = std::chrono::steady_clock::now();
 
-    std::function<void(std::shared_ptr<AsyncFD>)> _addLocalFdToPollArray;
+    std::function<void(std::weak_ptr<AsyncFD>)> _addLocalFdToPollArray;
     void _registerCallbacks();
     void _returnHttpErrorToClient(int code, std::string message = "");
 

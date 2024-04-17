@@ -69,7 +69,7 @@ bool AsyncOutput::hasPendingWrite() const {
 }
 
 void AsyncOutput::_internalOutCb(AsyncFD &fd) {
-    logD << "AsyncOutput::_internalOutCb(AsyncFD&) called";
+    // logD << "AsyncOutput::_internalOutCb(AsyncFD&) called";
     AsyncOutput &output = dynamic_cast<AsyncOutput &>(fd);
     output._hasPendingWrite = true;
     if (output._outCb) {

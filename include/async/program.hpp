@@ -19,7 +19,7 @@ class AsyncProgram {
     AsyncProgram(const AsyncProgram &&) = delete;
     AsyncProgram &operator=(const AsyncProgram &&) = delete;
 
-    void addToPollArray(const std::function<void(std::shared_ptr<AsyncFD>)> &addCb);
+    void addToPollArray(const std::function<void(std::weak_ptr<AsyncFD>)> &addCb);
 
 	std::string read(size_t size);
 	size_t write(std::string &data);

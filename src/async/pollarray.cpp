@@ -83,7 +83,7 @@ void AsyncPollArray::poll(int timeout) {
                 if (!fd) 
                     continue;
                 if (auto cb = fd->_eventCallbacks[eventType]) {
-                    cb(*fds[i]);
+                    cb(*fd);
                 }
             }
         }

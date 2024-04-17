@@ -17,7 +17,7 @@
 #define DEFAULT_READ_SIZE 1024
 #define DEFAULT_WRITE_SIZE 60000
 #define DEFAULT_MAX_WRITE_SIZE 32768
-#define DEFAULT_TIMEOUT_SECONDS 30
+#define DEFAULT_TIMEOUT_SECONDS 40
 #define DEFAULT_FD_BACKLOG_SIZE 50
 #define DEFAULT_LOCAL_FILE_READBUFFER 60000
 #define DEFAULT_ALLOWED_METHODS                                                                                                     \

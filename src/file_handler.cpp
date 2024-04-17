@@ -23,6 +23,10 @@ InFileHandler::~InFileHandler() {
     logD << "InFileHandler::~InFileHandler() called";
 }
 
+std::shared_ptr<AsyncInFile> InFileHandler::getFD() const {
+    return _fd;
+}
+
 std::string InFileHandler::read(std::size_t size) {
     logD << "InFileHandler::read(std::size_t) called";
     if (_bad)

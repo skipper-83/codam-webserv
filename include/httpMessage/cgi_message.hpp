@@ -4,7 +4,7 @@
 
 class cgiMessage : public httpMessage {
 	public:
-		cgiMessage(std::string const &cgiPath, const httpRequest* request, std::function<void(std::shared_ptr<AsyncFD>)> addAsyncFdToPollArray);
+		cgiMessage(std::string const &cgiPath, const httpRequest* request, std::function<void(std::weak_ptr<AsyncFD>)> addAsyncFdToPollArray);
 		~cgiMessage() = default;
 
 		bool isHeadersComplete() const { return _headersComplete; }
@@ -23,5 +23,5 @@ class cgiMessage : public httpMessage {
 		const httpRequest* _request = nullptr;
 		void _cgiReadCb(AsyncProgram& cgi);
 		void _cgiWriteCb(AsyncProgram& cgi);
-		std::function<void(std::shared_ptr<AsyncFD>)> _addAsyncFdToPollArray;
+		std::function<void(std::weak_ptr<AsyncFD>)> _addAsyncFdToPollArray;
 };

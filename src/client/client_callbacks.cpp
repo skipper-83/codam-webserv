@@ -12,16 +12,18 @@ void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
     // read from file (if available)
     _readFromFile();
 
-    if (_cgiMessage && _cgiMessage->isBodyComplete()) {
-		clientLogI << "_clientWriteCb: CGI response complete" << CPPLog::end;
-		clientLogI << "_clientWriteCb: CGI response: " << _cgiMessage->getBody() << CPPLog::end;
-        _response.setHeader("Content-Type", "text/html; charset=UTF-8");
-        _response.setCode(200);
-		_response.setFixedSizeBody(_cgiMessage->getBody());
-		_clientWriteBuffer = _response.getFixedBodyResponseAsString();
-		_cgiMessage = nullptr;
-		_request.clear();
-		return;
+    if (_cgiMessage) {
+        if (_cgiMessage->isBodyComplete()) {
+            clientLogI << "_clientWriteCb: CGI response complete" << CPPLog::end;
+            clientLogI << "_clientWriteCb: CGI response: " << _cgiMessage->getBody() << CPPLog::end;
+            _response.setHeader("Content-Type", "text/html; charset=UTF-8");
+            _response.setCode(200);
+            _response.setFixedSizeBody(_cgiMessage->getBody());
+            _clientWriteBuffer = _response.getFixedBodyResponseAsString();
+            _cgiMessage = nullptr;
+            _request.clear();
+            return;
+        }
     }
     // If the buffer is empty, return
     if (_clientWriteBuffer.empty())
@@ -165,7 +167,13 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
             // _clientWriteBuffer = _response.getFixedBodyResponseAsString();
             // _cgi = AsyncProgram::create(cgiExecutor, _request.getPath(), {}, std::bind(&Client::_cgiReadCb, this, std::placeholders::_1),
             // std::bind(&Client::_cgiWriteCb, this, std::placeholders::_1)); _cgi->addToPollArray(_addLocalFdToPollArray);
-            _cgiMessage = std::make_shared<cgiMessage>(cgiExecutor, &_request, _addLocalFdToPollArray);
+            try {
+                _cgiMessage = std::make_shared<cgiMessage>(cgiExecutor, &_request, _addLocalFdToPollArray);
+            } catch (const std::exception& e) {
+                clientLogE << "_clientReadCb: " << e.what() << CPPLog::end;
+                _returnHttpErrorToClient(500);
+                return;
+            }
             // _requestBodyForCgi = _request.getBody();
             // _request.clear();
             return;

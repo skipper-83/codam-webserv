@@ -17,7 +17,9 @@ AsyncInput::AsyncInput(int fd, const std::map<EventTypes, EventCallback> &eventC
     if (eventCallbacks.find(EventTypes::IN) != eventCallbacks.end()) {
         _inCb = eventCallbacks.at(EventTypes::IN);
     }
+
     _eventCallbacks[EventTypes::IN] = AsyncInput::_internalInCb;
+    _eventCallbacks[EventTypes::HANGUP] = AsyncInput::_internalInCb;
 }
 
 AsyncInput::AsyncInput(const std::map<EventTypes, EventCallback> &eventCallbacks)

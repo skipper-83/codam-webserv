@@ -2,6 +2,8 @@
 #include "input.hpp"
 #include "output.hpp"
 
+#include <signal.h>
+
 class AsyncProgram {
    public:
     using ProgramCallback = std::function<void(AsyncProgram &)>;
@@ -19,7 +21,7 @@ class AsyncProgram {
     AsyncProgram(const AsyncProgram &&) = delete;
     AsyncProgram &operator=(const AsyncProgram &&) = delete;
 
-    void addToPollArray(const std::function<void(std::shared_ptr<AsyncFD>)> &addCb);
+    void addToPollArray(const std::function<void(std::weak_ptr<AsyncFD>)> &addCb);
 
 	std::string read(size_t size);
 	size_t write(std::string &data);
@@ -35,7 +37,15 @@ class AsyncProgram {
 	void closeInputFd();
 	void closeOutputFd();
 
+    bool isRunning();
+    int getExitCode();
+    
+    void kill(int signal = SIGKILL);
+
    protected:
+
+    void _updateProgramStatus();
+
     void _internalReadReadyCb(AsyncFD &fd);
 	void _internalWriteReadyCb(AsyncFD &fd);
 
@@ -44,4 +54,9 @@ class AsyncProgram {
 
     ProgramCallback _programReadReadyCb;
     ProgramCallback _programWriteReadyCb;
+
+    pid_t _pid;
+    bool _running;
+
+    int _exitStatus;
 };

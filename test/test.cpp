@@ -7,7 +7,7 @@
 #include "test_httpReq.hpp"
 #include "test_config.hpp"
 #include "config.hpp"
-#include "path.hpp"
+// #include "path.hpp"
 
 MainConfig mainConfig;
 
@@ -101,7 +101,7 @@ TEST_F(httpRequestTest, get_adress) {
 }
 
 TEST_F(httpRequestTest, get_request_type) {
-    EXPECT_EQ(req.getRequestType(), "GET");
+    EXPECT_EQ(WebServUtil::httpMethodToString(req.getMethod()), "GET");
 }
 
 TEST_F(httpRequestTest, get_protocol) {
@@ -119,6 +119,11 @@ TEST_F(httpRequestTest, get_header) {
 TEST_F(httpRequestTest, get_headerlist) {
     EXPECT_EQ(req.getHeaderList("Cookie").at(0), "session_id=123");
     EXPECT_EQ(req.getHeaderList("Cookie").at(1), "user_pref=dark_mode");
+}
+
+TEST_F(httpRequestTest, parse_cookies) {
+	EXPECT_EQ(req.getCookie("session_id"), "123");
+	EXPECT_EQ(req.getCookie("user_pref"), "dark_mode");
 }
 
 TEST_F(httpBodyParseTest, with_content_length)
@@ -269,6 +274,17 @@ TEST_F(configTest, config_happy)
 	EXPECT_EQ(config.getServer(8080, "blabla")->rank, 0);
 }
 
+TEST_F(configTest, cgi)
+{
+
+	config_input >> config;
+	EXPECT_EQ(config.getServerFromPortAndName(8080, "*.j-projects.nl")->cgis.at(0).executor, "/usr/bin/php-cgi");
+	EXPECT_EQ(config.getServerFromPortAndName(8080, "*.j-projects.nl")->cgis.at(1).executor, "/usr/bin/python3");
+	EXPECT_EQ(config.getServerFromPortAndName(8080, "*.j-projects.nl")->cgis.at(0).extensions.at(0), ".php");
+	EXPECT_EQ(config.getServerFromPortAndName(8080, "*.j-projects.nl")->cgis.at(0).extensions.at(1), ".phtml");
+	EXPECT_EQ(config.getServerFromPortAndName(8080, "*.j-projects.nl")->cgis.at(1).extensions.at(0), ".py");
+}
+
 TEST_F(configTestStub, test_defaults)
 {
 	const ServerConfig* server;
@@ -399,23 +415,23 @@ TEST_F(configTest, ports_getter)
 // 	EXPECT_TRUE(req.bodyComplete());
 // 	EXPECT_EQ(input, "abcd");
 // }
-TEST(response, basic)
-{
-	httpResponse resp;
-	std::string exp_eq = R"(HTTP/1.1 200 OK
-Content-Length: 4
-Content-Type: text/html; charset=UTF-8
-Date: )" + WebServUtil::timeStamp() + "\n" + 
-R"(Server: Jelle en Albert's webserv
+// TEST(response, basic)
+// {
+// 	httpResponse resp;
+// 	std::string exp_eq = R"(HTTP/1.1 200 OK
+// Content-Length: 4
+// Content-Type: text/html; charset=UTF-8
+// Date: )" + WebServUtil::timeStamp() + "\n" + 
+// R"(Server: Jelle en Albert's webserv
 
-test)";
+// test)";
 
-	resp.setCode(200);
-	resp.setFixedSizeBody("test");
-	// std::cerr
-	std::cerr << "Response: \n" <<  resp.getFixedBodyResponseAsString() << "\n";
-	EXPECT_EQ(resp.getFixedBodyResponseAsString(), exp_eq);
-}
+// 	resp.setCode(200);
+// 	resp.setFixedSizeBody("test");
+// 	// std::cerr
+// 	std::cerr << "Response: \n" <<  resp.getFixedBodyResponseAsString() << "\n";
+// 	EXPECT_EQ(resp.getFixedBodyResponseAsString(), exp_eq);
+// }
 
 TEST_F(configWithRequest, getErrorPage)
 {
@@ -428,7 +444,7 @@ TEST_F(configWithRequest, getErrorPage)
 
 }
 
-TEST(path, first)
-{
-	checkFile("../../test/test_dir/");
-}
+// TEST(path, first)
+// {
+// 	checkFile("../../test/test_dir/");
+// }

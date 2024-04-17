@@ -4,6 +4,7 @@
 #include "logging.hpp"
 #include "util.hpp"
 
+
 static CPPLog::Instance clientLogI = logOut.instance(CPPLog::Level::INFO, "client");
 static CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "client");
 static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "client");
@@ -19,27 +20,30 @@ Client::Client(std::shared_ptr<AsyncSocketClient>& socketFd, const std::function
     : _response(&this->_request), _socketFd(socketFd), _addLocalFdToPollArray(addLocalFdToPollArray) {
     // addLocalFdToPollArray(_socketFd);
     this->_port = this->_socketFd->getPort();
-    this->_request.setServer(mainConfig, this->_port);
+    // this->_request.setServer(mainConfig, this->_port);
     _registerCallbacks();
 }
 
 Client::Client(Client&& other)
-    : _request(std::move(other._request)),
+	  : _state(other._state),
+     _request(std::move(other._request)),
       _response(&this->_request),
+	  _sessionList(other._sessionList),
+	  _session(other._session),
       _socketFd(std::move(other._socketFd)),
       _port(other._port),
-      _localReadBuffer(std::move(other._localReadBuffer)),
-      _localWriteBuffer(std::move(other._localWriteBuffer)),
+	  _bytesWrittenCounter(other._bytesWrittenCounter),
+	_clientReadBuffer(std::move(other._clientReadBuffer)),
+	_clientWriteBuffer(std::move(other._clientWriteBuffer)),
       _addLocalFdToPollArray(std::move(other._addLocalFdToPollArray)) {
     _registerCallbacks();
 }
 
 Client::~Client() {
-    if (_localFd != nullptr)
-        _localFd->close();
+	clientLogI << "Client destructor called" << CPPLog::end;
 }
 
-Client::Client(const Client& rhs) {
+Client::Client(const Client& rhs) : _sessionList(rhs._sessionList) {
     *this = rhs;
 }
 
@@ -50,13 +54,13 @@ Client& Client::operator=(const Client& rhs) {
     _port = rhs._port;
     _request = rhs._request;
     _response = rhs._response;
-    _localReadBuffer = rhs._localReadBuffer;
-    _localWriteBuffer = rhs._localWriteBuffer;
+	_sessionList = rhs._sessionList;
+	_session = rhs._session;
+	_state = rhs._state;
     _bytesWrittenCounter = rhs._bytesWrittenCounter;
     _state = rhs._state;
     _clientReadBuffer = rhs._clientReadBuffer;
     _clientWriteBuffer = rhs._clientWriteBuffer;
-    _localFd = rhs._localFd;
     _addLocalFdToPollArray = rhs._addLocalFdToPollArray;
     _registerCallbacks();
     return *this;
@@ -83,34 +87,3 @@ std::chrono::time_point<std::chrono::steady_clock> Client::getLastActivityTime()
     return _lastActivityTime;
 }
 
-// Write an error response to the client
-void Client::_returnHttpErrorToClient(int code, std::string message) {
-    std::string error_path, error_page;
-
-    // if custom error page is set, use it
-	this->_response.setCode(code);
-	if (code == 301)  // if the """error""" is a redirect, set the location header
-		_response.setHeader("Location", message);
-    if (_request.getServer() && !(error_page = _request.getServer()->getErrorPage(code)).empty()) {
-        clientLogI << "Error page found: " << error_path << CPPLog::end;
-        // root path for server is to be prependended to the error path
-        for (auto& it : _request.getServer()->locations) {
-            if (it.ref == "/") {
-                error_path = it.root + error_page;
-                break;
-            }
-        }
-        if (error_path.empty())
-            error_path = DEFAULT_ROOT + error_page;
-        if (std::filesystem::exists(error_path)) {
-            _localFd = AsyncInFile::create(error_path);
-            _addLocalFdToPollArray(_localFd);
-        }
-    } else {
-        this->_localWriteBuffer = this->_response.getFixedBodyResponseAsString();
-    }
-    this->_localReadBuffer.clear();
-    this->_request.clear();
-    this->_state = ClientState::WRITE_RESPONSE;
-    clientLogW << "HTTP error " << code << ": " << WebServUtil::codeDescription(code);
-}

@@ -50,8 +50,9 @@ httpRequest &httpRequest::operator=(const httpRequest &rhs) {
 
     // static_cast<httpMessage &>(*this) = rhs;
     httpMessageAssign(rhs);
-    this->_httpRequestType = rhs._httpRequestType;
+    this->_httpMethod = rhs._httpMethod;
     this->_httpAdress = rhs._httpAdress;
+	this->_cookies = rhs._cookies;
     this->_headerParseComplete = rhs._headerParseComplete;
     this->_bodyComplete = rhs._bodyComplete;
     this->_contentLength = rhs._contentLength;
@@ -60,6 +61,7 @@ httpRequest &httpRequest::operator=(const httpRequest &rhs) {
     this->_server = rhs._server;
     this->_port = rhs._port;
     this->_clientMaxBodySize = rhs._clientMaxBodySize;
+	this->_returnAutoIndex = rhs._returnAutoIndex;
     this->_path = rhs._path;
     return *this;
 }
@@ -76,7 +78,7 @@ uint16_t httpRequest::getPort(void) const {
 
 std::ostream &operator<<(std::ostream &os, httpRequest const &t) {
     os << "Protocol:" << t.getProtocol() << "\n"
-       << "Type: " << t.getRequestType() << "\n"
+       << "Type: " << WebServUtil::httpMethodToString(t.getMethod()) << "\n"
        << "Adress: " << t.getAdress() << "\n"
        << t.getHeaderListAsString() << "\n"
        << t.getBody() << "\n";

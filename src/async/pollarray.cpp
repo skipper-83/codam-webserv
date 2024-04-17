@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "logging.hpp"
+#include "async/pollarray.hpp"
 
 static CPPLog::Instance logI = logOut.instance(CPPLog::Level::INFO, "AsyncPollArray");
 static CPPLog::Instance logD = logOut.instance(CPPLog::Level::DEBUG, "AsyncPollArray");
@@ -78,4 +79,8 @@ void AsyncPollArray::poll(int timeout) {
             }
         }
     }
+}
+
+size_t AsyncPollArray::size() const {
+    return size_t(_weakFDs.size());
 }

@@ -45,7 +45,7 @@ std::ostream& operator<<(std::ostream& os, const AllowedMethods& rhs) {
     os << "allowed_methods";
     for (auto it : rhs.methods) {
         if (it.second)
-            os << " " << it.first;
+            os << " " << WebServUtil::httpMethodToString(it.first);
     }
     os << ";";
     return os;

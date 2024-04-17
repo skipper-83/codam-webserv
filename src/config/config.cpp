@@ -1,6 +1,8 @@
 #include "config.hpp"
-
+#include "logging.hpp"
 #include <iostream>
+
+static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "parse config");
 
 /**
  * @brief Called after all servers are passed, overrides defaults when a global value is set,
@@ -47,6 +49,7 @@ void MainConfig::_setServerNameAndPortArrays(void) {
  * @return const ServerConfig* 
  */
 const ServerConfig *MainConfig::getServerFromPort(uint16_t port) { 
+	infoLog << "getServerFromPort: " << port << CPPLog::end;
     auto pos = this->_portsToServers.find(port);
     if (pos != this->_portsToServers.end())
         return pos->second;
@@ -76,6 +79,7 @@ const ServerConfig *MainConfig::getServerFromPortAndName(uint16_t port, std::str
  */
 const ServerConfig *MainConfig::getServer(uint16_t port, std::string name) {
     const ServerConfig *ret;
+	infoLog << "getServer: " << port << " " << name << CPPLog::end;
 	// if a name was given, try to find a server with the given name.
     if (!name.empty() && (ret = getServerFromPortAndName(port, name)))
         return ret;
@@ -96,6 +100,20 @@ std::string ServerConfig::getErrorPage(int errorCode) const {
 				return it.page;
         }
     }
+    return std::string();
+}
+
+std::string ServerConfig::getCgiExectorFromPath(std::string path) const {
+	size_t extensionPos = path.find_last_of('.');
+	if (this->cgis.empty() || extensionPos == std::string::npos)
+		return std::string();
+	std::string extension = path.substr(extensionPos);
+	for (auto it : this->cgis) {
+		for (size_t i = 0; i < it.extensions.size(); ++i) {
+			if (path.find(it.extensions[i]) != std::string::npos)
+				return it.executor;
+		}
+	}
     return std::string();
 }
 

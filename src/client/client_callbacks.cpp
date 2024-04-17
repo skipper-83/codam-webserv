@@ -6,75 +6,53 @@
 static CPPLog::Instance clientLogI = logOut.instance(CPPLog::Level::INFO, "client");
 static CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "client");
 static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "client");
+static CPPLog::Instance sessionLogI = logOut.instance(CPPLog::Level::DEBUG, "WebServSession");
 
 void Client::clientWriteCb(AsyncSocketClient& asyncSocketClient) {
-    // this bit should probably be done in the FileHandler class
-    // ****************************************************** //
-    static std::string tempFileBuffer;
-    if (_localFd != nullptr && _localFd->hasPendingRead()) {
-        clientLogI << "I have a pending read" << CPPLog::end;
-        if (_localFd->eof()) {
-            clientLogI << "file is at eof" << CPPLog::end;
-            _localFd->close();
-            _localFd = nullptr;
-            _response.setFixedSizeBody(tempFileBuffer);
-            _localWriteBuffer = _response.getFixedBodyResponseAsString();
-            tempFileBuffer.clear();
-        } else {
-            tempFileBuffer += _localFd->read(1024);
-            clientLogI << "file buffer: " << tempFileBuffer << CPPLog::end;
-        }
-    }
-    // ****************************************************** //
+    // read from file (if available)
+    _readFromFile();
 
     // If the buffer is empty, return
-    if (_localWriteBuffer.empty())
+    if (_clientWriteBuffer.empty())
         return;
 
-    size_t bytesWritten = 0;
-    std::string writeBuffer;
-
-    // TODO: action if the response is too large
-    if (_localWriteBuffer.size() + _bytesWrittenCounter > DEFAULT_MAX_WRITE_SIZE) {
-        clientLogE << "clientWriteCb: response too large: " << _bytesWrittenCounter + _localWriteBuffer.size() << "fd: " << _socketFd << CPPLog::end;
-        _socketFd->close();
-        changeState(ClientState::DONE);
-        return;
-    }
+    size_t bytesWrittenInCycle = 0;
+    std::string writeCycleBuffer;
 
     // If the buffer is too large, write only a part of it
-    if (_localWriteBuffer.size() > DEFAULT_WRITE_SIZE) {
-        writeBuffer = _localWriteBuffer.substr(0, DEFAULT_WRITE_SIZE);
+    if (_clientWriteBuffer.size() > DEFAULT_WRITE_SIZE) {
+        writeCycleBuffer = _clientWriteBuffer.substr(0, DEFAULT_WRITE_SIZE);
     } else {
-        writeBuffer = _localWriteBuffer;
+        writeCycleBuffer = _clientWriteBuffer;
     }
 
     try {
         changeState(ClientState::WRITE_RESPONSE);
-        bytesWritten = asyncSocketClient.write(writeBuffer);
+        bytesWrittenInCycle = asyncSocketClient.write(writeCycleBuffer);
     } catch (const std::exception& e) {
         clientLogE << "clientWriteCb: " << e.what() << CPPLog::end;
-        _state = ClientState::ERROR;
+        changeState(ClientState::ERROR);
         return;
     }
-    _localWriteBuffer.erase(0, bytesWritten);
-    _bytesWrittenCounter += bytesWritten;
-    clientLogI << "clientWriteCb: wrote " << bytesWritten << " bytes to " << this->_port << CPPLog::end;
-    clientLogI << "clientWriteCb: " << _localWriteBuffer.size() << " bytes left to write" << CPPLog::end;
+    _clientWriteBuffer.erase(0, bytesWrittenInCycle);
+    _bytesWrittenCounter += bytesWrittenInCycle;
+    clientLogI << "clientWriteCb: wrote " << bytesWrittenInCycle << " bytes to " << this->_port << CPPLog::end;
+    clientLogI << "clientWriteCb: " << _clientWriteBuffer.size() << " bytes left to write" << CPPLog::end;
     clientLogI << "clientWriteCb: " << _bytesWrittenCounter << " bytes written in total" << CPPLog::end;
     clientLogI << "clientWriteCb: response body complete? " << this->_response.isBodyComplete() << CPPLog::end;
 
     // If the response is complete, clear the response and the write counter
-    if (_localWriteBuffer.empty() && this->_response.isBodyComplete()) {
-        clientLogI << "respnse Connection type" << this->_request.getHeader("Connection") << CPPLog::end;
-
+    if (_clientWriteBuffer.empty() && this->_response.isBodyComplete()) {
+        clientLogI << "respnse Connection type: " << this->_request.getHeader("Connection") << CPPLog::end;
         if (this->_request.getHeader("Connection") == "close") {
             _socketFd->close();
             clientLogI << "Closing connection by request" << CPPLog::end;
         }
         this->_response.clear();
         this->_request.clear();
+        _inputFile = nullptr;
         _bytesWrittenCounter = 0;
+        clientLogI << "clientWriteCb: client ready for input" << CPPLog::end;
         changeState(ClientState::READY_FOR_INPUT);
     }
 }
@@ -83,64 +61,119 @@ void Client::clientReadCb(AsyncSocketClient& asyncSocketClient) {
     // Read from the socket and append to the local buffer
     clientLogI << "clientReadCb" << CPPLog::end;
     try {
-        _localReadBuffer += asyncSocketClient.read(DEFAULT_READ_SIZE);
+        _clientReadBuffer += asyncSocketClient.read(DEFAULT_READ_SIZE);
     } catch (const std::exception& e) {
         clientLogE << "clientReadCb: " << e.what() << CPPLog::end;
         return;
     }
 
-    clientLogI << "read: " << _localReadBuffer.size() << " bytes from " << this->_port << CPPLog::end;
-    clientLogI << "read: " << _localReadBuffer << CPPLog::end;
+    clientLogI << "read: " << _clientReadBuffer.size() << " bytes from " << this->_port << CPPLog::end;
+    clientLogI << "read: " << _clientReadBuffer << CPPLog::end;
+    if (_clientReadBuffer.size() == 0)
+        return;
 
     // Try to parse the buffer as http request. If request is incomplete, parse will leave the buffer in place. On error, it will reply with a http
     // error response
     try {
-        this->_request.parse(this->_localReadBuffer, this->_port);
         changeState(ClientState::READ_REQUEST);
+        this->_request.parse(this->_clientReadBuffer, this->_port);
     } catch (const httpRequest::httpRequestException& e) {
         this->_returnHttpErrorToClient(e.errorNo(), e.what());
     }
 
     // If the header is not complete and the buffer is too large, return 413
-    if (!this->_request.headerComplete() && _localReadBuffer.size() > DEFAULT_MAX_HEADER_SIZE) {
+    if (!this->_request.headerComplete() && _clientReadBuffer.size() > DEFAULT_MAX_HEADER_SIZE) {
         this->_returnHttpErrorToClient(413);
     }
 
     if (this->_request.headerComplete()) {
-        changeState(ClientState::READ_BODY);
-
-        // this should be done in the FileHandler class
-        // ****************************************************** //
-        if (!std::filesystem::exists(this->_request.getPath())) {
-            _returnHttpErrorToClient(404);
+		sessionLogI << "Trying to find session" << CPPLog::end;
+		sessionLogI << "Cookie Header: " << _request.getHeader("Cookie") << CPPLog::end;
+        if (_session == nullptr) {
+			sessionLogI << "No session yet" << CPPLog::end;
+            if (!_request.getCookie(SESSION_COOKIE_NAME).empty()) {
+                try {
+                    _session = _sessionList.getSession(_request.getCookie(SESSION_COOKIE_NAME));
+					sessionLogI << "Session found in list: " << _session->getSessionId() << CPPLog::end;
+                } catch (const std::exception& e) {
+					sessionLogI << "Session not foun in list: " << e.what() << CPPLog::end;
+                    _session = _sessionList.createSession();
+					sessionLogI << "Session added: " << CPPLog::end;
+					sessionLogI << _session->getSessionId() << CPPLog::end;
+                    _session->setSessionIdToResponse(_response);
+					sessionLogI << "Session added: " << _session->getSessionId() << CPPLog::end;
+                }
+            } else {
+				sessionLogI << "No session cookie" << CPPLog::end;
+                _session = _sessionList.createSession();
+                _session->setSessionIdToResponse(_response);
+				sessionLogI << "Session added: " << _session->getSessionId() << CPPLog::end;
+            }
+            changeState(ClientState::READ_BODY);
         }
-        if (std::filesystem::is_directory(this->_request.getPath())) {
-            _response.setFixedSizeBody(WebServUtil::directoryIndexList(this->_request.getPath()));
-            _response.setHeader("Content-Type", "text/html; charset=UTF-8");
-			_response.setCode(200);
-            _localWriteBuffer = _response.getFixedBodyResponseAsString();
-        }
-        // ****************************************************** //
-
-        // clientLogI << "request header complete" << CPPLog::end;
-        // clientLogI << "request method: " << this->_request.getRequestType() << CPPLog::end;
-        // clientLogI << "request path: " << this->_request.getAdress() << CPPLog::end;
-        // clientLogI << "request port: " << this->_request.getPort() << CPPLog::end;
+		else
+			sessionLogI << "Session already exists" << CPPLog::end;
+		_session->addPathToTrail(_request.getAdress());
     }
-
     // Request is complete, handle it
     if (this->_request.bodyComplete()) {
         changeState(ClientState::BUILDING_RESPONSE);
-        clientLogI << "request body complete" << CPPLog::end;
-        clientLogI << "Body: [" << this->_request.getBody() << "] " << CPPLog::end;
-        clientLogI << "request address: " << this->_request.getAdress() << CPPLog::end;
-
-        _localFd = AsyncInFile::create(_request.getPath());
-        if (_localFd) {
+        std::string cgiExecutor;
+      
+        // If the request is for a CGI script, execute the script
+        if ((cgiExecutor = _request.getServer()->getCgiExectorFromPath(_request.getPath())).empty() == false) {
+            clientLogI << "CGI request: " << _request.getPath() << "; executor: " << cgiExecutor << CPPLog::end;
+            _response.setFixedSizeBody("CGI not implemented yet, this script would be executed by: " + cgiExecutor);
+            _response.setHeader("Content-Type", "text/html; charset=UTF-8");
             _response.setCode(200);
-            _addLocalFdToPollArray(_localFd);
-        } else
-            _returnHttpErrorToClient(500);  // right now it returns a 500 when the file has incorrect permissions
-        clientLogI << "body complete part done" << CPPLog::end;
+            _clientWriteBuffer = _response.getFixedBodyResponseAsString();
+            _request.clear();
+            return;
+        }
+
+        // If the request is for a directory, return the directory index
+        if (_request.returnAutoIndex()) {
+            _response.setFixedSizeBody(WebServUtil::directoryIndexList(this->_request.getPath(), _request.getAdress()));
+            _response.setHeader("Content-Type", "text/html; charset=UTF-8");
+            _response.setCode(200);
+            _clientWriteBuffer = _response.getFixedBodyResponseAsString();
+            _request.clear();
+            return;
+        }
+
+        // ************************************************ //
+        // HERE SWICTH BLOCK FOR STATIC FILE SERVING		//
+        // WITH DIFFERENT LOGIC FOR EACH METHOD				//
+        // ************************************************ //
+        switch (this->_request.getMethod()) {
+            case WebServUtil::HttpMethod::GET:
+            case WebServUtil::HttpMethod::POST:
+            case WebServUtil::HttpMethod::HEAD: {
+                // If the request is for a file, open the file and add it to the poll array
+                _openFileAndAddToPollArray(this->_request.getPath());
+                _response.setHeader("Content-Type", WebServUtil::getContentTypeFromPath(_request.getPath()));
+                break;
+            }
+            case WebServUtil::HttpMethod::PUT: {
+                // PUT logic here
+                break;
+            }
+            case WebServUtil::HttpMethod::DELETE: {
+                // DELETE logic here
+                break;
+            }
+            case WebServUtil::HttpMethod::OPTIONS: {
+                // OPTIONS logic here
+                break;
+            }
+            default: {
+                _returnHttpErrorToClient(405);
+                break;
+            }
+        }
+
+        // If the request is for a file, open the file and add it to the poll array
+        // _openFileAndAddToPollArray(this->_request.getPath());
+        // _response.setHeader("Content-Type", WebServUtil::getContentTypeFromPath(_request.getPath()));
     }
 }

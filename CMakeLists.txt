@@ -22,6 +22,8 @@ set (SRCS
 	src/file_handler.cpp
 	src/client/client.cpp
 	src/client/client_callbacks.cpp
+	src/client/client_util.cpp
+	src/client/client_file_handling.cpp
 	src/config/config_extractors.cpp
 	src/config/config_insertions.cpp
 	src/config/config.cpp
@@ -33,14 +35,14 @@ set (SRCS
 	src/httpMessage/httpRequest/helpers.cpp
 	src/httpMessage/http_message.cpp
 	src/httpMessage/http_response.cpp
-	src/path.cpp
+	src/session.cpp
 	src/util.cpp
 )
 set (EXEC_NAME webserv)
 
 # Compiler settings
-set (CMAKE_CXX_STANDARD 20)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
+set (CMAKE_CXX_STANDARD 20)
 set (CMAKE_CXX_FLAGS "-Wall -Werror -Wextra")
 set (CMAKE_CXX_FLAGS_DEBUG "-g -fsanitize=address") #cmake -DCMAKE_BUILD_TYPE=DEBUG to add debug flags
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON) #vscode include path checking

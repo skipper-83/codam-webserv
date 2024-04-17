@@ -17,6 +17,9 @@ class AsyncPollArray {
 
     void poll(int timeout);
 
+//tmp
+	size_t size() const;
+
    private:
     std::list<std::weak_ptr<AsyncFD>> _weakFDs;
 };

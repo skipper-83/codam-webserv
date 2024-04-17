@@ -19,13 +19,13 @@ void httpRequest::parse(std::string &input, uint16_t port) {
     }
     if (this->_server)
         _resolvePathAndLocationBlock();
-    infoLog << "Checking method if method " << _httpRequestType << " allowed" << CPPLog::end;
-    if (this->_server->allowed.methods.find(_httpRequestType)->second == false) {
+    infoLog << "Checking method if method " << WebServUtil::httpMethodToString( _httpMethod) << " allowed" << CPPLog::end;
+    if (this->_server->allowed.methods.find(_httpMethod)->second == false) {
         infoLog << "Method not allowed" << CPPLog::end;
         throw httpRequestException(405, "Method Not Allowed");
     }
     if (this->_headerParseComplete && !this->_bodyComplete) {
-        if (WebServUtil::isRequestWithoutBody(this->_httpRequestType))
+        if (WebServUtil::isRequestWithoutBody(this->_httpMethod))
             this->_bodyComplete = true;
         else
             parseBody(is);

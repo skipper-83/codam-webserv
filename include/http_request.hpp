@@ -29,12 +29,14 @@ class httpRequest : public httpMessage {
 	void _setVars(void);
 
     std::string _httpAdress;
-    std::string _httpRequestType;
+    WebServUtil::HttpMethod _httpMethod;
+	std::map<std::string, std::string> _cookies;
     size_t _contentLength = 0;
     bool _headerParseComplete = false;
     bool _bodyComplete = false;
     bool _chunkedRequest = false;
     bool _contentSizeSet = false;
+	bool _returnAutoIndex = false;
     const ServerConfig *_server = nullptr;
 	const Location *_location = nullptr;
     uint16_t _port = -1;
@@ -52,19 +54,23 @@ class httpRequest : public httpMessage {
 
    // GETTERS
     std::string getAdress(void) const;
-    std::string getRequestType(void) const;
+    WebServUtil::HttpMethod getMethod(void) const;
     std::string getErrorPage(int errorCode) const;
     bool bodyComplete(void) const;
     bool headerComplete(void) const;
+	bool returnAutoIndex(void) const;
 	const ServerConfig* getServer(void) const;
 	uint16_t getPort(void) const;
 	const Location* getLocation(void) const;
 	std::string getPath(void) const;
+	std::map<std::string, std::string> getCookies(void) const;
+	std::string getCookie(std::string key) const;
 
 	// PARSERS
     void parseHeader(std::istream &fs); // only called internally and for testing
     void parseBody(std::istream &fs); // only called internally and for testing
     void parse(std::string &input, uint16_t port);
+	void parseCookieHeader(std::string cookieHeader);
 
 	// SETTERS
     void setServer(MainConfig &config, uint16_t port);

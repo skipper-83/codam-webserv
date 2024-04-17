@@ -13,6 +13,14 @@ void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
     _readFromFile();
 
     if (_cgiMessage) {
+		int exitCode = _cgiMessage->checkProgramStatus();
+		if (exitCode != 0) {
+			clientLogE << "_clientWriteCb: CGI program exited with code: " << exitCode << CPPLog::end;
+			_returnHttpErrorToClient(500);
+			_cgiMessage = nullptr;
+			_request.clear();
+			return;
+		}
         if (_cgiMessage->isBodyComplete()) {
             clientLogI << "_clientWriteCb: CGI response complete" << CPPLog::end;
             clientLogI << "_clientWriteCb: CGI response: " << _cgiMessage->getBody() << CPPLog::end;

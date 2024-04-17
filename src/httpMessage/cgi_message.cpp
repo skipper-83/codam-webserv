@@ -12,6 +12,24 @@ cgiMessage::cgiMessage(std::string const& cgiPath, const httpRequest* request, s
                                 std::bind(&cgiMessage::_cgiWriteCb, this, std::placeholders::_1));
     _cgi->addToPollArray(_addAsyncFdToPollArray);
 }
+
+int cgiMessage::checkProgramStatus() {
+	try {
+		_cgiIsRunning = _cgi->isRunning();
+		if (!_cgiIsRunning) {
+			_cgiExitCode = _cgi->getExitCode();
+			infoLog << "Cgi program has exited with code: " << _cgiExitCode << CPPLog::end;
+			return _cgiExitCode;
+		}
+		return 0;
+	} catch (std::exception& e) {
+		infoLog << "Error checking program status: " << e.what() << CPPLog::end;
+		return -1;
+	}
+
+    return 0;
+}
+
 void cgiMessage::_cgiReadCb(AsyncProgram& cgi) {
 	infoLog << "Checking for EOF" << CPPLog::end;
     if (cgi.eof()) {

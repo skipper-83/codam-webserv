@@ -37,6 +37,9 @@ class httpRequest : public httpMessage {
     bool _chunkedRequest = false;
     bool _contentSizeSet = false;
     bool _returnAutoIndex = false;
+	bool _pathSet = false;
+	bool _methodCheck = false;
+	bool _sessionSet = false;
     const ServerConfig *_server = nullptr;
     const Location *_location = nullptr;
     uint16_t _port = -1;
@@ -65,6 +68,7 @@ class httpRequest : public httpMessage {
     std::string getPath(void) const;
     std::map<std::string, std::string> getCookies(void) const;
     std::string getCookie(std::string key) const;
+	bool isSessionSet(void) const { return _sessionSet; }
 
     // PARSERS
     void parseHeader(std::istream &fs);  // only called internally and for testing
@@ -75,6 +79,7 @@ class httpRequest : public httpMessage {
     // SETTERS
     void setServer(MainConfig &config, uint16_t port);
     void clear(void);  // clears the request
+	void setSession(bool session) { _sessionSet = session; }
 
     class httpRequestException : public std::exception {
        private:

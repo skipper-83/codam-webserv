@@ -42,8 +42,9 @@ Environment::Environment(const std::map<std::string, std::string> &environment) 
         size_t i = 0;
         for (auto &[key, value] : environment) {
             std::string keyvalue = key + '=' + value;
-            _env[i] = new char[keyvalue.length()];
+            _env[i] = new char[keyvalue.length() + 1];
             std::strcpy(_env[i], keyvalue.c_str());
+			i++;
         }
     } catch (std::bad_alloc &e) {
         logE << "Environment::Environment(const std::map<std::string, std::string>&) failed: " << e.what();

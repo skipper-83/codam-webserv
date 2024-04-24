@@ -26,6 +26,7 @@ class httpResponse : public httpMessage {
     void setCode(int code);
     void setFixedSizeBody(std::string body);
 	void setPrecedingRequest(httpRequest* const callingRequest);
+	void extractHeaders(const httpMessage* message);
 	std::string getStartLine(void) const;
 	std::string getFixedBodyResponseAsString(void);
 	std::string getHeadersForChunkedResponse(void);

@@ -67,7 +67,7 @@ class Client {
     void _clientReadCb(AsyncSocketClient &client);
     void _clientWriteCb(AsyncSocketClient &client);
 
-    std::string _requestBodyForCgi = "";
+    // std::string _requestBodyForCgi = "";
     void _cgiReadCb(AsyncProgram &cgi);
     void _cgiWriteCb(AsyncProgram &cgi);
 

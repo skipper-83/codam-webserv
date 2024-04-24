@@ -49,7 +49,7 @@ void httpRequest::_addToFixedContentSize(std::istream &fs) {
         this->_httpBody += contents.str();
         this->_bodyLength += addedLength;
     }
-    infoLog << this->_httpBody << " " << this->_bodyLength << CPPLog::end;
+    // infoLog << this->_httpBody << " " << this->_bodyLength << CPPLog::end;
     return;
 }
 

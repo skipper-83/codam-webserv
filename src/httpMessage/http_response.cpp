@@ -32,6 +32,14 @@ void httpResponse::setPrecedingRequest(httpRequest* const callingRequest) {
     _precedingRequest = callingRequest;
 }
 
+void httpResponse::extractHeaders(const httpMessage* message) {
+	infoLog << "Extracting headers" << CPPLog::end;
+	for (auto header : message->getHeaderMap())
+		setHeader(header.first, header.second);
+}
+
+
+
 void httpResponse::setCode(int code) {
     this->_responseCodeDescription = WebServUtil::codeDescription(code);
     this->_responseCode = code;

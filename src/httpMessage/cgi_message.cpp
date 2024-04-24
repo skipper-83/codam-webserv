@@ -4,13 +4,32 @@
 #include "logging.hpp"
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "cgi");
+static CPPLog::Instance fatalLog = logOut.instance(CPPLog::Level::FATAL, "cgi");
 
 cgiMessage::cgiMessage(std::string const& cgiPath, const httpRequest* request, std::function<void(std::weak_ptr<AsyncFD>)> addAsyncFdToPollArray)
     : _request(request), _addAsyncFdToPollArray(addAsyncFdToPollArray) {
+	_makeEnvironment();
 	infoLog << "Creating CGI Message" << CPPLog::end;
-    _cgi = AsyncProgram::create(cgiPath, _request->getPath(), {}, std::bind(&cgiMessage::_cgiReadCb, this, std::placeholders::_1),
+    _cgi = AsyncProgram::create(cgiPath, _request->getPath(), _cgiEnv, std::bind(&cgiMessage::_cgiReadCb, this, std::placeholders::_1),
                                 std::bind(&cgiMessage::_cgiWriteCb, this, std::placeholders::_1));
     _cgi->addToPollArray(_addAsyncFdToPollArray);
+}
+
+void cgiMessage::_makeEnvironment()
+{
+	_cgiEnv["REDIRECT_STATUS"] = "200";
+	_cgiEnv["CONTENT_LENGTH"] = std::to_string(_request->getBodyLength());
+	_cgiEnv["CONTENT_TYPE"] = _request->getHeader("Content-Type");
+	_cgiEnv["PATH_INFO"] = _request->getPath();
+	_cgiEnv["PATH_TRANSLATED"] = _request->getPath();
+	_cgiEnv["QUERY_STRING"] = _request->getPath().find_first_of('?') != std::string::npos ? _request->getPath().substr(_request->getPath().find_first_of('?') + 1) : "";
+	_cgiEnv["REQUEST_METHOD"] = WebServUtil::httpMethodToString(_request->getMethod());
+	_cgiEnv["SERVER_NAME"] = _request->getHeader("Host");
+	_cgiEnv["SERVER_PORT"] = std::to_string(_request->getPort());
+	_cgiEnv["SERVER_PROTOCOL"] = _request->getProtocol();
+	_cgiEnv["SERVER_SOFTWARE"] = DEFAULT_SERVER_NAME;
+	_cgiEnv["HTTP_COOKIE"] = _request->getHeader("Cookie");
+
 }
 
 int cgiMessage::checkProgramStatus() {
@@ -61,8 +80,7 @@ void cgiMessage::_cgiReadCb(AsyncProgram& cgi) {
                 }
             }
         }
-
-		if (_readBuffer.find("\r\n\r\n") == std::string::npos || _readBuffer.find("\n\n") == std::string::npos) {
+		if (_readBuffer.find("\r\n\r\n") == std::string::npos && _readBuffer.find("\n\n") == std::string::npos) {
 			infoLog << "Headers not complete" << CPPLog::end;
 			return;
 		} else {
@@ -88,5 +106,20 @@ void cgiMessage::_cgiReadCb(AsyncProgram& cgi) {
 void cgiMessage::_cgiWriteCb(AsyncProgram& cgi) {
     // (void)_writeBuffer;
     (void)cgi;
+	int bytesWritten;
+	std::string writeChunk;
+	if (_request->getMethod() == WebServUtil::HttpMethod::POST && _writeCounter < _request->getBodyLength()) {
+		infoLog << "Writing body to cgi" << CPPLog::end;
+		writeChunk = _request->getBody().substr(_writeCounter, DEFAULT_WRITE_SIZE);
+		bytesWritten = cgi.write(writeChunk);
+		if (bytesWritten < 0) {
+			fatalLog << "Error writing to cgi" << CPPLog::end;
+			cgi.kill();
+			return;
+		}
+		_writeCounter += bytesWritten;
+	}
+	// infoLog << "cgi write callback" << CPPLog::end;
+	// cgi.write(_request->getBody());
     // infoLog << "cgi write callback" << CPPLog::end;
 }

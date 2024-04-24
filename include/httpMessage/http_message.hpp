@@ -17,6 +17,7 @@ class httpMessage {
     std::string getHeader(const std::string &key) const;
     std::string getBody(void) const;
     httpRequestListT getHeaderList(std::string const &key) const;
+	httpRequestT getHeaderMap(void) const;
     std::string getHeaderListAsString(void) const;
     size_t getBodyLength(void) const;
     void deleteHeader(std::string key);

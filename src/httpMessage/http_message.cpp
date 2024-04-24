@@ -70,6 +70,9 @@ httpMessage::httpRequestListT httpMessage::getHeaderList(std::string const &key)
     return ret;
 }
 
+httpMessage::httpRequestT httpMessage::getHeaderMap(void) const {
+    return _httpHeaders;
+}
 std::string httpMessage::getHeaderListAsString(void) const {
     std::string ret;
     for (httpRequestT::const_iterator element = _httpHeaders.begin(); element != _httpHeaders.end(); element++)

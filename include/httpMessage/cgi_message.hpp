@@ -12,6 +12,7 @@ class cgiMessage : public httpMessage {
 		bool isHeadersComplete() const { return _headersComplete; }
 		bool isBodyComplete() const { return _bodyComplete; }
 		int	checkProgramStatus();
+		// void assignBuffer(std::string &buffer) { _writeBuffer = buffer; }
 
 	private:
 		// std::string _cgiPath;
@@ -23,10 +24,12 @@ class cgiMessage : public httpMessage {
 		bool _cgiIsRunning = true;
 		int _cgiExitCode = 0;
 		std::string _readBuffer;
+		std::string::size_type _writeCounter = 0;
 		std::map<std::string, std::string> _cgiEnv;
 		std::shared_ptr<AsyncProgram> _cgi = nullptr;
 		const httpRequest* _request = nullptr;
 		void _cgiReadCb(AsyncProgram& cgi);
 		void _cgiWriteCb(AsyncProgram& cgi);
+		void _makeEnvironment();
 		std::function<void(std::weak_ptr<AsyncFD>)> _addAsyncFdToPollArray;
 };

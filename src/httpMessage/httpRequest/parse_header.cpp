@@ -114,6 +114,7 @@ void httpRequest::_setVars(void) {
 void httpRequest::_resolvePathAndLocationBlock(void) {
     std::string path;
 
+	_pathSet = true;
     infoLog << "Resolving path for " << this->_httpAdress << CPPLog::end;
     for (auto &location : this->_server->locations) {
         if (location.ref == this->_httpAdress.substr(0, location.ref.size())) {

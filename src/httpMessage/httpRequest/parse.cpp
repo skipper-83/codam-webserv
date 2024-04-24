@@ -17,13 +17,14 @@ void httpRequest::parse(std::string &input, uint16_t port) {
     if (this->_headerParseComplete && this->_server == nullptr) {
         setServer(mainConfig, port);
     }
-    if (this->_server)
+    if (!_pathSet && this->_server)
         _resolvePathAndLocationBlock();
-    infoLog << "Checking method if method " << WebServUtil::httpMethodToString(_httpMethod) << " allowed" << CPPLog::end;
-    if (this->_server->allowed.methods.find(_httpMethod)->second == false) {
+    // infoLog << "Checking method if method " << WebServUtil::httpMethodToString(_httpMethod) << " allowed" << CPPLog::end;
+    if (!_methodCheck && this->_server->allowed.methods.find(_httpMethod)->second == false) {
         infoLog << "Method not allowed" << CPPLog::end;
         throw httpRequestException(405, "Method Not Allowed");
     }
+	_methodCheck = true;
     if (this->_headerParseComplete && !this->_bodyComplete) {
         if (WebServUtil::isRequestWithoutBody(this->_httpMethod))
             this->_bodyComplete = true;

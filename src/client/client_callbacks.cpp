@@ -221,6 +221,15 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
             }
             case WebServUtil::HttpMethod::DELETE: {
                 // DELETE logic here
+				// int res;
+				if (int res = std::remove(_request.getPath().c_str()) != 0)
+					_returnHttpErrorToClient(500);
+				_response.setCode(200);
+				_response.setHeader("Content-Type", "text/html; charset=UTF-8");
+				_response.setFixedSizeBody("File " + _request.getAdress() + " deleted");
+				_clientWriteBuffer = _response.getFixedBodyResponseAsString();
+				_request.clear();
+				
                 break;
             }
             case WebServUtil::HttpMethod::OPTIONS: {

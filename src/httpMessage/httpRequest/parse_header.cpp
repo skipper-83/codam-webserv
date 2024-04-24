@@ -30,6 +30,10 @@ void httpRequest::_parseHttpStartLine(std::istream &fs) {
     address_pos = line.find(' ', request_type_pos + 1);
     this->_httpMethod = WebServUtil::stringToHttpMethod(line.substr(0, request_type_pos));
     this->_httpAdress = line.substr(request_type_pos + 1, address_pos - request_type_pos - 1);
+	if (_httpAdress.find('?') != std::string::npos) {
+		_queryString = _httpAdress.substr(_httpAdress.find('?') + 1);
+		_httpAdress = _httpAdress.substr(0, _httpAdress.find('?'));
+	}
     this->_httpProtocol = line.substr(address_pos + 1, request_type_pos - address_pos - 1);
     infoLog << "Start Line parsed" << CPPLog::end;
     return;

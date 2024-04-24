@@ -64,6 +64,7 @@ httpRequest &httpRequest::operator=(const httpRequest &rhs) {
 	this->_methodCheck = rhs._methodCheck;
 	this->_sessionSet = rhs._sessionSet;
     this->_path = rhs._path;
+	this->_queryString = rhs._queryString;
     return *this;
 }
 

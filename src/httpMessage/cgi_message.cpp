@@ -22,7 +22,7 @@ void cgiMessage::_makeEnvironment()
 	_cgiEnv["CONTENT_TYPE"] = _request->getHeader("Content-Type");
 	_cgiEnv["PATH_INFO"] = _request->getPath();
 	_cgiEnv["PATH_TRANSLATED"] = _request->getPath();
-	_cgiEnv["QUERY_STRING"] = _request->getPath().find_first_of('?') != std::string::npos ? _request->getPath().substr(_request->getPath().find_first_of('?') + 1) : "";
+	_cgiEnv["QUERY_STRING"] = _request->getQueryString();
 	_cgiEnv["REQUEST_METHOD"] = WebServUtil::httpMethodToString(_request->getMethod());
 	_cgiEnv["SERVER_NAME"] = _request->getHeader("Host");
 	_cgiEnv["SERVER_PORT"] = std::to_string(_request->getPort());

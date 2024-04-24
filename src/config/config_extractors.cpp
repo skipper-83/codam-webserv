@@ -152,7 +152,8 @@ static void setLocationRoot(std::istream& is, Location& rhs) {
         if (word.find(';') == std::string::npos)
             throw(std::invalid_argument("Missing terminating ; after root"));
     }
-	if (rhs.root[rhs.root.size()] != '/')
+	// infoLog << "root last char []"
+	if (rhs.root[rhs.root.size() - 1] != '/')
 		rhs.root += '/';
     infoLog << "root set to " << rhs.root << CPPLog::end;
 }

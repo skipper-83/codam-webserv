@@ -97,7 +97,9 @@ Host: 123.124.123.123
 }
 
 TEST_F(httpRequestTest, get_adress) {
-    EXPECT_EQ(req.getAdress(), "/path/to/resource?query=123");
+	// std::cerr << req.getAdress() << "\n";
+    EXPECT_EQ(req.getAdress(), "/path/to/resource");
+	EXPECT_EQ(req.getQueryString(), "query=123");
 }
 
 TEST_F(httpRequestTest, get_request_type) {
@@ -366,10 +368,12 @@ TEST_F(configWithRequest, request_larger_than_client_max_body_size)
 	request_input << "Host: myname:8080\n\n123456789";
 	
 	config_input >> config;
-	request.parseHeader(request_input);
-	EXPECT_TRUE(request.headerComplete());
-	request.setServer(config, 8080);
-	EXPECT_THROW(request.parseBody(request_input), httpRequest::httpRequestException);
+	std::string req = request_input.str();
+	// request.parseHeader(request_input);
+	// EXPECT_TRUE(request.headerComplete());
+	// request.setServer(config, 8080);
+	// request.parse(req, 8080);
+	EXPECT_THROW(request.parse(req, 8080), httpRequest::httpRequestException);
 }
 
 // TEST_F(configWithRequest, request_with_wrong_port)

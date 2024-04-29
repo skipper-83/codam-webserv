@@ -14,16 +14,16 @@
 #define DEFAULT_CLIENT_BODY_SIZE 1000000
 #define DEFAULT_PORT 80
 #define DEFAULT_MAX_HEADER_SIZE 4096
-#define DEFAULT_READ_SIZE 1024
-#define DEFAULT_WRITE_SIZE 60000
+#define DEFAULT_READ_SIZE 6000000
+#define DEFAULT_WRITE_SIZE 6000000
 #define DEFAULT_MAX_WRITE_SIZE 32768
 #define DEFAULT_TIMEOUT_SECONDS 40
-#define DEFAULT_FD_BACKLOG_SIZE 50
+#define DEFAULT_FD_BACKLOG_SIZE 150
 #define DEFAULT_LOCAL_FILE_READBUFFER 60000
-#define DEFAULT_ALLOWED_METHODS                                                                                                     \
-    {WebServUtil::HttpMethod::GET, true}, {WebServUtil::HttpMethod::POST, true}, {WebServUtil::HttpMethod::PUT, true},              \
-        {WebServUtil::HttpMethod::DELETE, true}, {WebServUtil::HttpMethod::HEAD, true}, {WebServUtil::HttpMethod::OPTIONS, true}, { \
-        WebServUtil::HttpMethod::PATCH, true                                                                                        \
+#define DEFAULT_ALLOWED_METHODS                                                                                                        \
+    {WebServUtil::HttpMethod::GET, false}, {WebServUtil::HttpMethod::POST, false}, {WebServUtil::HttpMethod::PUT, false},              \
+        {WebServUtil::HttpMethod::DELETE, false}, {WebServUtil::HttpMethod::HEAD, false}, {WebServUtil::HttpMethod::OPTIONS, false}, { \
+        WebServUtil::HttpMethod::PATCH, false                                                                                          \
     }
 #define DEFAULT_RESPONSE_PROTOCOL "HTTP/1.1"
 #define DEFAULT_SERVER_NAME "Jelle en Alberts webserv 1.0"
@@ -50,6 +50,8 @@ struct AllowedMethods {
 struct Location {
     std::string ref;
     std::string root;
+    AllowedMethods allowed;
+    BodySize clientMaxBodySize;
     std::vector<std::string> index_vec;
 };
 
@@ -70,6 +72,7 @@ struct ErrorPage {
 struct Cgi {
     std::vector<std::string> extensions;
     std::string executor;
+    AllowedMethods allowed;
 };
 
 class ServerConfig {
@@ -85,7 +88,7 @@ class ServerConfig {
     int rank;  // deprecated, used for sorting, still used in tests
 
     std::string getErrorPage(int errorCode) const;
-    std::string getCgiExecutorFromPath(std::string path) const;
+    Cgi const* getCgiFromPath(std::string path) const;
 
    private:
     void sortLocations(void);

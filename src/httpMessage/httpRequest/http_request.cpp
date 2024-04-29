@@ -65,6 +65,8 @@ httpRequest &httpRequest::operator=(const httpRequest &rhs) {
 	this->_sessionSet = rhs._sessionSet;
     this->_path = rhs._path;
 	this->_queryString = rhs._queryString;
+	this->_nextChunkSize = rhs._nextChunkSize;
+	this->_chunkSizeKnown = rhs._chunkSizeKnown;
     return *this;
 }
 

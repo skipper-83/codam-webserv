@@ -30,10 +30,10 @@ void httpRequest::_parseHttpStartLine(std::istream &fs) {
     address_pos = line.find(' ', request_type_pos + 1);
     this->_httpMethod = WebServUtil::stringToHttpMethod(line.substr(0, request_type_pos));
     this->_httpAdress = line.substr(request_type_pos + 1, address_pos - request_type_pos - 1);
-	if (_httpAdress.find('?') != std::string::npos) {
-		_queryString = _httpAdress.substr(_httpAdress.find('?') + 1);
-		_httpAdress = _httpAdress.substr(0, _httpAdress.find('?'));
-	}
+    if (_httpAdress.find('?') != std::string::npos) {
+        _queryString = _httpAdress.substr(_httpAdress.find('?') + 1);
+        _httpAdress = _httpAdress.substr(0, _httpAdress.find('?'));
+    }
     this->_httpProtocol = line.substr(address_pos + 1, request_type_pos - address_pos - 1);
     infoLog << "Start Line parsed" << CPPLog::end;
     return;
@@ -56,6 +56,7 @@ void httpRequest::_parseHttpHeaders(std::istream &fs) {
         if (key_value.first == "Cookie") {
             parseCookieHeader(key_value.second);
         }
+		infoLog << "Header: " << key_value.first << ": " << key_value.second << CPPLog::end;
     }
     _checkHttpHeaders();
     _setVars();
@@ -118,51 +119,59 @@ void httpRequest::_setVars(void) {
 void httpRequest::_resolvePathAndLocationBlock(void) {
     std::string path;
 
-	_pathSet = true;
+    _pathSet = true;
     infoLog << "Resolving path for " << this->_httpAdress << CPPLog::end;
+    if (_httpAdress.find('.') == std::string::npos && _httpAdress[_httpAdress.size() - 1] != '/')
+        _httpAdress += '/';
     for (auto &location : this->_server->locations) {
         if (location.ref == this->_httpAdress.substr(0, location.ref.size())) {
             infoLog << "Matched location: " << location.ref << CPPLog::end;
-            path = location.root + this->_httpAdress.substr(1, this->_httpAdress.size());
+            path = location.root + this->_httpAdress.substr(location.ref.size(), this->_httpAdress.size());
             infoLog << path << CPPLog::end;
             _path = path;
             _location = &location;
+			infoLog << "Client max body size: " << location.clientMaxBodySize.value << " bytes" << CPPLog::end;
+            _clientMaxBodySize = location.clientMaxBodySize.value;
 
+            infoLog << "Path: " << _path << " Location: " << location.ref << " Root: " << location.root;
             // resolve path if it is a directory
-            if (!std::filesystem::exists(path) && !(_httpMethod == WebServUtil::HttpMethod::PUT))
+            if (!std::filesystem::exists(_path) && !(_httpMethod == WebServUtil::HttpMethod::PUT) && this->_server->getCgiFromPath(_path) == nullptr){
+                infoLog << "File not found, returning 404: " << _path << CPPLog::end;
                 throw(httpRequestException(404, "File not found"));
-            if (std::filesystem::is_directory(path)) {
+            }
+            if (std::filesystem::is_directory(_path)) {
                 infoLog << "Path is a directory, request: [" << _httpAdress << "] ref: [" << _location->ref << "]" << CPPLog::end;
-                if (path[path.size() - 1] != '/')  // if the path does not end with a slash, redirect
-                    throw(httpRequestException(301, _httpAdress + '/'));
-                if (_httpAdress == _location->ref)  // if the requested adress is the location root
-                {
-                    if (!_location->index_vec.empty()) {
-                        infoLog << "checking for index files in config" << CPPLog::end;
-                        for (auto &rootIndexFile : _location->index_vec) {
-                            if (std::filesystem::exists(path + rootIndexFile)) {
-                                _path = path + rootIndexFile;
-                                return;
-                            }
-                        }
-                    }
-                }
-                infoLog << "No index files found, checking if autoindex is on" << CPPLog::end;
-                if (_server->autoIndex.on) {
+                // if (path[path.size() - 1] != '/')  // if the path does not end with a slash, redirect
+                //     throw(httpRequestException(301, _httpAdress + '/'));
+                // if (_httpAdress == _location->ref)  // if the requested adress is the location root
+                // {
+				if (_server->autoIndex.on) {
                     infoLog << "Autoindex is on" << CPPLog::end;
                     _returnAutoIndex = true;
                     _path = path;
                     return;
                 }
+                if (!_location->index_vec.empty()) {
+                    infoLog << "checking for index files in config" << CPPLog::end;
+                    for (auto &rootIndexFile : _location->index_vec) {
+                        if (std::filesystem::exists(_path + rootIndexFile)) {
+                            _path = _path + rootIndexFile;
+                            return;
+                        }
+                    }
+					throw(httpRequestException(404, "Directory index file not found, and autoindex is off"));
+                    // }
+                }
+                infoLog << "No index files found, checking if autoindex is on" << CPPLog::end;
+    
                 infoLog << "Autoindex is off, returning 403 Forbidden" << CPPLog::end;
                 throw(httpRequestException(403, "No directory index, and autoindex is off"));
             }
             return;
         }
     }
-    infoLog << "No match. Resolved default path: "
-            << "." + this->_httpAdress << CPPLog::end;
-    _path = DEFAULT_ROOT + this->_httpAdress.substr(1, this->_httpAdress.size());
+    infoLog << "No location block found, returning 404" << CPPLog::end;
+    throw(httpRequestException(404, "No location block found"));
 }
 void httpRequest::parseCookieHeader(std::string cookieHeader) {
     size_t pos = 0;

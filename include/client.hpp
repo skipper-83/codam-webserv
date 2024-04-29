@@ -17,6 +17,9 @@ enum class ClientState {
     READ_BODY,
     BUILDING_RESPONSE,
     WRITE_RESPONSE,
+	CGI_WRITE,
+	CGI_READ,
+	FILE_READ,
     ERROR,
     DONE,
 };
@@ -31,7 +34,7 @@ class Client {
     Client(const Client &rhs);
     Client &operator=(const Client &);
 
-    Client(Client &&);
+    // Client(Client &&);
 
     AsyncIO &socketFd() const;
     uint16_t port() const;
@@ -67,12 +70,9 @@ class Client {
     void _clientReadCb(AsyncSocketClient &client);
     void _clientWriteCb(AsyncSocketClient &client);
 
-    // std::string _requestBodyForCgi = "";
-    void _cgiReadCb(AsyncProgram &cgi);
-    void _cgiWriteCb(AsyncProgram &cgi);
-
     void _openFileAndAddToPollArray(std::string path);
     void _readFromFile();
+	void _readFromCgi();
 
     bool _sessionSet = false;
 };

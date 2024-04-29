@@ -22,7 +22,7 @@ class httpRequest : public httpMessage {
     bool _hasNewLine(std::string &str);
     // std::string _getLineWithCRLF(std::istream &is);
     std::string _readNumberOfBytesFromFileStream(std::istream &fs, size_t amountOfBytes);
-    std::streampos _remainingLength(std::istream &fs);
+    size_t _remainingLength(std::istream &fs);
 
     // SETTERS AND RESOLVERS
     void _resolvePathAndLocationBlock(void);
@@ -46,6 +46,8 @@ class httpRequest : public httpMessage {
     std::string _path;
     std::string _queryString = "";
     size_t _clientMaxBodySize = DEFAULT_CLIENT_BODY_SIZE;
+	size_t _nextChunkSize = 0;
+	bool _chunkSizeKnown = false;
 
    public:
     // CONSTRUCTORS

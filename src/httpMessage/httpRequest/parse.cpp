@@ -18,9 +18,13 @@ void httpRequest::parse(std::string &input, uint16_t port) {
         setServer(mainConfig, port);
     }
     if (!_pathSet && this->_server)
+	try {
         _resolvePathAndLocationBlock();
+	} catch (const httpRequestException &e) {
+		throw httpRequestException(e.errorNo(), e.codeDescription());
+	}
     // infoLog << "Checking method if method " << WebServUtil::httpMethodToString(_httpMethod) << " allowed" << CPPLog::end;
-    if (!_methodCheck && this->_server->allowed.methods.find(_httpMethod)->second == false) {
+    if (!_methodCheck && this->_location->allowed.methods.find(_httpMethod)->second == false) {
         infoLog << "Method not allowed" << CPPLog::end;
         throw httpRequestException(405, "Method Not Allowed");
     }
@@ -31,5 +35,9 @@ void httpRequest::parse(std::string &input, uint16_t port) {
         else
             parseBody(is);
     }
-    input = is.str().substr(is.tellg());
-}
+    std::streampos pos = is.tellg();
+	if (pos >= 0 && static_cast<std::size_t>(pos) < is.str().size()) 
+    	input = is.str().substr(pos);
+	else 
+		input = "";
+	}

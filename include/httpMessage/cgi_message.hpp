@@ -12,6 +12,7 @@ class cgiMessage : public httpMessage {
 		bool isHeadersComplete() const { return _headersComplete; }
 		bool isBodyComplete() const { return _bodyComplete; }
 		int	checkProgramStatus();
+		void setRequest(const httpRequest* request) { _request = request; }
 		// void assignBuffer(std::string &buffer) { _writeBuffer = buffer; }
 
 	private:

@@ -15,12 +15,13 @@ void Client::_openFileAndAddToPollArray(std::string path)
 void Client::_returnHttpErrorToClient(int code, std::string message) {
     std::string error_path, error_page;
 
+	clientLogI << "Returning error to client: " << code << " " << message << CPPLog::end;
     // if custom error page is set, use it
 	this->_clientWriteBuffer.clear();
     this->_clientReadBuffer.clear();
 	this->_response.deleteHeader("Content-Type");
 	this->_response.setCode(code);
-	clientLogI << _response.getFixedBodyResponseAsString() << CPPLog::end;
+	// clientLogI << _response.getFixedBodyResponseAsString() << CPPLog::end;
 	if (code == 301)  // if the """error""" is a redirect, set the location header
 		_response.setHeader("Location", message);
     if (_request.getServer() && !(error_page = _request.getServer()->getErrorPage(code)).empty()) {
@@ -47,6 +48,7 @@ void Client::_returnHttpErrorToClient(int code, std::string message) {
     }
     this->_request.clear();
     changeState(ClientState::ERROR);
+	//
 	clientLogI << "Buffer from error now: " << this->_clientWriteBuffer << CPPLog::end;
     clientLogW << "HTTP error " << code << ": " << WebServUtil::codeDescription(code);
 }

@@ -6,12 +6,11 @@ static CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "cl
 static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "client");
 
 void Client::_readFromFile() {
-    if (!_inputFile)
-        return;
 
     clientLogI << "I have an inputfile" << CPPLog::end;
     if (_inputFile->bad()) {
         clientLogE << "file is bad" << CPPLog::end;
+		changeState(ClientState::WRITE_RESPONSE);
         if (_inputFile->badCode() == EACCES) {
             _inputFile = nullptr;
             _returnHttpErrorToClient(403);
@@ -22,6 +21,7 @@ void Client::_readFromFile() {
 
     if (_inputFile->readBufferFull()) {
         clientLogI << "file buffer full" << CPPLog::end;
+		changeState(ClientState::WRITE_RESPONSE);
         _response.setCode(200);
         if (!_response.isChunked())
 		{
@@ -38,6 +38,7 @@ void Client::_readFromFile() {
     }
 
     if (_inputFile->eof()) {
+		changeState(ClientState::WRITE_RESPONSE);
         clientLogI << "file is at eof" << CPPLog::end;
 		std::string tempFileBuffer = _inputFile->read();
         _inputFile = nullptr;

@@ -10,37 +10,30 @@ static CPPLog::Instance sessionLogI = logOut.instance(CPPLog::Level::DEBUG, "Web
 
 void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
     // read from file (if available)
-    _readFromFile();
+	if (_inputFile)
+    	_readFromFile();
 
-    if (_cgiMessage) {
-		int exitCode = _cgiMessage->checkProgramStatus();
+    if (_cgiMessage) 
+		_readFromCgi();
+	// {
+	// 	int exitCode = _cgiMessage->checkProgramStatus();
 
-		if (exitCode != 0) {
-			// clientLogE << "_clientWriteCb: CGI program exited with code: " << exitCode << CPPLog::end;
-			_returnHttpErrorToClient(500);
-			_cgiMessage = nullptr;
-			_request.clear();
-			return;
-		}
-        if (_cgiMessage->isBodyComplete()) {
-            // clientLogI << "_clientWriteCb: CGI response complete" << CPPLog::end;
-            // clientLogI << "_clientWriteCb: CGI response: " << _cgiMessage->getBody() << CPPLog::end;
-			_response.extractHeaders(_cgiMessage.get());
-			if (_response.getHeader("Content-Type").empty())
-				_response.setHeader("Content-Type", "text/html; charset=UTF-8");
-            _response.setCode(200);
-            _response.setFixedSizeBody(_cgiMessage->getBody());
-            _clientWriteBuffer = _response.getFixedBodyResponseAsString();
-            _cgiMessage = nullptr;
-            _request.clear();
-            return;
-        }
-		// if (_request.getMethod() == WebServUtil::HttpMethod::POST)
-		// {
-		// 	_cgiMessage->assignBuffer(_requestBodyForCgi);
-		// }
-		return;
-    }
+	// 	if (exitCode != 0) {
+	// 		_cgiMessage = nullptr;
+	// 		_returnHttpErrorToClient(500);
+	// 		return;
+	// 	}
+    //     if (_cgiMessage->isBodyComplete()) {
+	// 		_response.extractHeaders(_cgiMessage.get());
+	// 		if (_response.getHeader("Content-Type").empty())
+	// 			_response.setHeader("Content-Type", "text/html; charset=UTF-8");
+    //         _response.setCode(200);
+    //         _response.setFixedSizeBody(_cgiMessage->getBody());
+    //         _clientWriteBuffer = _response.getFixedBodyResponseAsString();
+    //         _cgiMessage = nullptr;
+    //         _request.clear();
+    //     }
+    // }
     // If the buffer is empty, return
     if (_clientWriteBuffer.empty())
         return;
@@ -73,7 +66,8 @@ void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
     // If the response is complete, clear the response and the write counter
     if (_clientWriteBuffer.empty() && this->_response.isBodyComplete()) {
         clientLogI << "respnse Connection type: " << this->_request.getHeader("Connection") << CPPLog::end;
-        if (this->_request.getHeader("Connection") == "close") {
+        if (this->_request.getHeader("Connection") == "close" ||
+		(this->_response.getCode() >= 400 && this->_response.getCode() <= 599)){
             _socketFd->close();
             clientLogI << "Closing connection by request" << CPPLog::end;
         }
@@ -85,36 +79,8 @@ void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
         changeState(ClientState::READY_FOR_INPUT);
     }
 }
-
-// void Client::_cgiReadCb(AsyncProgram& cgi) {
-//     if (cgi.eof()) {
-//         // clientLogI << "_cgiReadCb: EOF" << CPPLog::end;
-//         return;
-//     }
-
-//     std::string cgiReadCycleBuffer;
-
-//     try {
-//         cgiReadCycleBuffer = cgi.read(DEFAULT_READ_SIZE);
-//     } catch (const std::exception& e) {
-//         clientLogE << "_cgiReadCb: " << e.what() << CPPLog::end;
-//         _returnHttpErrorToClient(500);
-//         return;
-//     }
-
-//     if (cgiReadCycleBuffer.empty())
-//         return;
-
-//     clientLogI << "_cgiReadCb: " << cgiReadCycleBuffer << CPPLog::end;
-// }
-
-// void Client::_cgiWriteCb(AsyncProgram& cgi) {
-//     if (_requestBodyForCgi.empty() == false)
-//         clientLogI << "_cgiWriteCb: " << cgi.write(_requestBodyForCgi) << CPPLog::end;
-// }
-
 void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
-    clientLogI << "_clientReadCb" << CPPLog::end;
+    // clientLogI << "_clientReadCb" << CPPLog::end;
 	if(ClientState::ERROR == _state) // if the client is in error state, do not read
 		return;
 
@@ -127,8 +93,7 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
     }
 
     clientLogI << "read: " << _clientReadBuffer.size() << " bytes from " << this->_port << CPPLog::end;
-    // clientLogI << "read: " << _clientReadBuffer << CPPLog::end;
-    if (_clientReadBuffer.size() == 0)
+    if (_clientReadBuffer.size() == 0) // if the buffer is empty, return
         return;
 
     // Try to parse the buffer as http request. If request is incomplete, parse will leave the buffer in place. On error, it will reply with a http
@@ -155,7 +120,7 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
                     _session = _sessionList.getSession(_request.getCookie(SESSION_COOKIE_NAME));
                     sessionLogI << "Session found in list: " << _session->getSessionId() << CPPLog::end;
                 } catch (const std::exception& e) {
-                    sessionLogI << "Session not foun in list: " << e.what() << CPPLog::end;
+                    sessionLogI << "Session not found in list: " << e.what() << CPPLog::end;
                     _session = _sessionList.createSession();
                     sessionLogI << "Session added: " << CPPLog::end;
                     sessionLogI << _session->getSessionId() << CPPLog::end;
@@ -169,21 +134,24 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
                 sessionLogI << "Session added: " << _session->getSessionId() << CPPLog::end;
             }
             changeState(ClientState::READ_BODY);
-        } else
+        } else {
             sessionLogI << "Session already exists" << CPPLog::end;
-        _session->addPathToTrail(_request.getAdress());
-		_request.setSession(true);
+		}
+        _session->addPathToTrail(_request.getAdress()); // add path to session trail
+		_request.setSession(true); // set session flag to true to avoid duplication on longer requests
     }
+
     // Request is complete, handle it
     if (this->_request.bodyComplete()) {
         changeState(ClientState::BUILDING_RESPONSE);
         
 		// If the request is for a CGI script, execute the script
-        std::string cgiExecutor;
-        if ((cgiExecutor = _request.getServer()->getCgiExecutorFromPath(_request.getPath())).empty() == false) {
-            clientLogI << "CGI request: " << _request.getPath() << "; executor: " << cgiExecutor << CPPLog::end;
+        Cgi const *cgi;
+        if ((cgi = _request.getServer()->getCgiFromPath(_request.getPath())) && 
+		cgi->allowed.methods.find(_request.getMethod())->second) {
+            clientLogI << "CGI request: " << _request.getPath() << "; executor: " << cgi->executor << CPPLog::end;
             try {
-                _cgiMessage = std::make_shared<cgiMessage>(cgiExecutor, &_request, _addLocalFdToPollArray);
+                _cgiMessage = std::make_shared<cgiMessage>(cgi->executor, &_request, _addLocalFdToPollArray);
             } catch (const std::exception& e) {
                 clientLogE << "_clientReadCb: " << e.what() << CPPLog::end;
                 _returnHttpErrorToClient(500);
@@ -206,22 +174,19 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
         // HERE SWITCH BLOCK FOR STATIC FILE SERVING		//
         // WITH DIFFERENT LOGIC FOR EACH METHOD				//
         // ************************************************ //
-        switch (this->_request.getMethod()) {
+        switch (this->_request.getMethod()) { // switch block for different request methods
             case WebServUtil::HttpMethod::GET:
             case WebServUtil::HttpMethod::POST:
             case WebServUtil::HttpMethod::HEAD: {
-                // If the request is for a file, open the file and add it to the poll array
                 _openFileAndAddToPollArray(this->_request.getPath());
                 _response.setHeader("Content-Type", WebServUtil::getContentTypeFromPath(_request.getPath()));
                 break;
             }
             case WebServUtil::HttpMethod::PUT: {
-                // PUT logic here
+                _returnHttpErrorToClient(999);
                 break;
             }
             case WebServUtil::HttpMethod::DELETE: {
-                // DELETE logic here
-				// int res;
 				if (int res = std::remove(_request.getPath().c_str()) != 0)
 					_returnHttpErrorToClient(500);
 				_response.setCode(200);
@@ -229,11 +194,10 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
 				_response.setFixedSizeBody("File " + _request.getAdress() + " deleted");
 				_clientWriteBuffer = _response.getFixedBodyResponseAsString();
 				_request.clear();
-				
                 break;
             }
             case WebServUtil::HttpMethod::OPTIONS: {
-                // OPTIONS logic here
+				_returnHttpErrorToClient(999);
                 break;
             }
             default: {
@@ -241,9 +205,5 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
                 break;
             }
         }
-
-        // If the request is for a file, open the file and add it to the poll array
-        // _openFileAndAddToPollArray(this->_request.getPath());
-        // _response.setHeader("Content-Type", WebServUtil::getContentTypeFromPath(_request.getPath()));
     }
 }

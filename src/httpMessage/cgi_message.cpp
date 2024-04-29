@@ -29,6 +29,18 @@ void cgiMessage::_makeEnvironment()
 	_cgiEnv["SERVER_PROTOCOL"] = _request->getProtocol();
 	_cgiEnv["SERVER_SOFTWARE"] = DEFAULT_SERVER_NAME;
 	_cgiEnv["HTTP_COOKIE"] = _request->getHeader("Cookie");
+	httpMessage::httpRequestT headers = _request->getHeaderMap();
+	for (auto header : headers) {
+		std::string header_key = header.first;
+		if(header_key.size() > 2 && strncmp(header_key.c_str(), "X-", 2) == 0) {
+			std::string::size_type i = 0;
+			while ((i = header_key.find('-', i)) != std::string::npos) {
+				header_key.replace(i, 1, "_");
+				i++;
+			}
+			_cgiEnv["HTTP_" + header_key] = header.second;
+		}
+	}
 
 }
 
@@ -50,14 +62,14 @@ int cgiMessage::checkProgramStatus() {
 }
 
 void cgiMessage::_cgiReadCb(AsyncProgram& cgi) {
-	infoLog << "Checking for EOF" << CPPLog::end;
+	// infoLog << "Checking for EOF" << CPPLog::end;
     if (cgi.eof()) {
 		infoLog << "EOF found" << CPPLog::end;
         _bodyComplete = true;
         return;
     }
     _readBuffer += cgi.read(DEFAULT_READ_SIZE);
-    infoLog << "read buffer: " << _readBuffer << " size: " << _readBuffer.size() << CPPLog::end;
+    // infoLog << "read buffer: " << _readBuffer << " size: " << _readBuffer.size() << CPPLog::end;
 
     if (!_headersComplete) {
 		std::pair<std::string, std::string> key_value;
@@ -108,8 +120,8 @@ void cgiMessage::_cgiWriteCb(AsyncProgram& cgi) {
     (void)cgi;
 	int bytesWritten;
 	std::string writeChunk;
-	if (_request->getMethod() == WebServUtil::HttpMethod::POST && _writeCounter < _request->getBodyLength()) {
-		infoLog << "Writing body to cgi" << CPPLog::end;
+	if (_request && _request->getMethod() == WebServUtil::HttpMethod::POST && _writeCounter < _request->getBodyLength()) {
+		infoLog << "Writing body to cgi, counter is at: " << _writeCounter << CPPLog::end;
 		writeChunk = _request->getBody().substr(_writeCounter, DEFAULT_WRITE_SIZE);
 		bytesWritten = cgi.write(writeChunk);
 		if (bytesWritten < 0) {

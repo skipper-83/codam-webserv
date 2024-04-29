@@ -1,6 +1,9 @@
 #include "httpMessage/http_message.hpp"
 #include "httpMessage/http_request.hpp"
 #include <regex>
+#include "logging.hpp"
+
+static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest body parser");
 
 /**
  * @brief Returns protocol of request (ie HTTP1.1)
@@ -92,21 +95,33 @@ void httpMessage::_httpMessageAssign(const httpMessage &rhs) {
 std::string httpMessage::_getLineWithCRLF(std::istream &is) {
     std::string line;
 
-    std::getline(is, line);
+	// infoLog << "Getting line with CRLF (is type)\n";
+    if(!std::getline(is, line))
+	{
+		// infoLog << "No line\n";
+		return "";
+	}
+	// infoLog << "Line: [" << line << "]" << CPPLog::end;
     if (!line.empty() && line.back() == '\r')
+	{
+		// infoLog << "Removing \\r\n";	
         line.pop_back();
+	}
     return line;
 }
 
 std::string httpMessage::_getLineWithCRLF(std::string &input) {
-    std::string::size_type pos = input.find("\n");
+    std::string::size_type pos = input.find('\n');
 	std::string line;
-	if (pos == std::string::npos)
+
+	// infoLog << "Getting line with CRLF\n";
+	if (pos == std::string::npos || input.empty())
 		return "";
 	line = input.substr(0, pos);
 	if (line[line.size() - 1] == '\r')
 		line.pop_back(); // remove \r
-	input = input.substr(pos + 1, input.size()); // remove line from input
+	if (pos + 1 < input.size())
+		input = input.substr(pos + 1, input.size()); // remove line from input
     return line;
 }
 

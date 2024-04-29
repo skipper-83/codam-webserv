@@ -24,6 +24,7 @@ class httpResponse : public httpMessage {
 	httpResponse& operator=(const httpResponse& rhs);
 
     void setCode(int code);
+	int getCode(void) const { return _responseCode; };
     void setFixedSizeBody(std::string body);
 	void setPrecedingRequest(httpRequest* const callingRequest);
 	void extractHeaders(const httpMessage* message);

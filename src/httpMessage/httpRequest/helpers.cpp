@@ -19,7 +19,7 @@ bool httpRequest::_hasNewLine(std::string &str) {
  * @param fs
  * @return std::streampos
  */
-std::streampos httpRequest::_remainingLength(std::istream &fs) {
+size_t httpRequest::_remainingLength(std::istream &fs) {
     std::streampos curPos, endPos;
 
     curPos = fs.tellg();

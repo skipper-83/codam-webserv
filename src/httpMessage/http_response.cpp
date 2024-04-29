@@ -43,7 +43,7 @@ void httpResponse::extractHeaders(const httpMessage* message) {
 void httpResponse::setCode(int code) {
     this->_responseCodeDescription = WebServUtil::codeDescription(code);
     this->_responseCode = code;
-    if (this->_responseCode >= 400 && this->_responseCode <= 599)
+    if ((this->_responseCode >= 400 && this->_responseCode <= 599)|| this->_responseCode == 999)
         this->_setErrorBody();
 }
 
@@ -59,7 +59,8 @@ void httpResponse::_setErrorBody() {
         .append(" " + this->_responseCodeDescription)
         .append("</h1></center><hr><center>")
         .append(DEFAULT_SERVER_NAME)
-        .append("</center>");
+        .append("</center>")
+		.append("</body></html>");
     // }
     setHeader("Content-Type", "text/html; charset=UTF-8");
     this->setFixedSizeBody(error_page);
@@ -108,7 +109,7 @@ std::string httpResponse::getFixedBodyResponseAsString(void) {
     setHeader("Date", WebServUtil::timeStamp());
     ret.append(this->getStartLine());
     ret.append(getHeaderListAsString());
-    ret.append("\r\n").append(_httpBody).append("\r\n\r\n");
+    ret.append("\r\n").append(_httpBody);
     return ret;
 }
 

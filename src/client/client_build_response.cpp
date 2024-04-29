@@ -44,7 +44,7 @@ void Client::_buildResponse() {
             break;
         }
         case WebServUtil::HttpMethod::DELETE: {
-            if (int res = std::remove(_request.getPath().c_str()) != 0)
+            if (std::remove(_request.getPath().c_str()) != 0)
                 _returnHttpErrorToClient(500);
             _response.setCode(200);
             _response.setHeader("Content-Type", "text/html; charset=UTF-8");

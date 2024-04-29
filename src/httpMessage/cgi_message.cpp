@@ -1,5 +1,7 @@
 #include "httpMessage/cgi_message.hpp"
 
+#include <cstring>
+
 #include "config.hpp"
 #include "logging.hpp"
 

@@ -4,7 +4,6 @@
 #include "logging.hpp"
 #include "util.hpp"
 
-
 static CPPLog::Instance clientLogI = logOut.instance(CPPLog::Level::INFO, "client");
 static CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "client");
 static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "client");
@@ -35,7 +34,7 @@ Client::Client(const Client& rhs) : _sessionList(rhs._sessionList) {
 Client& Client::operator=(const Client& rhs) {
     if (this == &rhs)
         return *this;
-	clientLogI << "Client copy assignment called" << CPPLog::end;
+    clientLogI << "Client copy assignment called" << CPPLog::end;
     _socketFd = rhs._socketFd;
     _port = rhs._port;
     _request = rhs._request;
@@ -49,8 +48,8 @@ Client& Client::operator=(const Client& rhs) {
     _clientWriteBuffer = rhs._clientWriteBuffer;
     _addLocalFdToPollArray = rhs._addLocalFdToPollArray;
     _cgiMessage = rhs._cgiMessage;
-	if (_cgiMessage)
-		_cgiMessage->setRequest(&_request);
+    if (_cgiMessage)
+        _cgiMessage->setRequest(&_request);
     _inputFile = rhs._inputFile;
     _registerCallbacks();
     return *this;
@@ -67,7 +66,7 @@ uint16_t Client::port() const {
 void Client::changeState(ClientState newState) {
     _state = newState;
     setLastActivityTime();
-	clientLogI << "Time changed" << CPPLog::end;
+    clientLogI << "Time changed" << CPPLog::end;
 }
 
 void Client::setLastActivityTime() {

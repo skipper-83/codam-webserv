@@ -24,25 +24,6 @@ Client::Client(std::shared_ptr<AsyncSocketClient>& socketFd, std::function<void(
     _registerCallbacks();
 }
 
-// Client::Client(Client&& other)
-//     : _state(other._state),
-//       _request(std::move(other._request)),
-//       _response(&this->_request),
-//       _sessionList(other._sessionList),
-//       _session(other._session),
-//       _socketFd(std::move(other._socketFd)),
-//       _inputFile(std::move(other._inputFile)),
-//       _cgiMessage(std::move(other._cgiMessage)),
-//       _port(other._port),
-//       _bytesWrittenCounter(other._bytesWrittenCounter),
-//       _clientReadBuffer(std::move(other._clientReadBuffer)),
-//       _clientWriteBuffer(std::move(other._clientWriteBuffer)),
-//       _addLocalFdToPollArray(std::move(other._addLocalFdToPollArray))
-//       {
-// 		clientLogI << "Client move constructor called" << CPPLog::end;
-//     _registerCallbacks();
-// }
-
 Client::~Client() {
     clientLogI << "Client destructor called" << CPPLog::end;
 }

@@ -25,6 +25,8 @@ set (SRCS
 	src/client/client_util.cpp
 	src/client/client_file_handling.cpp
 	src/client/client_cgi_handling.cpp
+	src/client/client_session.cpp
+	src/client/client_build_response.cpp
 	src/config/config_extractors.cpp
 	src/config/config_insertions.cpp
 	src/config/config.cpp

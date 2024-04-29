@@ -27,7 +27,6 @@ void mainClientAvailableCb(AsyncSocket& socket, AsyncPollArray& pollArray, std::
     clientsList.emplace_back(
         newSocketClient,
         [&pollArray](std::weak_ptr<AsyncFD> fd) {
-            mainLogI << "adding Fd to pollArray from CLIENT" << CPPLog::end;
             pollArray.add(fd);
             mainLogI << "added Fd to pollArray from CLIENT: " << pollArray.size() << CPPLog::end;
         },
@@ -107,7 +106,7 @@ int main(int argc, char** argv) {
                                              return false;
                                          }),
                           clientsList.end());
-		sessionList.removeExpiredSessions(std::chrono::steady_clock::now());
+        sessionList.removeExpiredSessions(std::chrono::steady_clock::now());
         // usleep(1000);
     }
 }

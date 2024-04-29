@@ -1,4 +1,5 @@
 #include "httpMessage/http_request.hpp"
+
 #include "logging.hpp"
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest parser");
@@ -60,13 +61,13 @@ httpRequest &httpRequest::operator=(const httpRequest &rhs) {
     this->_port = rhs._port;
     this->_clientMaxBodySize = rhs._clientMaxBodySize;
     this->_returnAutoIndex = rhs._returnAutoIndex;
-	this->_pathSet = rhs._pathSet;
-	this->_methodCheck = rhs._methodCheck;
-	this->_sessionSet = rhs._sessionSet;
+    this->_pathSet = rhs._pathSet;
+    this->_methodCheck = rhs._methodCheck;
+    this->_sessionSet = rhs._sessionSet;
     this->_path = rhs._path;
-	this->_queryString = rhs._queryString;
-	this->_nextChunkSize = rhs._nextChunkSize;
-	this->_chunkSizeKnown = rhs._chunkSizeKnown;
+    this->_queryString = rhs._queryString;
+    this->_nextChunkSize = rhs._nextChunkSize;
+    this->_chunkSizeKnown = rhs._chunkSizeKnown;
     return *this;
 }
 

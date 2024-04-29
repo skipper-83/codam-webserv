@@ -1,6 +1,8 @@
 #include "httpMessage/http_message.hpp"
-#include "httpMessage/http_request.hpp"
+
 #include <regex>
+
+#include "httpMessage/http_request.hpp"
 #include "logging.hpp"
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest body parser");
@@ -95,33 +97,31 @@ void httpMessage::_httpMessageAssign(const httpMessage &rhs) {
 std::string httpMessage::_getLineWithCRLF(std::istream &is) {
     std::string line;
 
-	// infoLog << "Getting line with CRLF (is type)\n";
-    if(!std::getline(is, line))
-	{
-		// infoLog << "No line\n";
-		return "";
-	}
-	// infoLog << "Line: [" << line << "]" << CPPLog::end;
-    if (!line.empty() && line.back() == '\r')
-	{
-		// infoLog << "Removing \\r\n";	
+    // infoLog << "Getting line with CRLF (is type)\n";
+    if (!std::getline(is, line)) {
+        // infoLog << "No line\n";
+        return "";
+    }
+    // infoLog << "Line: [" << line << "]" << CPPLog::end;
+    if (!line.empty() && line.back() == '\r') {
+        // infoLog << "Removing \\r\n";
         line.pop_back();
-	}
+    }
     return line;
 }
 
 std::string httpMessage::_getLineWithCRLF(std::string &input) {
     std::string::size_type pos = input.find('\n');
-	std::string line;
+    std::string line;
 
-	// infoLog << "Getting line with CRLF\n";
-	if (pos == std::string::npos || input.empty())
-		return "";
-	line = input.substr(0, pos);
-	if (line[line.size() - 1] == '\r')
-		line.pop_back(); // remove \r
-	if (pos + 1 < input.size())
-		input = input.substr(pos + 1, input.size()); // remove line from input
+    // infoLog << "Getting line with CRLF\n";
+    if (pos == std::string::npos || input.empty())
+        return "";
+    line = input.substr(0, pos);
+    if (line[line.size() - 1] == '\r')
+        line.pop_back();  // remove \r
+    if (pos + 1 < input.size())
+        input = input.substr(pos + 1, input.size());  // remove line from input
     return line;
 }
 
@@ -129,7 +129,7 @@ std::pair<std::string, std::string> httpMessage::_parseHeaderLine(std::string li
     // std::string key, value;
     // std::string::size_type key_end, val_start;
 
-std::regex pattern("^([^\\s:]+):\\s*(.*)");
+    std::regex pattern("^([^\\s:]+):\\s*(.*)");
     std::smatch match;
 
     if (std::regex_match(line, match, pattern)) {

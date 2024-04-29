@@ -73,6 +73,8 @@ class Client {
     void _openFileAndAddToPollArray(std::string path);
     void _readFromFile();
 	void _readFromCgi();
+	void _handleSession();
+	void _buildResponse();
 
     bool _sessionSet = false;
 };

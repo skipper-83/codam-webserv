@@ -117,7 +117,7 @@ std::string ServerConfig::getErrorPage(int errorCode) const {
     return std::string();
 }
 
-Cgi const* ServerConfig::getCgiFromPath(std::string path) const {
+Cgi const *ServerConfig::getCgiFromPath(std::string path) const {
     size_t extensionPos = path.find_last_of('.');
     if (this->cgis.empty() || extensionPos == std::string::npos)
         return nullptr;

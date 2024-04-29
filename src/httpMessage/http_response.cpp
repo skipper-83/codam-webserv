@@ -1,5 +1,7 @@
 #include "httpMessage/http_response.hpp"
+
 #include <sstream>
+
 #include "logging.hpp"
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpResponse");
@@ -33,17 +35,15 @@ void httpResponse::setPrecedingRequest(httpRequest* const callingRequest) {
 }
 
 void httpResponse::extractHeaders(const httpMessage* message) {
-	infoLog << "Extracting headers" << CPPLog::end;
-	for (auto header : message->getHeaderMap())
-		setHeader(header.first, header.second);
+    infoLog << "Extracting headers" << CPPLog::end;
+    for (auto header : message->getHeaderMap())
+        setHeader(header.first, header.second);
 }
-
-
 
 void httpResponse::setCode(int code) {
     this->_responseCodeDescription = WebServUtil::codeDescription(code);
     this->_responseCode = code;
-    if ((this->_responseCode >= 400 && this->_responseCode <= 599)|| this->_responseCode == 999)
+    if ((this->_responseCode >= 400 && this->_responseCode <= 599) || this->_responseCode == 999)
         this->_setErrorBody();
 }
 
@@ -60,7 +60,7 @@ void httpResponse::_setErrorBody() {
         .append("</h1></center><hr><center>")
         .append(DEFAULT_SERVER_NAME)
         .append("</center>")
-		.append("</body></html>");
+        .append("</body></html>");
     // }
     setHeader("Content-Type", "text/html; charset=UTF-8");
     this->setFixedSizeBody(error_page);

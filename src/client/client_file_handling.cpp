@@ -6,11 +6,10 @@ static CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "cl
 static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "client");
 
 void Client::_readFromFile() {
-
     clientLogI << "I have an inputfile" << CPPLog::end;
     if (_inputFile->bad()) {
         clientLogE << "file is bad" << CPPLog::end;
-		changeState(ClientState::WRITE_RESPONSE);
+        changeState(ClientState::WRITE_RESPONSE);
         if (_inputFile->badCode() == EACCES) {
             _inputFile = nullptr;
             _returnHttpErrorToClient(403);
@@ -21,38 +20,35 @@ void Client::_readFromFile() {
 
     if (_inputFile->readBufferFull()) {
         clientLogI << "file buffer full" << CPPLog::end;
-		changeState(ClientState::WRITE_RESPONSE);
+        changeState(ClientState::WRITE_RESPONSE);
         _response.setCode(200);
-        if (!_response.isChunked())
-		{
+        if (!_response.isChunked()) {
             _clientWriteBuffer = _response.getHeadersForChunkedResponse();
-			if (_request.getMethod() == WebServUtil::HttpMethod::HEAD){
-				clientLogI << "HEAD request" << CPPLog::end;
-				_response.transformLineForChunkedResponse("");
-				clientLogI << "setting inputfile to nullptr" << CPPLog::end;
-            	return;
-			}
-		}
+            if (_request.getMethod() == WebServUtil::HttpMethod::HEAD) {
+                clientLogI << "HEAD request" << CPPLog::end;
+                _response.transformLineForChunkedResponse("");
+                clientLogI << "setting inputfile to nullptr" << CPPLog::end;
+                return;
+            }
+        }
         _clientWriteBuffer += _response.transformLineForChunkedResponse(_inputFile->read());
         clientLogI << "file buffer: " << _clientWriteBuffer << "size:" << _clientWriteBuffer.size() << CPPLog::end;
     }
 
     if (_inputFile->eof()) {
-		changeState(ClientState::WRITE_RESPONSE);
+        changeState(ClientState::WRITE_RESPONSE);
         clientLogI << "file is at eof" << CPPLog::end;
-		std::string tempFileBuffer = _inputFile->read();
+        std::string tempFileBuffer = _inputFile->read();
         _inputFile = nullptr;
         clientLogI << "file buffer: " << tempFileBuffer << "size:" << tempFileBuffer.size() << CPPLog::end;
         if (!_response.isChunked()) {
             _response.setCode(200);
             _response.setFixedSizeBody(tempFileBuffer);
-			if (_request.getMethod() == WebServUtil::HttpMethod::HEAD)
-			{
-				_clientWriteBuffer = _response.getStartLine() + _response.getHeaderListAsString();
-				return;
-			}
-			else
-            	_clientWriteBuffer = _response.getFixedBodyResponseAsString();
+            if (_request.getMethod() == WebServUtil::HttpMethod::HEAD) {
+                _clientWriteBuffer = _response.getStartLine() + _response.getHeaderListAsString();
+                return;
+            } else
+                _clientWriteBuffer = _response.getFixedBodyResponseAsString();
         } else {
             _clientWriteBuffer += _response.transformLineForChunkedResponse(tempFileBuffer);
             _clientWriteBuffer += _response.transformLineForChunkedResponse("");

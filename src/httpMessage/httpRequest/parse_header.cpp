@@ -56,7 +56,7 @@ void httpRequest::_parseHttpHeaders(std::istream &fs) {
         if (key_value.first == "Cookie") {
             parseCookieHeader(key_value.second);
         }
-		infoLog << "Header: " << key_value.first << ": " << key_value.second << CPPLog::end;
+        infoLog << "Header: " << key_value.first << ": " << key_value.second << CPPLog::end;
     }
     _checkHttpHeaders();
     _setVars();
@@ -121,7 +121,7 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
 
     _pathSet = true;
     infoLog << "Resolving path for " << this->_httpAdress << CPPLog::end;
-    if (_httpAdress.find('.') == std::string::npos && _httpAdress[_httpAdress.size() - 1] != '/')
+    if (_httpAdress.find('.') == std::string::npos && _httpAdress[_httpAdress.size() - 1] != '/')  //
         _httpAdress += '/';
     for (auto &location : this->_server->locations) {
         if (location.ref == this->_httpAdress.substr(0, location.ref.size())) {
@@ -130,22 +130,28 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
             infoLog << path << CPPLog::end;
             _path = path;
             _location = &location;
-			infoLog << "Client max body size: " << location.clientMaxBodySize.value << " bytes" << CPPLog::end;
+            infoLog << "Client max body size: " << location.clientMaxBodySize.value << " bytes" << CPPLog::end;
             _clientMaxBodySize = location.clientMaxBodySize.value;
 
             infoLog << "Path: " << _path << " Location: " << location.ref << " Root: " << location.root;
             // resolve path if it is a directory
-            if (!std::filesystem::exists(_path) && !(_httpMethod == WebServUtil::HttpMethod::PUT) && this->_server->getCgiFromPath(_path) == nullptr){
+            Cgi const *cgi;
+            if (!std::filesystem::exists(_path) &&
+                !(_httpMethod == WebServUtil::HttpMethod::PUT) &&  // if the file does not exist and the method is not PUT
+                ((cgi = this->_server->getCgiFromPath(_path)) == nullptr ||
+                 cgi->allowed.methods.find(_httpMethod) == cgi->allowed.methods.end())) {  // and the path is not a cgi
                 infoLog << "File not found, returning 404: " << _path << CPPLog::end;
                 throw(httpRequestException(404, "File not found"));
             }
             if (std::filesystem::is_directory(_path)) {
                 infoLog << "Path is a directory, request: [" << _httpAdress << "] ref: [" << _location->ref << "]" << CPPLog::end;
+
+                /*
+                 * I used to throw a redirect here, but the intra tester expects the server to add a trailing slash to the path
+                 */
                 // if (path[path.size() - 1] != '/')  // if the path does not end with a slash, redirect
                 //     throw(httpRequestException(301, _httpAdress + '/'));
-                // if (_httpAdress == _location->ref)  // if the requested adress is the location root
-                // {
-				if (_server->autoIndex.on) {
+                if (_server->autoIndex.on) {
                     infoLog << "Autoindex is on" << CPPLog::end;
                     _returnAutoIndex = true;
                     _path = path;
@@ -159,11 +165,11 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
                             return;
                         }
                     }
-					throw(httpRequestException(404, "Directory index file not found, and autoindex is off"));
+                    throw(httpRequestException(404, "Directory index file not found, and autoindex is off"));
                     // }
                 }
                 infoLog << "No index files found, checking if autoindex is on" << CPPLog::end;
-    
+
                 infoLog << "Autoindex is off, returning 403 Forbidden" << CPPLog::end;
                 throw(httpRequestException(403, "No directory index, and autoindex is off"));
             }

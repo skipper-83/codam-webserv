@@ -244,17 +244,19 @@ TEST_F(httpBodyParseTest, chunked_in_three_parts)
 	request << R"(Transfer-Encoding: chunked
 
 5
-01234)";
+01234
+)";
 	test.parseHeader(request);
 	EXPECT_TRUE(test.headerComplete());
 	test.parseBody(request);
+	EXPECT_EQ(test.getBody(), "");
+	EXPECT_EQ(test.getBodyLength(), 0);
+	request << R"(6
+012345
+)";
+	test.parseBody(request);
 	EXPECT_EQ(test.getBody(), "01234");
 	EXPECT_EQ(test.getBodyLength(), 5);
-	request << R"(6
-012345)";
-	test.parseBody(request);
-	EXPECT_EQ(test.getBody(), "01234012345");
-	EXPECT_EQ(test.getBodyLength(), 11);
 	EXPECT_EQ(test.bodyComplete(), false);
 	// EXPECT_TRUE(test.bodyComplete());
 	request << R"(0

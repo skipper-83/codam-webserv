@@ -187,7 +187,6 @@ static void setLocationIndex(std::istream& is, Location& rhs) {
     }
 }
 
-
 /**
  * @brief Extractor for client_max_body_size
  *
@@ -233,8 +232,7 @@ std::istream& operator>>(std::istream& is, Location& rhs) {
     SubParsers subParsers = {{"root", [&rhs](std::istream& is) { setLocationRoot(is, rhs); }},
                              {"index", [&rhs](std::istream& is) { setLocationIndex(is, rhs); }},
                              {"allowed_methods", [&rhs](std::istream& is) { is >> rhs.allowed; }},
-							 {"client_max_body_size", [&rhs](std::istream& is) { is >> rhs.clientMaxBodySize; }}
-	};
+                             {"client_max_body_size", [&rhs](std::istream& is) { is >> rhs.clientMaxBodySize; }}};
 
     is >> rhs.ref >> word;
     if (!is || rhs.ref.find('{') != std::string::npos)
@@ -249,8 +247,8 @@ std::istream& operator>>(std::istream& is, Location& rhs) {
             if (rhs.root == "")
                 throw(std::invalid_argument("No root for location"));
             break;
-		} else if (subParsers[word])
-			subParsers[word](is);
+        } else if (subParsers[word])
+            subParsers[word](is);
         else if (word == "location")
             throw(std::invalid_argument("Nested location blocks are not allowed"));
         else
@@ -289,11 +287,11 @@ std::istream& operator>>(std::istream& is, Cgi& rhs) {
     std::string line, word;
     std::stringstream lineStream;
 
-	infoLog << "Cgi extractor" << CPPLog::end;	
+    infoLog << "Cgi extractor" << CPPLog::end;
     checkTerminator(is, line, "cgi");
     lineStream.str(line);
     while (lineStream >> word) {
-		infoLog << "Word: " << word << CPPLog::end;
+        infoLog << "Word: " << word << CPPLog::end;
         if (!lineStream)
             throw(std::invalid_argument("Unexpected input for cgi"));
         if (word.find(';') != std::string::npos) {
@@ -307,13 +305,11 @@ std::istream& operator>>(std::istream& is, Cgi& rhs) {
                 throw(std::invalid_argument("No extensions given for cgi"));
             if (word.find(';') != std::string::npos)
                 word = word.substr(0, word.length() - 1);
-			if (WebServUtil::stringToHttpMethod(word) != WebServUtil::HttpMethod::UNKNOWN)
-			{
-				infoLog << "Method: " << word << CPPLog::end;
-				rhs.allowed.methods[WebServUtil::stringToHttpMethod(word)] = true;
-			}
-			else
-            	rhs.executor = word;
+            if (WebServUtil::stringToHttpMethod(word) != WebServUtil::HttpMethod::UNKNOWN) {
+                infoLog << "Method: " << word << CPPLog::end;
+                rhs.allowed.methods[WebServUtil::stringToHttpMethod(word)] = true;
+            } else
+                rhs.executor = word;
             // break;
         }
     }

@@ -1,12 +1,12 @@
 #include "util.hpp"
 
-#include <ctime>
-#include <cstring>
 #include <chrono>
+#include <cstring>
+#include <ctime>
 // #include <format>
 #include <filesystem>
-#include <sstream>
 #include <iomanip>
+#include <sstream>
 #include <unordered_map>
 
 #include "config.hpp"
@@ -68,7 +68,6 @@ std::string WebServUtil::directoryIndexList(const std::string& path, const std::
     std::string title, filename;
     std::stringstream index_listing;
 
-
     title = "Index of " + request_adress;
     index_listing << "<html><head><title>" << title << "</title></head><body>\n";
     index_listing << "<h1>" << title << "</h1><hr><pre>\n";
@@ -80,55 +79,44 @@ std::string WebServUtil::directoryIndexList(const std::string& path, const std::
         filename = it.filename().string();
         if (std::filesystem::is_directory(it))
             filename += "/";
-		if (filename.length() > DEFAULT_MAX_FILENAME_DISPLAY)
-			filename = filename.substr(0, DEFAULT_MAX_FILENAME_DISPLAY) + "..>";
-		index_listing << "<a href=\"" << it.filename().string() << "\">" << std::setw(DEFAULT_MAX_FILENAME_DISPLAY) << std::left << filename + "</a>";
-		index_listing << "\t" << _fileTimeToString(std::filesystem::last_write_time(it));
-		if (!std::filesystem::is_directory(it))
-			index_listing << "\t" << std::filesystem::file_size(it);
-		else
-			index_listing << "\t" << "-";
-		index_listing << "\n";
+        if (filename.length() > DEFAULT_MAX_FILENAME_DISPLAY)
+            filename = filename.substr(0, DEFAULT_MAX_FILENAME_DISPLAY) + "..>";
+        index_listing << "<a href=\"" << it.filename().string() << "\">" << std::setw(DEFAULT_MAX_FILENAME_DISPLAY) << std::left << filename + "</a>";
+        index_listing << "\t" << _fileTimeToString(std::filesystem::last_write_time(it));
+        if (!std::filesystem::is_directory(it))
+            index_listing << "\t" << std::filesystem::file_size(it);
+        else
+            index_listing << "\t"
+                          << "-";
+        index_listing << "\n";
     }
     index_listing << "</pre><hr></body></html>";
     return index_listing.str();
 }
 
 WebServUtil::HttpMethod WebServUtil::stringToHttpMethod(std::string method) {
-	static const std::unordered_map<std::string, HttpMethod> methods = {
-		{"GET", HttpMethod::GET},
-		{"POST", HttpMethod::POST},
-		{"HEAD", HttpMethod::HEAD},
-		{"PUT", HttpMethod::PUT},
-		{"DELETE", HttpMethod::DELETE},
-		{"CONNECT", HttpMethod::CONNECT},
-		{"OPTIONS", HttpMethod::OPTIONS},
-		{"TRACE", HttpMethod::TRACE},
-		{"PATCH", HttpMethod::PATCH},
-	};
+    static const std::unordered_map<std::string, HttpMethod> methods = {
+        {"GET", HttpMethod::GET},         {"POST", HttpMethod::POST},     {"HEAD", HttpMethod::HEAD},
+        {"PUT", HttpMethod::PUT},         {"DELETE", HttpMethod::DELETE}, {"CONNECT", HttpMethod::CONNECT},
+        {"OPTIONS", HttpMethod::OPTIONS}, {"TRACE", HttpMethod::TRACE},   {"PATCH", HttpMethod::PATCH},
+    };
 
-	auto it = methods.find(method);
-	if (it != methods.end())
-		return it->second;
-	return HttpMethod::UNKNOWN;
+    auto it = methods.find(method);
+    if (it != methods.end())
+        return it->second;
+    return HttpMethod::UNKNOWN;
 }
 
 std::string WebServUtil::httpMethodToString(HttpMethod method) {
-	static const std::unordered_map<HttpMethod, std::string> methods = {
-		{HttpMethod::GET, "GET"},
-		{HttpMethod::POST, "POST"},
-		{HttpMethod::HEAD, "HEAD"},
-		{HttpMethod::PUT, "PUT"},
-		{HttpMethod::DELETE, "DELETE"},
-		{HttpMethod::CONNECT, "CONNECT"},
-		{HttpMethod::OPTIONS, "OPTIONS"},
-		{HttpMethod::TRACE, "TRACE"},
-		{HttpMethod::PATCH, "PATCH"},
-	};
-	auto it = methods.find(method);
-	if (it != methods.end())
-		return it->second;
-	return "";
+    static const std::unordered_map<HttpMethod, std::string> methods = {
+        {HttpMethod::GET, "GET"},         {HttpMethod::POST, "POST"},     {HttpMethod::HEAD, "HEAD"},
+        {HttpMethod::PUT, "PUT"},         {HttpMethod::DELETE, "DELETE"}, {HttpMethod::CONNECT, "CONNECT"},
+        {HttpMethod::OPTIONS, "OPTIONS"}, {HttpMethod::TRACE, "TRACE"},   {HttpMethod::PATCH, "PATCH"},
+    };
+    auto it = methods.find(method);
+    if (it != methods.end())
+        return it->second;
+    return "";
 }
 
 std::string WebServUtil::timeStamp(void) {
@@ -140,24 +128,36 @@ std::string WebServUtil::timeStamp(void) {
 }
 
 bool WebServUtil::isRequestWithoutBody(HttpMethod requestType) {
-	if (requestType == HttpMethod::GET || requestType == HttpMethod::HEAD || requestType == HttpMethod::DELETE || requestType == HttpMethod::OPTIONS || requestType == HttpMethod::TRACE || requestType == HttpMethod::CONNECT)
+    if (requestType == HttpMethod::GET || requestType == HttpMethod::HEAD || requestType == HttpMethod::DELETE ||
+        requestType == HttpMethod::OPTIONS || requestType == HttpMethod::TRACE || requestType == HttpMethod::CONNECT)
         return true;
     return false;
 }
 
 const std::unordered_map<std::string, std::string> WebServUtil::_getFileTypes(void) {
     const std::unordered_map<std::string, std::string> mimeTypes = {
-        {".html", "text/html"},       {".htm", "text/html"},
-        {".jpg", "image/jpeg"},       {".jpeg", "image/jpeg"},
-        {".png", "image/png"},        {".pdf", "application/pdf"},
-        {".txt", "text/plain"},       {".css", "text/css"},
-        {".js", "text/javascript"},   {"", "application/octet-stream"},
-        {".ico", "image/x-icon"},     {".gif", "image/gif"},
-        {".svg", "image/svg+xml"},    {".xml", "application/xml"},
-        {".json", "application/json"}, {".php", "application/x-httpd-php"},
-		{".zip", "application/zip"},  {".tar", "application/x-tar"},
-		{".gz", "application/gzip"},  {".rar", "application/x-rar-compressed"},
-		{".7z", "application/x-7z-compressed"}, {".tar.gz", "application/gzip"},		
+        {".html", "text/html"},
+        {".htm", "text/html"},
+        {".jpg", "image/jpeg"},
+        {".jpeg", "image/jpeg"},
+        {".png", "image/png"},
+        {".pdf", "application/pdf"},
+        {".txt", "text/plain"},
+        {".css", "text/css"},
+        {".js", "text/javascript"},
+        {"", "application/octet-stream"},
+        {".ico", "image/x-icon"},
+        {".gif", "image/gif"},
+        {".svg", "image/svg+xml"},
+        {".xml", "application/xml"},
+        {".json", "application/json"},
+        {".php", "application/x-httpd-php"},
+        {".zip", "application/zip"},
+        {".tar", "application/x-tar"},
+        {".gz", "application/gzip"},
+        {".rar", "application/x-rar-compressed"},
+        {".7z", "application/x-7z-compressed"},
+        {".tar.gz", "application/gzip"},
         // Add more mappings here as needed
     };
     return mimeTypes;
@@ -227,6 +227,6 @@ const std::map<int, std::string>& WebServUtil::_getStatusCodes() {
                                                      {508, "Loop Detected"},
                                                      {510, "Not Extended"},
                                                      {511, "Network Authentication Required"},
-													 {999, "Method not implemented"}};
+                                                     {999, "Method not implemented"}};
     return codes;
 }

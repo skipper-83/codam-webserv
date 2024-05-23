@@ -28,6 +28,7 @@ void Client::_buildResponse() {
 		}
 		catch(const std::exception& e)
 		{
+			clientLogE << "_buildResponse: " << e.what() << CPPLog::end;
 			_returnHttpErrorToClient(500);
 		}
 		

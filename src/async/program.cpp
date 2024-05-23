@@ -70,8 +70,8 @@ Environment &Environment::operator=(const Environment &other) {
     while (other._env[length++] != nullptr)
         ;
 
-    this->_env = new char *[length];
-    std::fill(_env, _env + length, nullptr);
+    this->_env = new char *[length + 1];
+    std::fill(_env, _env + length + 1, nullptr);
     for (size_t i = 0; other._env[i] != nullptr; i++) {
         this->_env[i] = new char[strlen(other._env[i])];
         strcpy(this->_env[i], other._env[i]);
@@ -86,7 +86,7 @@ Environment::operator char **() {
 void Environment::_destroy() {
     if (_env != nullptr) {
         for (size_t i = 0; _env[i] != nullptr; i++) {
-            delete _env[i];
+            delete[] _env[i];
             _env[i] = nullptr;
         }
     }

@@ -6,8 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "logging.hpp"
 #include "async/pollarray.hpp"
+#include "logging.hpp"
 
 static CPPLog::Instance logI = logOut.instance(CPPLog::Level::INFO, "AsyncPollArray");
 static CPPLog::Instance logD = logOut.instance(CPPLog::Level::DEBUG, "AsyncPollArray");
@@ -27,21 +27,17 @@ void AsyncPollArray::remove(std::weak_ptr<AsyncFD> fd) {
 }
 
 void AsyncPollArray::cleanup() {
-    _weakFDs.remove_if([](const std::weak_ptr<AsyncFD>& wfd) { return wfd.expired(); });
+    _weakFDs.remove_if([](const std::weak_ptr<AsyncFD>& wfd) {
+        std::shared_ptr<AsyncFD> fd = wfd.lock();
+        return !fd || !fd->isValid();
+    });
 }
 
 void AsyncPollArray::poll(int timeout) {
     cleanup();
     std::vector<std::shared_ptr<AsyncFD>> fds;
-    std::vector<std::weak_ptr<AsyncFD>> weakfds;
     fds.reserve(_weakFDs.size());
-    for (const auto& wfd : _weakFDs) {
-        std::shared_ptr<AsyncFD> fd = wfd.lock();
-        if (fd && fd->isValid() && !fd->_eventCallbacks.empty()) {
-            fds.push_back(fd);
-            weakfds.push_back(wfd);
-        }
-    }
+    std::transform(_weakFDs.begin(), _weakFDs.end(), std::back_inserter(fds), [](const std::weak_ptr<AsyncFD>& wfd) { return wfd.lock(); });
 
     std::vector<pollfd> pollfds;
     pollfds.reserve(fds.size());
@@ -69,22 +65,28 @@ void AsyncPollArray::poll(int timeout) {
         return;
     }
 
-    if (weakfds.size() != pollfds.size()) {
+    if (_weakFDs.size() != pollfds.size()) {
         logE << "fds.size() != pollfds.size()";
+        std::cout << "fds.size() != pollfds.size(), fds.size() = " << fds.size() << ", pollfds.size() = " << pollfds.size()
+                  << ", weakFDs.size() = " << _weakFDs.size() << "\n";
         throw std::runtime_error("poll returned different number of fds than expected");
     }
 
-    for (size_t i = 0; i < pollfds.size(); i++) {
+    std::list<std::weak_ptr<AsyncFD>>::iterator it = _weakFDs.begin();
+    for (auto& pfd : pollfds) {
         for (auto [event, eventType] : AsyncFD::pollToEventType) {
-            if (pollfds[i].revents & event) {
-                std::shared_ptr<AsyncFD> fd = weakfds[i].lock();
-                if (!fd) 
+            if (pfd.revents & event) {
+                std::shared_ptr<AsyncFD> fd = it->lock();
+                if (!fd) {
+                    it++;
                     continue;
+                }
                 if (auto cb = fd->_eventCallbacks[eventType]) {
                     cb(*fd);
                 }
             }
         }
+        it++;
     }
 }
 

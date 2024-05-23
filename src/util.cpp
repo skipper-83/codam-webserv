@@ -10,6 +10,7 @@
 #include <unordered_map>
 
 #include "config.hpp"
+#include "logging.hpp"
 
 std::string WebServUtil::codeDescription(int httpCode) {
     std::string ret = "Unknown HTTP Status Code";
@@ -81,13 +82,24 @@ std::string WebServUtil::directoryIndexList(const std::string& path, const std::
             filename += "/";
         if (filename.length() > DEFAULT_MAX_FILENAME_DISPLAY)
             filename = filename.substr(0, DEFAULT_MAX_FILENAME_DISPLAY) + "..>";
-        index_listing << "<a href=\"" << request_adress << it.filename().string() << "\">" << std::setw(DEFAULT_MAX_FILENAME_DISPLAY) << std::left << filename + "</a>";
-        index_listing << "\t" << _fileTimeToString(std::filesystem::last_write_time(it));
-        if (!std::filesystem::is_directory(it))
-            index_listing << "\t" << std::filesystem::file_size(it);
-        else
-            index_listing << "\t"
-                          << "-";
+        index_listing << "<a href=\"" << request_adress << it.filename().string() << "\">" << std::setw(DEFAULT_MAX_FILENAME_DISPLAY) << std::left
+                      << filename + "</a>";
+        index_listing << "\t";
+        try {
+            std::filesystem::file_time_type ftime = std::filesystem::last_write_time(it);
+            std::chrono::system_clock::time_point sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(ftime - std::filesystem::file_time_type::clock::now() +
+                                                                                          std::chrono::system_clock::now());
+            std::time_t cftime = std::chrono::system_clock::to_time_t(sctp);
+            index_listing << std::put_time(std::localtime(&cftime), "%Y-%m-%d %H:%M:%S");
+        } catch (std::exception& e) {
+            index_listing << "-\t\t";
+        }
+        index_listing << "\t";
+        try {
+            index_listing << std::filesystem::file_size(it);
+        } catch (std::exception& e) {
+            index_listing << "-";
+        }
         index_listing << "\n";
     }
     index_listing << "</pre><hr></body></html>";

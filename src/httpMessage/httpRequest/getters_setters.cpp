@@ -1,6 +1,5 @@
-#include "http_request.hpp"
+#include "httpMessage/http_request.hpp"
 #include "logging.hpp"
-
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest parser");
 /**
@@ -58,11 +57,11 @@ bool httpRequest::returnAutoIndex(void) const {
  * @param port port from select()
  */
 void httpRequest::setServer(MainConfig &config, uint16_t port) {
-	infoLog << "setServer: " << port << " host:" << this->getHeader("Host") << CPPLog::end;
+    infoLog << "setServer: " << port << " host:" << this->getHeader("Host") << CPPLog::end;
     this->_server = config.getServer(port, this->getHeader("Host"));
     if (this->_server == nullptr)
         throw httpRequestException(500, "No server match found");
-    this->_clientMaxBodySize = this->_server->clientMaxBodySize.value;
+    // this->_clientMaxBodySize = this->_server->clientMaxBodySize.value;
 }
 
 const ServerConfig *httpRequest::getServer(void) const {
@@ -78,9 +77,9 @@ std::map<std::string, std::string> httpRequest::getCookies(void) const {
 }
 
 std::string httpRequest::getCookie(std::string key) const {
-	if (_cookies.find(key) == _cookies.end())
-		return std::string();
-	return _cookies.at(key);
+    if (_cookies.find(key) == _cookies.end())
+        return std::string();
+    return _cookies.at(key);
 }
 
 const Location *httpRequest::getLocation(void) const {

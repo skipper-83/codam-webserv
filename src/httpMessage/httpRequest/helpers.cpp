@@ -1,4 +1,4 @@
-#include "http_request.hpp"
+#include "httpMessage/http_request.hpp"
 #include "logging.hpp"
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest parser");
@@ -19,7 +19,7 @@ bool httpRequest::_hasNewLine(std::string &str) {
  * @param fs
  * @return std::streampos
  */
-std::streampos httpRequest::_remainingLength(std::istream &fs) {
+size_t httpRequest::_remainingLength(std::istream &fs) {
     std::streampos curPos, endPos;
 
     curPos = fs.tellg();
@@ -46,13 +46,4 @@ std::string httpRequest::_readNumberOfBytesFromFileStream(std::istream &fs, size
     }
     std::string ret(buffer.begin(), buffer.end());
     return (ret);
-}
-
-std::string httpRequest::_getLineWithCRLF(std::istream &is) {
-    std::string line;
-
-    std::getline(is, line);
-    if (!line.empty() && line.back() == '\r')
-        line.pop_back();
-    return line;
 }

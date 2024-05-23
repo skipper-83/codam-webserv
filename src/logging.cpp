@@ -5,7 +5,8 @@
 #endif
 
 #ifndef LOGGING_SCOPES
-#define LOGGING_SCOPES {}
+#define LOGGING_SCOPES \
+    {}
 #endif
 
 CPPLog logOut(std::clog, MINIMUM_LOG_LEVEL, LOGGING_SCOPES);

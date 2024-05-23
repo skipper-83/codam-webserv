@@ -24,12 +24,16 @@ void mainClientAvailableCb(AsyncSocket& socket, AsyncPollArray& pollArray, std::
     mainLogI << "client available CB" << CPPLog::end;
     mainLogI << "creating client" << CPPLog::end;
     std::shared_ptr<AsyncSocketClient> newSocketClient = socket.accept();
-    clientsList.emplace_back(newSocketClient, [&pollArray](std::weak_ptr<AsyncFD> fd) {
-		mainLogI << "adding client to pollArray" << CPPLog::end;
-		pollArray.add(fd);
-	});
+    clientsList.emplace_back(
+        newSocketClient,
+        [&pollArray](std::weak_ptr<AsyncFD> fd) {
+            pollArray.add(fd);
+            mainLogI << "added Fd to pollArray from CLIENT: " << pollArray.size() << CPPLog::end;
+        },
+        sessionList);
     mainLogI << "adding client to pollArray" << CPPLog::end;
-    pollArray.add(newSocketClient);	
+    pollArray.add(newSocketClient);
+    // usleep(5000);
 }
 
 void parseConfig(int argc, char** argv) {
@@ -102,7 +106,7 @@ int main(int argc, char** argv) {
                                              return false;
                                          }),
                           clientsList.end());
-		sessionList.removeExpiredSessions(std::chrono::steady_clock::now());
+        sessionList.removeExpiredSessions(std::chrono::steady_clock::now());
         // usleep(1000);
     }
 }

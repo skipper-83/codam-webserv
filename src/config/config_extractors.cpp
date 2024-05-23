@@ -43,7 +43,7 @@ static void checkTerminator(std::istream& is, std::string& line, std::string ref
 std::istream& operator>>(std::istream& is, AllowedMethods& rhs) {
     std::string line, word;
     std::stringstream lineStream;
-	WebServUtil::HttpMethod method;
+    WebServUtil::HttpMethod method;
 
     checkTerminator(is, line, "allowed_methods");
     lineStream.str(line);
@@ -56,8 +56,8 @@ std::istream& operator>>(std::istream& is, AllowedMethods& rhs) {
             if (word.length() > 1)
                 word = word.substr(0, word.length() - 1);
         }
-		method = WebServUtil::stringToHttpMethod(word);
-		if (method == WebServUtil::HttpMethod::UNKNOWN)
+        method = WebServUtil::stringToHttpMethod(word);
+        if (method == WebServUtil::HttpMethod::UNKNOWN)
             throw(std::invalid_argument("Invalid method in allowed_methods: [" + word + "]"));
         rhs.methods[method] = true;
         infoLog << word << " method allowed";
@@ -152,8 +152,9 @@ static void setLocationRoot(std::istream& is, Location& rhs) {
         if (word.find(';') == std::string::npos)
             throw(std::invalid_argument("Missing terminating ; after root"));
     }
-	if (rhs.root[rhs.root.size()] != '/')
-		rhs.root += '/';
+    // infoLog << "root last char []"
+    if (rhs.root[rhs.root.size() - 1] != '/')
+        rhs.root += '/';
     infoLog << "root set to " << rhs.root << CPPLog::end;
 }
 
@@ -184,43 +185,6 @@ static void setLocationIndex(std::istream& is, Location& rhs) {
         for (auto it : rhs.index_vec)
             infoLog << it << CPPLog::end;
     }
-}
-
-/**
- * @brief Location extractor overload. Extracts the referrer (the URI after the location keyword)
- * 		and calls setLocationIndex() and/or setLocationRoot() for indices and root respectively
- *
- * @param is
- * @param rhs
- * @return std::istream&
- */
-std::istream& operator>>(std::istream& is, Location& rhs) {
-    std::string word;
-
-    is >> rhs.ref >> word;
-    if (!is || rhs.ref.find('{') != std::string::npos)
-        throw(std::invalid_argument("Wrong referrer for location"));  // todo check referrer more thoroughly
-    if (word.find('{') == std::string::npos)
-        throw(std::invalid_argument("Missing opening { in location"));
-    infoLog << "Referrer: " << rhs.ref << CPPLog::end;
-    while (is >> word) {
-        if (!is)
-            throw(std::invalid_argument("Wrong input for location"));
-        else if (word.find('}') != std::string::npos) {
-            if (rhs.root == "")
-                throw(std::invalid_argument("No root for location"));
-            break;
-        }
-        else if (word == "root")
-            setLocationRoot(is, rhs);
-        else if (word == "index")
-            setLocationIndex(is, rhs);
-		else if (word == "location")
-			throw(std::invalid_argument("Nested location blocks are not allowed"));
-		else
-			throw(std::invalid_argument("Unexpected input for location: " + word));
-    }
-    return is;
 }
 
 /**
@@ -256,6 +220,44 @@ std::istream& operator>>(std::istream& is, BodySize& rhs) {
 }
 
 /**
+ * @brief Location extractor overload. Extracts the referrer (the URI after the location keyword)
+ * 		and calls setLocationIndex() and/or setLocationRoot() for indices and root respectively
+ *
+ * @param is
+ * @param rhs
+ * @return std::istream&
+ */
+std::istream& operator>>(std::istream& is, Location& rhs) {
+    std::string word;
+    SubParsers subParsers = {{"root", [&rhs](std::istream& is) { setLocationRoot(is, rhs); }},
+                             {"index", [&rhs](std::istream& is) { setLocationIndex(is, rhs); }},
+                             {"allowed_methods", [&rhs](std::istream& is) { is >> rhs.allowed; }},
+                             {"client_max_body_size", [&rhs](std::istream& is) { is >> rhs.clientMaxBodySize; }}};
+
+    is >> rhs.ref >> word;
+    if (!is || rhs.ref.find('{') != std::string::npos)
+        throw(std::invalid_argument("Wrong referrer for location"));  // todo check referrer more thoroughly
+    if (word.find('{') == std::string::npos)
+        throw(std::invalid_argument("Missing opening { in location"));
+    infoLog << "Referrer: " << rhs.ref << CPPLog::end;
+    while (is >> word) {
+        if (!is)
+            throw(std::invalid_argument("Wrong input for location"));
+        else if (word.find('}') != std::string::npos) {
+            if (rhs.root == "")
+                throw(std::invalid_argument("No root for location"));
+            break;
+        } else if (subParsers[word])
+            subParsers[word](is);
+        else if (word == "location")
+            throw(std::invalid_argument("Nested location blocks are not allowed"));
+        else
+            throw(std::invalid_argument("Unexpected input for location: " + word));
+    }
+    return is;
+}
+
+/**
  * @brief Extractor for listenport
  *
  * @param is
@@ -280,37 +282,38 @@ std::istream& operator>>(std::istream& is, ListenPort& rhs) {
     return is;
 }
 
-std::istream & operator>>(std::istream & is, Cgi & rhs)
-{
-// TODO: insert return statement here
-	std::string line, word;
-	std::stringstream lineStream;
+std::istream& operator>>(std::istream& is, Cgi& rhs) {
+    // TODO: insert return statement here
+    std::string line, word;
+    std::stringstream lineStream;
 
-	checkTerminator(is, line, "cgi");
-	lineStream.str(line);
-	while (lineStream >> word)
-	{
-		if (!lineStream)
-			throw(std::invalid_argument("Unexpected input for cgi"));
-		if (word.find(';') != std::string::npos)
-		{
-			if (word.length() > 1)
-				word = word.substr(0, word.length() - 1);
-		}
-		if (word[0] == '.'	&& word[1] != '/')
-			rhs.extensions.push_back(word);
-		else
-		{
-			if (rhs.extensions.size() < 1)
-				throw(std::invalid_argument("No extensions given for cgi"));
-			if (word.find(';') != std::string::npos)
-				word = word.substr(0, word.length() - 1);
-			rhs.executor = word;
-			break;
-		}
-	}
-	return is;
-
+    infoLog << "Cgi extractor" << CPPLog::end;
+    checkTerminator(is, line, "cgi");
+    lineStream.str(line);
+    while (lineStream >> word) {
+        infoLog << "Word: " << word << CPPLog::end;
+        if (!lineStream)
+            throw(std::invalid_argument("Unexpected input for cgi"));
+        if (word.find(';') != std::string::npos) {
+            if (word.length() > 1)
+                word = word.substr(0, word.length() - 1);
+        }
+        if (word[0] == '.' && word[1] != '/')
+            rhs.extensions.push_back(word);
+        else {
+            if (rhs.extensions.size() < 1)
+                throw(std::invalid_argument("No extensions given for cgi"));
+            if (word.find(';') != std::string::npos)
+                word = word.substr(0, word.length() - 1);
+            if (WebServUtil::stringToHttpMethod(word) != WebServUtil::HttpMethod::UNKNOWN) {
+                infoLog << "Method: " << word << CPPLog::end;
+                rhs.allowed.methods[WebServUtil::stringToHttpMethod(word)] = true;
+            } else
+                rhs.executor = word;
+            // break;
+        }
+    }
+    return is;
 }
 
 /**
@@ -370,16 +373,17 @@ static void setServerSubparsers(SubParsers& subParsers, ServerConfig& rhs) {
                   {"server_name", [&rhs](std::istream& is) { is >> rhs.names; }},
                   {"autoindex", [&rhs](std::istream& is) { is >> rhs.autoIndex; }},
                   {"client_max_body_size", [&rhs](std::istream& is) { is >> rhs.clientMaxBodySize; }},
-                  {"error_page", [&rhs](std::istream& is) {
+                  {"error_page",
+                   [&rhs](std::istream& is) {
                        ErrorPage new_errorPage;
                        is >> new_errorPage;
                        rhs.errorPages.push_back(new_errorPage);
                    }},
-				   {"cgi", [&rhs](std::istream& is) {
-					Cgi new_cgi;
-					is >> new_cgi;
-					rhs.cgis.push_back(new_cgi);
-				   }}};
+                  {"cgi", [&rhs](std::istream& is) {
+                       Cgi new_cgi;
+                       is >> new_cgi;
+                       rhs.cgis.push_back(new_cgi);
+                   }}};
 }
 
 /**
@@ -416,7 +420,7 @@ std::istream& operator>>(std::istream& is, ServerConfig& rhs) {
         rhs.ports.push_back(new_port);
     }
     rhs.rank = rank++;
-	rhs.sortLocations();
+    rhs.sortLocations();
     return is;
 }
 

@@ -1,6 +1,8 @@
 #include "config.hpp"
-#include "logging.hpp"
+
 #include <iostream>
+
+#include "logging.hpp"
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "parse config");
 
@@ -24,18 +26,28 @@ void MainConfig::_overrideDefaults() {
             it.allowed.methods = this->_allowed.methods;
             it.allowed.defaultValue = false;
         }
+        for (auto &it_loc : it.locations) {
+            if (!it.allowed.defaultValue && it_loc.allowed.defaultValue) {
+                it_loc.allowed.methods = it.allowed.methods;
+                it_loc.allowed.defaultValue = false;
+            }
+            if (!it.clientMaxBodySize.defaultValue && it_loc.clientMaxBodySize.defaultValue) {
+                it_loc.clientMaxBodySize.value = it.clientMaxBodySize.value;
+                it_loc.clientMaxBodySize.defaultValue = false;
+            }
+        }
     }
 }
 
-void MainConfig::_setServerNameAndPortArrays(void) { 
+void MainConfig::_setServerNameAndPortArrays(void) {
     for (size_t i = 0; i < this->_servers.size(); ++i) {
         for (auto it_ports : this->_servers[i].ports) {
-			// insert server with port. Insert does not overwrite, so the first server with a port will be the one stored.
+            // insert server with port. Insert does not overwrite, so the first server with a port will be the one stored.
             this->_portsToServers.insert({it_ports.value, &this->_servers[i]});
             if (std::find(_ports.begin(), _ports.end(), it_ports.value) == _ports.end())
                 _ports.push_back(it_ports.value);
             for (auto it_names : this->_servers[i].names.name_vec) {
-				// insert server with port and name. Insert does not overwrite, so the first server with a port and name will be the one stored.
+                // insert server with port and name. Insert does not overwrite, so the first server with a port and name will be the one stored.
                 this->_portsNamesToServers.insert({{it_ports.value, it_names}, &this->_servers[i]});
             }
         }
@@ -44,12 +56,12 @@ void MainConfig::_setServerNameAndPortArrays(void) {
 
 /**
  * @brief Return the server that is listening on the given port.
- * 
- * @param port 
- * @return const ServerConfig* 
+ *
+ * @param port
+ * @return const ServerConfig*
  */
-const ServerConfig *MainConfig::getServerFromPort(uint16_t port) { 
-	infoLog << "getServerFromPort: " << port << CPPLog::end;
+const ServerConfig *MainConfig::getServerFromPort(uint16_t port) {
+    infoLog << "getServerFromPort: " << port << CPPLog::end;
     auto pos = this->_portsToServers.find(port);
     if (pos != this->_portsToServers.end())
         return pos->second;
@@ -58,32 +70,34 @@ const ServerConfig *MainConfig::getServerFromPort(uint16_t port) {
 
 /**
  * @brief Return the server that is listening on the given port and name.
- * 
- * @param port 
- * @param name 
- * @return const ServerConfig* 
+ *
+ * @param port
+ * @param name
+ * @return const ServerConfig*
  */
 const ServerConfig *MainConfig::getServerFromPortAndName(uint16_t port, std::string name) {
     auto pos = this->_portsNamesToServers.find({port, name});
-    if (pos != this->_portsNamesToServers.end())
+    if (pos != this->_portsNamesToServers.end()) {
+        infoLog << "getServerFromPortAndName: " << pos->second->names.name_vec[0] << CPPLog::end;
         return pos->second;
+    }
     return nullptr;
 }
 
 /**
  * @brief Return the server that is listening on the given port and name.
- * 
- * @param port 
- * @param name 
- * @return const ServerConfig* 
+ *
+ * @param port
+ * @param name
+ * @return const ServerConfig*
  */
 const ServerConfig *MainConfig::getServer(uint16_t port, std::string name) {
     const ServerConfig *ret;
-	infoLog << "getServer: " << port << " " << name << CPPLog::end;
-	// if a name was given, try to find a server with the given name.
+    infoLog << "getServer: " << port << " " << name << CPPLog::end;
+    // if a name was given, try to find a server with the given name.
     if (!name.empty() && (ret = getServerFromPortAndName(port, name)))
         return ret;
-	// if no server was found with the given name, return the first server that listens on the given port.
+    // if no server was found with the given name, return the first server that listens on the given port.
     if ((ret = getServerFromPort(port)))
         return ret;
     return nullptr;
@@ -96,29 +110,27 @@ const std::vector<uint16_t> &MainConfig::getPorts(void) {
 std::string ServerConfig::getErrorPage(int errorCode) const {
     for (auto it : this->errorPages) {
         for (size_t i = 0; i < it.errorNumbers.size(); ++i) {
-			if (it.errorNumbers[i] == errorCode)
-				return it.page;
+            if (it.errorNumbers[i] == errorCode)
+                return it.page;
         }
     }
     return std::string();
 }
 
-std::string ServerConfig::getCgiExectorFromPath(std::string path) const {
-	size_t extensionPos = path.find_last_of('.');
-	if (this->cgis.empty() || extensionPos == std::string::npos)
-		return std::string();
-	std::string extension = path.substr(extensionPos);
-	for (auto it : this->cgis) {
-		for (size_t i = 0; i < it.extensions.size(); ++i) {
-			if (path.find(it.extensions[i]) != std::string::npos)
-				return it.executor;
-		}
-	}
-    return std::string();
+Cgi const *ServerConfig::getCgiFromPath(std::string path) const {
+    size_t extensionPos = path.find_last_of('.');
+    if (this->cgis.empty() || extensionPos == std::string::npos)
+        return nullptr;
+    std::string extension = path.substr(extensionPos);
+    for (auto &it : this->cgis) {
+        for (size_t i = 0; i < it.extensions.size(); ++i) {
+            if (path.find(it.extensions[i]) != std::string::npos)
+                return &it;
+        }
+    }
+    return nullptr;
 }
 
 void ServerConfig::sortLocations(void) {
-	std::sort(this->locations.begin(), this->locations.end(), [](const Location &a, const Location &b) {
-		return a.ref.size() > b.ref.size();
-	});
+    std::sort(this->locations.begin(), this->locations.end(), [](const Location &a, const Location &b) { return a.ref.size() > b.ref.size(); });
 }

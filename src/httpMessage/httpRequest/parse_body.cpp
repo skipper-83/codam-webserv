@@ -1,4 +1,4 @@
-#include "http_request.hpp"
+#include "httpMessage/http_request.hpp"
 #include "logging.hpp"
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest body parser");
@@ -11,10 +11,16 @@ static CPPLog::Instance warningLog = logOut.instance(CPPLog::Level::WARNING, "ht
  */
 void httpRequest::parseBody(std::istream &fs) {
     std::streampos nextChunkSize;
-    std::stringstream contents;
+    // std::stringstream contents;
     std::string line;
+	// std::streampos originalPos = fs.tellg();
+
 
     infoLog << "ADD TO BODY: " << _remainingLength(fs) << CPPLog::end;
+	// infoLog << "Buffer [" << fs.rdbuf() << "]" << CPPLog::end;
+	// fs.seekg(originalPos);
+    if (_remainingLength(fs) == 0)
+        return;
     if (this->_bodyComplete)
         return;
     if (this->_chunkedRequest)
@@ -40,6 +46,7 @@ void httpRequest::_addToFixedContentSize(std::istream &fs) {
         try {
             _httpBody += _readNumberOfBytesFromFileStream(fs, _contentLength - _bodyLength);
         } catch (const std::exception &e) {
+            warningLog << "Error reading http request: " << e.what() << CPPLog::end;
             throw httpRequestException(400, "Error reading http request: " + std::string(e.what()));
         }
         this->_bodyLength = _contentLength;
@@ -49,7 +56,7 @@ void httpRequest::_addToFixedContentSize(std::istream &fs) {
         this->_httpBody += contents.str();
         this->_bodyLength += addedLength;
     }
-    infoLog << this->_httpBody << " " << this->_bodyLength << CPPLog::end;
+    // infoLog << this->_httpBody << " " << this->_bodyLength << CPPLog::end;
     return;
 }
 
@@ -61,23 +68,36 @@ void httpRequest::_addToFixedContentSize(std::istream &fs) {
  */
 void httpRequest::_addChunkedContent(std::istream &fs) {
     std::string line;
-    std::streampos nextChunkSize;
+    // std::streampos nextChunkSize;
 
     while (fs) {
-        line = _getLineWithCRLF(fs);
-        // MAYBE IMPLEMENT CHECK FOR EMPTY LINE
-        try {
-            nextChunkSize = stoi(line);
-        } catch (std::exception &e) {
-            throw httpRequestException(400, "Incorrect chunk size in chunked http request: " + std::string(e.what()));
+        if (!_chunkSizeKnown)  // if we do not have chunk size from the last iteration
+        {
+			infoLog << "Getting chunk size" << CPPLog::end;
+            line = _getLineWithCRLF(fs);
+            // MAYBE IMPLEMENT CHECK FOR EMPTY LINE
+			if (line.empty())
+			{
+				infoLog << "Empty line, returning\n";
+				return;
+			}
+            infoLog << "New chunk size: " << line << CPPLog::end;
+            try {
+                _nextChunkSize = stoi(line, nullptr, 16); // convert hex to int
+				_chunkSizeKnown = true;
+				infoLog << "Chunk size: " << _nextChunkSize << CPPLog::end;
+            } catch (std::exception &e) {
+                throw httpRequestException(400, "Incorrect chunk size in chunked http request: " + std::string(e.what()));
+            }
         }
-        if (_remainingLength(fs) < nextChunkSize) {
-            throw httpRequestException(400, "Chunk size smaller than announced size in chunked http request");
-        }
-        if (this->_bodyLength + nextChunkSize > this->_clientMaxBodySize)
+		if (this->_bodyLength + _nextChunkSize > this->_clientMaxBodySize)
             throw httpRequestException(413, "Request body larger than max body size");
-        if (!nextChunkSize) {
-            // std::getline(fs, line);
+        if (_nextChunkSize > 0 && _remainingLength(fs) < (_nextChunkSize) + 2) {  // +2 for newline
+			return ;
+            // throw httpRequestException(400, "Chunk size smaller than announced size in chunked http request");
+        }
+        
+        if (_nextChunkSize == 0) {  // end of body
             line = _getLineWithCRLF(fs);
             if (line.empty()) {
                 this->_bodyComplete = true;
@@ -86,12 +106,17 @@ void httpRequest::_addChunkedContent(std::istream &fs) {
             throw httpRequestException(400, "Terminating line of chunked http request non-empty");
         }
         try {
-            this->_httpBody += _readNumberOfBytesFromFileStream(fs, nextChunkSize);
+            this->_httpBody += _readNumberOfBytesFromFileStream(fs, _nextChunkSize);
         } catch (const std::exception &e) {
             throw httpRequestException(400, "Error reading chunked http request: " + std::string(e.what()));
         }
-        this->_bodyLength += (size_t)nextChunkSize;
+        this->_bodyLength += _nextChunkSize;
+		infoLog << "Body size: " << this->_bodyLength << " -- old chunk size: " << _nextChunkSize << CPPLog::end;
+        _nextChunkSize = 0;
+		_chunkSizeKnown = false;
         line = _getLineWithCRLF(fs);  // skip terminating newline
+
+		// line = _getLineWithCRLF(fs);  // skip terminating newline
         // std::getline(fs, line);  // skip terminating newline
     }
     fs.clear();

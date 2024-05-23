@@ -2,13 +2,15 @@
 #include "input.hpp"
 #include "output.hpp"
 
+#include <signal.h>
+
 class AsyncProgram {
    public:
     using ProgramCallback = std::function<void(AsyncProgram &)>;
 
-    AsyncProgram(const std::string &exec, const std::map<std::string, std::string> &environment, const ProgramCallback &programReadReadyCb = {},
+    AsyncProgram(const std::string &exec, const std::string &file, const std::map<std::string, std::string> &environment, const ProgramCallback &programReadReadyCb = {},
                  const ProgramCallback &programWriteReadyCb = {});
-    static std::unique_ptr<AsyncProgram> create(const std::string &exec, const std::map<std::string, std::string> &environment,
+    static std::unique_ptr<AsyncProgram> create(const std::string &exec, const std::string &file, const std::map<std::string, std::string> &environment,
                                                 const ProgramCallback &programReadReadyCb = {}, const ProgramCallback &programWriteReadyCb = {});
 
     virtual ~AsyncProgram();
@@ -35,7 +37,15 @@ class AsyncProgram {
 	void closeInputFd();
 	void closeOutputFd();
 
+    bool isRunning();
+    int getExitCode();
+    
+    void kill(int signal = SIGKILL);
+
    protected:
+
+    void _updateProgramStatus();
+
     void _internalReadReadyCb(AsyncFD &fd);
 	void _internalWriteReadyCb(AsyncFD &fd);
 
@@ -44,4 +54,9 @@ class AsyncProgram {
 
     ProgramCallback _programReadReadyCb;
     ProgramCallback _programWriteReadyCb;
+
+    pid_t _pid;
+    bool _running;
+
+    int _exitStatus;
 };

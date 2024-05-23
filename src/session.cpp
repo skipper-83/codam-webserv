@@ -24,7 +24,7 @@ WebServSession& WebServSession::operator=(const WebServSession& rhs) {
     _sessionId = rhs._sessionId;
     // _sessionData = rhs._sessionData;
     _lastActivityTime = rhs._lastActivityTime;
-	_pathTrail = rhs._pathTrail;
+    _pathTrail = rhs._pathTrail;
     return *this;
 }
 
@@ -46,7 +46,7 @@ void WebServSession::updateSessionTimeout() {
 
 void WebServSession::addPathToTrail(std::string path) {
     _pathTrail += path + "\n";
-	infoLog << "Path trail: " << _pathTrail << CPPLog::end;
+    infoLog << "Path trail: " << _pathTrail << CPPLog::end;
 }
 
 std::string WebServSession::generateSessionId() {
@@ -88,15 +88,15 @@ WebServSessionList::~WebServSessionList() {
 }
 
 std::shared_ptr<WebServSession> WebServSessionList::getSession(std::string sessionId) {
-	auto it = std::find_if(_sessions.begin(), _sessions.end(),
-						   [sessionId](const std::shared_ptr<WebServSession> session) { return session->getSessionId() == sessionId; });
-	if (it == _sessions.end())
-		throw std::runtime_error("Session not found");
-	return (*it);
+    auto it = std::find_if(_sessions.begin(), _sessions.end(),
+                           [sessionId](const std::shared_ptr<WebServSession> session) { return session->getSessionId() == sessionId; });
+    if (it == _sessions.end())
+        throw std::runtime_error("Session not found");
+    return (*it);
 }
 
 std::shared_ptr<WebServSession> WebServSessionList::createSession() {
-	infoLog << "Creating new session" << CPPLog::end;
+    infoLog << "Creating new session" << CPPLog::end;
     _sessions.push_back(std::make_shared<WebServSession>());
     return (_sessions.back());
 }
@@ -111,10 +111,11 @@ void WebServSessionList::removeExpiredSessions(std::chrono::time_point<std::chro
     _sessions.erase(std::remove_if(_sessions.begin(), _sessions.end(),
                                    [now, this](const std::shared_ptr<WebServSession> session) {
                                        bool expired = (now - session->_lastActivityTime) > std::chrono::seconds(DEFAULT_TIMEOUT_SECONDS);
-                                       if (expired)
-                                           {infoLog << "Session expired: " << session->getSessionId()
+                                       if (expired) {
+                                           infoLog << "Session expired: " << session->getSessionId()
                                                    << " session list length before deletion: " << this->_sessions.size() << CPPLog::end;
-											infoLog << "Path trail: " << session->_pathTrail << CPPLog::end;}
+                                           infoLog << "Path trail: " << session->_pathTrail << CPPLog::end;
+                                       }
                                        return (expired);
                                    }),
                     _sessions.end());

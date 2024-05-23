@@ -1,13 +1,14 @@
 #pragma once
 
-// #include <memory>
-
 #include <chrono>
-#include "async/socket_client.hpp"
+
 #include "async/in_file.hpp"
-#include "http_request.hpp"
-#include "http_response.hpp"
+#include "async/program.hpp"
+#include "async/socket_client.hpp"
 #include "file_handler.hpp"
+#include "httpMessage/http_request.hpp"
+#include "httpMessage/http_response.hpp"
+#include "httpMessage/cgi_message.hpp"
 #include "session.hpp"
 
 enum class ClientState {
@@ -16,6 +17,9 @@ enum class ClientState {
     READ_BODY,
     BUILDING_RESPONSE,
     WRITE_RESPONSE,
+	CGI_WRITE,
+	CGI_READ,
+	FILE_READ,
     ERROR,
     DONE,
 };
@@ -23,19 +27,17 @@ enum class ClientState {
 class Client {
    public:
     using SocketClientCallback = AsyncSocketClient::SocketClientCallback;
-    Client(std::shared_ptr<AsyncSocketClient> &socketFd, const std::function<void(std::weak_ptr<AsyncFD>)> &addLocalFdToPollArray);
+    Client(std::shared_ptr<AsyncSocketClient> &socketFd, std::function<void(std::weak_ptr<AsyncFD>)> addLocalFdToPollArray,
+           WebServSessionList &sessionList);
     ~Client();
 
     Client(const Client &rhs);
     Client &operator=(const Client &);
 
-    Client(Client &&);
+    // Client(Client &&);
 
     AsyncIO &socketFd() const;
     uint16_t port() const;
-
-    void clientReadCb(AsyncSocketClient &client);
-    void clientWriteCb(AsyncSocketClient &client);
 
     void changeState(ClientState newState);
     void setLastActivityTime();
@@ -45,11 +47,13 @@ class Client {
     ClientState _state;
     httpRequest _request;
     httpResponse _response;
-	WebServSessionList &_sessionList;
-	std::shared_ptr<WebServSession> _session = nullptr;
+    WebServSessionList &_sessionList;
+    std::shared_ptr<WebServSession> _session = nullptr;
 
     std::shared_ptr<AsyncSocketClient> _socketFd;
-	std::shared_ptr<InFileHandler> _inputFile = nullptr;
+    std::shared_ptr<InFileHandler> _inputFile = nullptr;
+    // std::shared_ptr<AsyncProgram> _cgi = nullptr;
+	std::shared_ptr<cgiMessage> _cgiMessage;
 
     uint16_t _port = 0;
 
@@ -59,11 +63,18 @@ class Client {
     std::string _clientWriteBuffer;
     std::chrono::time_point<std::chrono::steady_clock> _lastActivityTime = std::chrono::steady_clock::now();
 
-    std::function<void(std::shared_ptr<AsyncFD>)> _addLocalFdToPollArray;
+    std::function<void(std::weak_ptr<AsyncFD>)> _addLocalFdToPollArray;
     void _registerCallbacks();
     void _returnHttpErrorToClient(int code, std::string message = "");
 
-	void _openFileAndAddToPollArray(std::string path);
-	void _readFromFile();
-	bool _sessionSet = false;
+    void _clientReadCb(AsyncSocketClient &client);
+    void _clientWriteCb(AsyncSocketClient &client);
+
+    void _openFileAndAddToPollArray(std::string path);
+    void _readFromFile();
+	void _readFromCgi();
+	void _handleSession();
+	void _buildResponse();
+
+    bool _sessionSet = false;
 };

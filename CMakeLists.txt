@@ -24,6 +24,9 @@ set (SRCS
 	src/client/client_callbacks.cpp
 	src/client/client_util.cpp
 	src/client/client_file_handling.cpp
+	src/client/client_cgi_handling.cpp
+	src/client/client_session.cpp
+	src/client/client_build_response.cpp
 	src/config/config_extractors.cpp
 	src/config/config_insertions.cpp
 	src/config/config.cpp
@@ -35,6 +38,7 @@ set (SRCS
 	src/httpMessage/httpRequest/helpers.cpp
 	src/httpMessage/http_message.cpp
 	src/httpMessage/http_response.cpp
+	src/httpMessage/cgi_message.cpp
 	src/session.cpp
 	src/util.cpp
 )

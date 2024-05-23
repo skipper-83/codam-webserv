@@ -1,6 +1,5 @@
+#include "httpMessage/http_request.hpp"
 
-#include "http_request.hpp"
-// #include <map>
 #include "logging.hpp"
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest parser");
@@ -49,10 +48,10 @@ httpRequest &httpRequest::operator=(const httpRequest &rhs) {
         return *this;
 
     // static_cast<httpMessage &>(*this) = rhs;
-    httpMessageAssign(rhs);
+    _httpMessageAssign(rhs);
     this->_httpMethod = rhs._httpMethod;
     this->_httpAdress = rhs._httpAdress;
-	this->_cookies = rhs._cookies;
+    this->_cookies = rhs._cookies;
     this->_headerParseComplete = rhs._headerParseComplete;
     this->_bodyComplete = rhs._bodyComplete;
     this->_contentLength = rhs._contentLength;
@@ -61,8 +60,14 @@ httpRequest &httpRequest::operator=(const httpRequest &rhs) {
     this->_server = rhs._server;
     this->_port = rhs._port;
     this->_clientMaxBodySize = rhs._clientMaxBodySize;
-	this->_returnAutoIndex = rhs._returnAutoIndex;
+    this->_returnAutoIndex = rhs._returnAutoIndex;
+    this->_pathSet = rhs._pathSet;
+    this->_methodCheck = rhs._methodCheck;
+    this->_sessionSet = rhs._sessionSet;
     this->_path = rhs._path;
+    this->_queryString = rhs._queryString;
+    this->_nextChunkSize = rhs._nextChunkSize;
+    this->_chunkSizeKnown = rhs._chunkSizeKnown;
     return *this;
 }
 

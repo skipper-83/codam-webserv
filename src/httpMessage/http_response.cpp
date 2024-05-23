@@ -1,4 +1,4 @@
-#include "http_response.hpp"
+#include "httpMessage/http_response.hpp"
 
 #include <sstream>
 
@@ -19,11 +19,11 @@ httpResponse::httpResponse(httpRequest* callingRequest) : httpResponse() {
 httpResponse& httpResponse::operator=(const httpResponse& rhs) {
     if (this == &rhs)
         return *this;
-    httpMessageAssign(rhs);
+    _httpMessageAssign(rhs);
     this->_bodyComplete = rhs._bodyComplete;
     this->_responseCode = rhs._responseCode;
     this->_bodyComplete = rhs._bodyComplete;
-	this->_chunked = rhs._chunked;
+    this->_chunked = rhs._chunked;
     this->_responseCodeDescription = rhs._responseCodeDescription;
     this->_precedingRequest = rhs._precedingRequest;
     return *this;
@@ -34,10 +34,16 @@ void httpResponse::setPrecedingRequest(httpRequest* const callingRequest) {
     _precedingRequest = callingRequest;
 }
 
+void httpResponse::extractHeaders(const httpMessage* message) {
+    infoLog << "Extracting headers" << CPPLog::end;
+    for (auto header : message->getHeaderMap())
+        setHeader(header.first, header.second);
+}
+
 void httpResponse::setCode(int code) {
     this->_responseCodeDescription = WebServUtil::codeDescription(code);
     this->_responseCode = code;
-    if (this->_responseCode >= 400 && this->_responseCode <= 599)
+    if ((this->_responseCode >= 400 && this->_responseCode <= 599) || this->_responseCode == 999)
         this->_setErrorBody();
 }
 
@@ -45,15 +51,16 @@ void httpResponse::_setErrorBody() {
     std::string error_page;
 
     infoLog << "Setting up error page for " << this->_responseCode << CPPLog::end;
-        error_page.append("<html><head><title>")
-            .append(std::to_string(this->_responseCode))
-            .append(" " + this->_responseCodeDescription)
-            .append("</title></head><body><center><h1>")
-            .append(std::to_string(this->_responseCode))
-            .append(" " + this->_responseCodeDescription)
-            .append("</h1></center><hr><center>")
-            .append(DEFAULT_SERVER_NAME)
-            .append("</center>");
+    error_page.append("<html><head><title>")
+        .append(std::to_string(this->_responseCode))
+        .append(" " + this->_responseCodeDescription)
+        .append("</title></head><body><center><h1>")
+        .append(std::to_string(this->_responseCode))
+        .append(" " + this->_responseCodeDescription)
+        .append("</h1></center><hr><center>")
+        .append(DEFAULT_SERVER_NAME)
+        .append("</center>")
+        .append("</body></html>");
     // }
     setHeader("Content-Type", "text/html; charset=UTF-8");
     this->setFixedSizeBody(error_page);
@@ -75,7 +82,7 @@ std::string httpResponse::getStartLine(void) const {
 std::string httpResponse::getHeadersForChunkedResponse(void) {
     std::string ret;
 
-	_chunked = true;
+    _chunked = true;
     deleteHeader("Date");
     setHeader("Date", WebServUtil::timeStamp());
     deleteHeader("Content-Length");
@@ -89,8 +96,8 @@ std::string httpResponse::getHeadersForChunkedResponse(void) {
 std::string httpResponse::transformLineForChunkedResponse(std::string line) {
     std::stringstream ret;
 
-	if (line.empty())
-		_bodyComplete = true;
+    if (line.empty())
+        _bodyComplete = true;
     ret << std::hex << line.size() << "\r\n" << line << "\r\n";
     return (ret.str());
 }
@@ -102,7 +109,7 @@ std::string httpResponse::getFixedBodyResponseAsString(void) {
     setHeader("Date", WebServUtil::timeStamp());
     ret.append(this->getStartLine());
     ret.append(getHeaderListAsString());
-    ret.append("\r\n").append(_httpBody).append("\r\n\r\n");
+    ret.append("\r\n").append(_httpBody);
     return ret;
 }
 

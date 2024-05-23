@@ -15,7 +15,7 @@ InFileHandler::InFileHandler(std::string path, std::size_t bufferSize) : _buffer
     } catch (const std::exception& e) {
         logF << "InFileHandler::InFileHandler(std::string, std::size_t) failed: " << e.what() << " errno: " << errno;
         _bad = true;
-		_badCode = errno;
+        _badCode = errno;
     }
 }
 
@@ -54,7 +54,8 @@ std::size_t InFileHandler::readBufferLength() const {
 }
 
 bool InFileHandler::readBufferFull() const {
-    logD << "InFileHandler::readBufferFull() called: " << _readbuffer.length() << " >= " << _bufferSize << " = " << (_readbuffer.length() >= _bufferSize);
+    logD << "InFileHandler::readBufferFull() called: " << _readbuffer.length() << " >= " << _bufferSize << " = "
+         << (_readbuffer.length() >= _bufferSize);
     return _readbuffer.length() >= _bufferSize;
 }
 

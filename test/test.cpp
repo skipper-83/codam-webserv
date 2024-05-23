@@ -2,8 +2,8 @@
 
 #include <sstream>
 
-#include "http_request.hpp"
-#include "http_response.hpp"
+#include "httpMessage/http_request.hpp"
+#include "httpMessage/http_response.hpp"
 #include "test_httpReq.hpp"
 #include "test_config.hpp"
 #include "config.hpp"
@@ -97,7 +97,9 @@ Host: 123.124.123.123
 }
 
 TEST_F(httpRequestTest, get_adress) {
-    EXPECT_EQ(req.getAdress(), "/path/to/resource?query=123");
+	// std::cerr << req.getAdress() << "\n";
+    EXPECT_EQ(req.getAdress(), "/path/to/resource");
+	EXPECT_EQ(req.getQueryString(), "query=123");
 }
 
 TEST_F(httpRequestTest, get_request_type) {
@@ -242,17 +244,19 @@ TEST_F(httpBodyParseTest, chunked_in_three_parts)
 	request << R"(Transfer-Encoding: chunked
 
 5
-01234)";
+01234
+)";
 	test.parseHeader(request);
 	EXPECT_TRUE(test.headerComplete());
 	test.parseBody(request);
+	EXPECT_EQ(test.getBody(), "");
+	EXPECT_EQ(test.getBodyLength(), 0);
+	request << R"(6
+012345
+)";
+	test.parseBody(request);
 	EXPECT_EQ(test.getBody(), "01234");
 	EXPECT_EQ(test.getBodyLength(), 5);
-	request << R"(6
-012345)";
-	test.parseBody(request);
-	EXPECT_EQ(test.getBody(), "01234012345");
-	EXPECT_EQ(test.getBodyLength(), 11);
 	EXPECT_EQ(test.bodyComplete(), false);
 	// EXPECT_TRUE(test.bodyComplete());
 	request << R"(0
@@ -366,10 +370,12 @@ TEST_F(configWithRequest, request_larger_than_client_max_body_size)
 	request_input << "Host: myname:8080\n\n123456789";
 	
 	config_input >> config;
-	request.parseHeader(request_input);
-	EXPECT_TRUE(request.headerComplete());
-	request.setServer(config, 8080);
-	EXPECT_THROW(request.parseBody(request_input), httpRequest::httpRequestException);
+	std::string req = request_input.str();
+	// request.parseHeader(request_input);
+	// EXPECT_TRUE(request.headerComplete());
+	// request.setServer(config, 8080);
+	// request.parse(req, 8080);
+	EXPECT_THROW(request.parse(req, 8080), httpRequest::httpRequestException);
 }
 
 // TEST_F(configWithRequest, request_with_wrong_port)

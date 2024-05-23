@@ -81,7 +81,7 @@ std::string WebServUtil::directoryIndexList(const std::string& path, const std::
             filename += "/";
         if (filename.length() > DEFAULT_MAX_FILENAME_DISPLAY)
             filename = filename.substr(0, DEFAULT_MAX_FILENAME_DISPLAY) + "..>";
-        index_listing << "<a href=\"" << it.filename().string() << "\">" << std::setw(DEFAULT_MAX_FILENAME_DISPLAY) << std::left << filename + "</a>";
+        index_listing << "<a href=\"" << request_adress << it.filename().string() << "\">" << std::setw(DEFAULT_MAX_FILENAME_DISPLAY) << std::left << filename + "</a>";
         index_listing << "\t" << _fileTimeToString(std::filesystem::last_write_time(it));
         if (!std::filesystem::is_directory(it))
             index_listing << "\t" << std::filesystem::file_size(it);

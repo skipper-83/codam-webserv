@@ -22,7 +22,15 @@ void Client::_buildResponse() {
 
     // If the request is for a directory, return the directory index
     if (_request.returnAutoIndex()) {
-        _response.setFixedSizeBody(WebServUtil::directoryIndexList(this->_request.getPath(), _request.getAdress()));
+		try
+		{
+        	_response.setFixedSizeBody(WebServUtil::directoryIndexList(this->_request.getPath(), _request.getAdress()));
+		}
+		catch(const std::exception& e)
+		{
+			_returnHttpErrorToClient(500);
+		}
+		
         _response.setHeader("Content-Type", "text/html; charset=UTF-8");
         _response.setCode(200);
         _clientWriteBuffer = _response.getFixedBodyResponseAsString();

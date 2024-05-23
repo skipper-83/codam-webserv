@@ -121,8 +121,8 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
 
     _pathSet = true;
     infoLog << "Resolving path for " << this->_httpAdress << CPPLog::end;
-    if (_httpAdress.find('.') == std::string::npos && _httpAdress[_httpAdress.size() - 1] != '/')  //
-        _httpAdress += '/';
+
+	
     for (auto &location : this->_server->locations) {
         if (location.ref == this->_httpAdress.substr(0, location.ref.size())) {
             infoLog << "Matched location: " << location.ref << CPPLog::end;
@@ -145,6 +145,8 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
             }
             if (std::filesystem::is_directory(_path)) {
                 infoLog << "Path is a directory, request: [" << _httpAdress << "] ref: [" << _location->ref << "]" << CPPLog::end;
+				if (_httpAdress[_httpAdress.size() - 1] != '/')  //
+        			_httpAdress += '/';
 
                 /*
                  * I used to throw a redirect here, but the intra tester expects the server to add a trailing slash to the path

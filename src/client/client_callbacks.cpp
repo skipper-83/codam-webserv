@@ -74,6 +74,7 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
     }
 
     clientLogI << "read: " << _clientReadBuffer.size() << " bytes from " << this->_port << CPPLog::end;
+    clientLogI << "buffer contents: " << _clientReadBuffer << CPPLog::end;
     if (_clientReadBuffer.size() == 0)  // if the buffer is empty, return
         return;
 

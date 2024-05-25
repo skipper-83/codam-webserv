@@ -309,7 +309,10 @@ std::istream& operator>>(std::istream& is, Cgi& rhs) {
                 infoLog << "Method: " << word << CPPLog::end;
                 rhs.allowed.methods[WebServUtil::stringToHttpMethod(word)] = true;
             } else
+            {
+                infoLog << "setting executor: " << word;
                 rhs.executor = word;
+            }
             // break;
         }
     }

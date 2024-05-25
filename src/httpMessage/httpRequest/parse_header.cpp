@@ -18,6 +18,8 @@ void httpRequest::_parseHttpStartLine(std::istream &fs) {
     std::string line;
 
     line = _getLineWithCRLF(fs);
+    while (fs && line.empty()) // skip empty lines before request
+        line = _getLineWithCRLF(fs);
     std::string::size_type request_type_pos, address_pos;
     infoLog << "Parsing Start Line: [" << line << "]";
     static const std::regex http_startline_pattern(
@@ -170,6 +172,7 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
                 if (!_location->index_vec.empty()) {
                     infoLog << "checking for index files in config" << CPPLog::end;
                     for (auto &rootIndexFile : _location->index_vec) {
+                            infoLog << "checking" << _path + rootIndexFile;
                         if (std::filesystem::exists(_path + rootIndexFile)) {
                             _path = _path + rootIndexFile;
                             return;

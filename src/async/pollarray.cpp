@@ -64,29 +64,21 @@ void AsyncPollArray::poll(int timeout) {
     if (ret == 0) {
         return;
     }
-
-    if (_weakFDs.size() != pollfds.size()) {
-        logE << "fds.size() != pollfds.size()";
-        std::cout << "fds.size() != pollfds.size(), fds.size() = " << fds.size() << ", pollfds.size() = " << pollfds.size()
-                  << ", weakFDs.size() = " << _weakFDs.size() << "\n";
-        throw std::runtime_error("poll returned different number of fds than expected");
-    }
-
-    std::list<std::weak_ptr<AsyncFD>>::iterator it = _weakFDs.begin();
-    for (auto& pfd : pollfds) {
+    
+    std::list<std::weak_ptr<AsyncFD>>::iterator wfdIt;
+    std::vector<pollfd>::iterator pfdIt;
+    for (wfdIt = _weakFDs.begin(), pfdIt = pollfds.begin(); wfdIt != _weakFDs.end() && pfdIt != pollfds.end(); ++wfdIt, ++pfdIt) {
         for (auto [event, eventType] : AsyncFD::pollToEventType) {
-            if (pfd.revents & event) {
-                std::shared_ptr<AsyncFD> fd = it->lock();
-                if (!fd) {
-                    it++;
+            if (pfdIt->revents & event) {
+                std::shared_ptr<AsyncFD> fd = wfdIt->lock();
+                if (!fd)
                     continue;
-                }
-                if (auto cb = fd->_eventCallbacks[eventType]) {
-                    cb(*fd);
-                }
+                auto cbIt = fd->_eventCallbacks.find(eventType);
+                if (cbIt == fd->_eventCallbacks.end()) 
+                    continue;
+                cbIt->second(*fd);
             }
         }
-        it++;
     }
 }
 

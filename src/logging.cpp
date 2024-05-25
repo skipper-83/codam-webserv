@@ -1,5 +1,7 @@
 #include "logging.hpp"
 
+#include <iostream>
+
 #ifndef MINIMUM_LOG_LEVEL
 #define MINIMUM_LOG_LEVEL CPPLog::Level::INFO
 #endif

@@ -1,7 +1,5 @@
 #include "config.hpp"
 
-#include <iostream>
-
 #include "logging.hpp"
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "parse config");

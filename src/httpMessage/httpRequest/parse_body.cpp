@@ -146,7 +146,7 @@ void httpRequest::_addUntilNewline(std::istream &fs) {
         // std::cerr << "loop\n";
         // std::cerr << "line: [" << line << "]\n";
         if (line.empty()) {
-            std::cerr << "found double nl\n";
+            infoLog << "found double nl\n";
             fs.clear();
             this->_bodyComplete = true;
             infoLog << "found double newline: " << this->_httpBody << " size:" << this->_bodyLength << CPPLog::end;

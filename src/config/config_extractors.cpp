@@ -1,13 +1,3 @@
-// #include <algorithm>
-// #include <fstream>
-// #include <functional>
-// #include <iostream>
-// #include <istream>
-
-// #include <map>
-// #include <sstream>
-// #include <vector>
-
 #include "config.hpp"
 #include "logging.hpp"
 
@@ -437,7 +427,6 @@ std::istream& operator>>(std::istream& is, ServerConfig& rhs) {
 std::istream& operator>>(std::istream& is, MainConfig& rhs) {
     std::string word, line;
     std::string::size_type pos;
-    std::cout << word;
     std::stringstream ss;
     SubParsers subParsers = {{"server",
                               [&rhs](std::istream& is) {

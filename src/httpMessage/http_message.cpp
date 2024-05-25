@@ -94,20 +94,28 @@ void httpMessage::_httpMessageAssign(const httpMessage &rhs) {
     this->_bodyLength = rhs._bodyLength;
 }
 
-std::string httpMessage::_getLineWithCRLF(std::istream &is) {
-    std::string line;
+bool httpMessage::_getLineWithCRLF(std::istream &is, std::string &line) {
+    std::string new_line;
+    size_t start_pos = is.tellg();
 
     // infoLog << "Getting line with CRLF (is type)\n";
-    if (!std::getline(is, line)) {
+
+    if (!std::getline(is, new_line)) {
         // infoLog << "No line\n";
-        return "";
+        line = "";
+        return 0;
     }
     // infoLog << "Line: [" << line << "]" << CPPLog::end;
-    if (!line.empty() && line.back() == '\r') {
+    if (!line.empty() && line.back() == '\r') { // no proper line ending
         // infoLog << "Removing \\r\n";
-        line.pop_back();
+        is.seekg(start_pos);
+        line ="";
+        return 0;
+        // line.pop_back();
     }
-    return line;
+    line = new_line;
+    line.pop_back();
+    return 1;
 }
 
 std::string httpMessage::_getLineWithCRLF(std::string &input) {

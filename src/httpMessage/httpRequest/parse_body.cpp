@@ -60,6 +60,12 @@ void httpRequest::_addToFixedContentSize(std::istream &fs) {
     return;
 }
 
+// size_t getChunkSize(std::istream &fs)
+// {
+    
+// }
+
+
 /**
  * @brief Add to body from a chunked filestream. Expects the amount of bytes as a number on one line, then that amount of bytes to read on the next.
  * Keeps reading until it encountes 0\n\n.
@@ -74,7 +80,9 @@ void httpRequest::_addChunkedContent(std::istream &fs) {
         if (!_chunkSizeKnown)  // if we do not have chunk size from the last iteration
         {
 			infoLog << "Getting chunk size" << CPPLog::end;
-            line = _getLineWithCRLF(fs);
+            if (!_getLineWithCRLF(fs, line))
+                return ;
+            infoLog << "Line: " << line;
             // MAYBE IMPLEMENT CHECK FOR EMPTY LINE
 			if (line.empty())
 			{
@@ -98,7 +106,8 @@ void httpRequest::_addChunkedContent(std::istream &fs) {
         }
         
         if (_nextChunkSize == 0) {  // end of body
-            line = _getLineWithCRLF(fs);
+            if (!_getLineWithCRLF(fs, line))
+                return;
             if (line.empty()) {
                 this->_bodyComplete = true;
                 return;
@@ -114,7 +123,7 @@ void httpRequest::_addChunkedContent(std::istream &fs) {
 		infoLog << "Body size: " << this->_bodyLength << " -- old chunk size: " << _nextChunkSize << CPPLog::end;
         _nextChunkSize = 0;
 		_chunkSizeKnown = false;
-        line = _getLineWithCRLF(fs);  // skip terminating newline
+        _getLineWithCRLF(fs,line);  // skip terminating newline
 
 		// line = _getLineWithCRLF(fs);  // skip terminating newline
         // std::getline(fs, line);  // skip terminating newline
@@ -131,7 +140,8 @@ void httpRequest::_addChunkedContent(std::istream &fs) {
 void httpRequest::_addUntilNewline(std::istream &fs) {
     std::string line;
     // std::cerr << "Parsing until double newline\n";
-    line = _getLineWithCRLF(fs);
+    if(!_getLineWithCRLF(fs, line))
+        return ;
     while (fs) {
         // std::cerr << "loop\n";
         // std::cerr << "line: [" << line << "]\n";
@@ -156,7 +166,8 @@ void httpRequest::_addUntilNewline(std::istream &fs) {
             this->_httpBody += "\n";
             this->_bodyLength += 1;
         }
-        line = _getLineWithCRLF(fs);
+        if(!_getLineWithCRLF(fs,line))
+            return;
     }
     infoLog << "found EOF: " << this->_httpBody << " size:" << this->_bodyLength << CPPLog::end;
     fs.clear();

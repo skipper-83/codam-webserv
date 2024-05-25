@@ -29,6 +29,7 @@ class httpMessage {
     // httpMessage &operator=(const httpMessage &rhs);
 
     void _httpMessageAssign(httpMessage const &rhs);
+    bool _getLineWithCRLF(std::istream &fs, std::string &line);
 	std::string _getLineWithCRLF(std::istream &is);
 	std::string _getLineWithCRLF(std::string &input);
 	std::pair<std::string, std::string> _parseHeaderLine(std::string line);

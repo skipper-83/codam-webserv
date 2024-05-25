@@ -17,9 +17,11 @@ void httpRequest::parseHeader(std::istream &fs) {
 void httpRequest::_parseHttpStartLine(std::istream &fs) {
     std::string line;
 
-    line = _getLineWithCRLF(fs);
+    if (!_getLineWithCRLF(fs, line))   
+        return;
     while (fs && line.empty()) // skip empty lines before request
-        line = _getLineWithCRLF(fs);
+        if(!_getLineWithCRLF(fs,line))
+            return;
     std::string::size_type request_type_pos, address_pos;
     infoLog << "Parsing Start Line: [" << line << "]";
     static const std::regex http_startline_pattern(
@@ -46,7 +48,9 @@ void httpRequest::_parseHttpHeaders(std::istream &fs) {
     std::pair<std::string, std::string> key_value;
 
     while (fs) {
-        line = _getLineWithCRLF(fs);
+        // line = _getLineWithCRLF(fs);
+        if (!_getLineWithCRLF(fs,line))
+            return ;
         if (line.empty())
             break;
         try {

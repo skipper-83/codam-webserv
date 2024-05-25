@@ -9,8 +9,10 @@ static CPPLog::Instance warningLog = logOut.instance(CPPLog::Level::WARNING, "ht
 
 void httpRequest::parseHeader(std::istream &fs) {
     _parseHttpStartLine(fs);
-    _parseHttpHeaders(fs);
-    this->_headerParseComplete = true;
+
+    if (!this->_httpAdress.empty())
+        this->_headerParseComplete = _parseHttpHeaders(fs);
+    
     infoLog << "Request header parse succesfully";
 }
 
@@ -43,14 +45,14 @@ void httpRequest::_parseHttpStartLine(std::istream &fs) {
     return;
 }
 
-void httpRequest::_parseHttpHeaders(std::istream &fs) {
+bool httpRequest::_parseHttpHeaders(std::istream &fs) {
     std::string line;
     std::pair<std::string, std::string> key_value;
 
     while (fs) {
         // line = _getLineWithCRLF(fs);
         if (!_getLineWithCRLF(fs,line))
-            return ;
+            return false;
         if (line.empty())
             break;
         try {
@@ -66,7 +68,7 @@ void httpRequest::_parseHttpHeaders(std::istream &fs) {
     }
     _checkHttpHeaders();
     _setVars();
-    return;
+    return true;
 }
 
 void httpRequest::_checkHttpHeaders(void) {

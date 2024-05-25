@@ -11,7 +11,7 @@ extern MainConfig mainConfig;
 class httpRequest : public httpMessage {
    private:
     // PARSERS
-    void _parseHttpHeaders(std::istream &fs);
+    bool _parseHttpHeaders(std::istream &fs);
     void _parseHttpStartLine(std::istream &fs);
     void _checkHttpHeaders(void);
 

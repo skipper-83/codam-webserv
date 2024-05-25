@@ -105,9 +105,10 @@ bool httpMessage::_getLineWithCRLF(std::istream &is, std::string &line) {
         line = "";
         return 0;
     }
-    // infoLog << "Line: [" << line << "]" << CPPLog::end;
+    infoLog << "Line: [" << line << "]" << CPPLog::end;
     if (!line.empty() && line.back() == '\r') { // no proper line ending
         // infoLog << "Removing \\r\n";
+        infoLog << "Inproper line ending: ["<< line.back()<<"]";
         is.seekg(start_pos);
         line ="";
         return 0;

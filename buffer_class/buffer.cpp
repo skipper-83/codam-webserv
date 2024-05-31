@@ -83,8 +83,8 @@ void Buffer::clear() {
 }
 
 int Buffer::getLine(std::string& line) {
-	// clear line before adding new data ??
-	line.clear();
+    // clear line before adding new data ??
+    line.clear();
 
     if (this->linesInBuffer == 0) {
         return 0;
@@ -94,7 +94,7 @@ int Buffer::getLine(std::string& line) {
             for (size_t i = 0; i < item.size; i++) {
                 if (item.data[i] == '\n' && i > 0 && item.data[i - 1] == '\r') {
                     line[i - 1] = '\0';
-					this->remove(i + 1);
+                    this->remove(i + 1);
                     return 1;
                 }
                 line += (char)item.data[i];
@@ -126,20 +126,19 @@ int main(void) {
     std::cout << "\tLines: " << buffer.lines() << std::endl;
     std::cout << "\tSize: " << buffer.size() << std::endl;
 
-	buffer.add("123456\r\n789");
-	buffer.print();
-	std::cout << "\tLines: " << buffer.lines() << std::endl;
-	std::cout << "\tSize: " << buffer.size() << std::endl;
-	buffer.remove(5);
-	buffer.print();
-	std::cout << "\tLines: " << buffer.lines() << std::endl;
-	std::cout << "\tSize: " << buffer.size() << std::endl;
-	buffer.remove(2);
-	buffer.print();
-	std::cout << "\tLines: " << buffer.lines() << std::endl;
-	std::cout << "\tSize: " << buffer.size() << std::endl;
-	std::cout << " Can we get a line? " << buffer.getLine(line) << std::endl;
+    buffer.add("123456\r\n789");
+    buffer.print();
+    std::cout << "\tLines: " << buffer.lines() << std::endl;
+    std::cout << "\tSize: " << buffer.size() << std::endl;
+    buffer.remove(5);
+    buffer.print();
+    std::cout << "\tLines: " << buffer.lines() << std::endl;
+    std::cout << "\tSize: " << buffer.size() << std::endl;
+    buffer.remove(2);
+    buffer.print();
+    std::cout << "\tLines: " << buffer.lines() << std::endl;
+    std::cout << "\tSize: " << buffer.size() << std::endl;
+    std::cout << " Can we get a line? " << buffer.getLine(line) << std::endl;
 
-
-	return 0;
+    return 0;
 }

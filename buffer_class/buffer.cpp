@@ -22,9 +22,10 @@ class Buffer {
     void remove(size_t length);
     std::string read(size_t length);
 	size_t read(size_t length, std::string& data);
+	void readAndRemove(size_t length, std::string& data);
     void clear();
     void print(void);
-    int getLine(std::string& line);
+    int getCRLFLine(std::string& line);
     size_t lines(void) { return this->linesInBuffer; };
     size_t size(void) { return this->sizeOfBuffer; };
 };
@@ -104,6 +105,17 @@ size_t Buffer::read(size_t length, std::string& data) {
 }
 
 /**
+ * @brief Reads length bytes from the buffer and stores them in data, then removes the data from the buffer
+ * 
+ * @param length the number of bytes to read
+ * @param data the string to store the data in
+ */
+void Buffer::readAndRemove(size_t length, std::string& data) {
+	data = this->read(length);
+	this->remove(data.size());
+}
+
+/**
  * @brief Prints the buffer to the console
  * 
  */
@@ -166,7 +178,7 @@ void Buffer::clear() {
  * @param line the line to return
  * @return int 1 if a line was found, 0 otherwise
  */
-int Buffer::getLine(std::string& line) {
+int Buffer::getCRLFLine(std::string& line) {
     if (this->linesInBuffer == 0)
         return 0;
     for (std::__1::list<BufferItem>::iterator::value_type& item : this->buffer) {
@@ -195,12 +207,12 @@ int main(void) {
     std::cout << "\tLines: " << buffer.lines() << std::endl;  // 2
     std::cout << "\tSize: " << buffer.size() << std::endl;    // 33
     std::string line;
-    std::cout << " Can we get a line? " << buffer.getLine(line) << std::endl;  // true
+    std::cout << " Can we get a line? " << buffer.getCRLFLine(line) << std::endl;  // true
     std::cout << "Line got: [" << line << "]" << std::endl;                    // Hello World!\nProep
     buffer.print();
     std::cout << "\tLines: " << buffer.lines() << std::endl;                   // 1
     std::cout << "\tSize: " << buffer.size() << std::endl;                     // 13
-    std::cout << " Can we get a line? " << buffer.getLine(line) << std::endl;  // true
+    std::cout << " Can we get a line? " << buffer.getCRLFLine(line) << std::endl;  // true
     std::cout << "Line got: [" << line << "]" << std::endl;                    // Second line
     buffer.print();
     std::cout << "\tLines: " << buffer.lines() << std::endl;  // 0
@@ -220,7 +232,7 @@ int main(void) {
     buffer.print();
     std::cout << "\tLines: " << buffer.lines() << std::endl;                   // 0
     std::cout << "\tSize: " << buffer.size() << std::endl;                     // 4
-    std::cout << " Can we get a line? " << buffer.getLine(line) << std::endl;  // false
+    std::cout << " Can we get a line? " << buffer.getCRLFLine(line) << std::endl;  // false
 
     std::cout << "\n\n";
     buffer.clear();
@@ -249,6 +261,10 @@ int main(void) {
 	line.clear();
 	bytes_read = new_buffer.read(5, line);
 	std::cout << "Read 5 from buffer: [" << line << "]" << " Bytes read: " << bytes_read << std::endl;
+	line.clear();
+	new_buffer.readAndRemove(5, line);
+	std::cout << "Read and remove 5 from buffer: [" << line << "]" << std::endl;
+	new_buffer.print();
 
     return 0;
 }

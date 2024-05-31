@@ -16,8 +16,11 @@ class Buffer {
     size_t linesInBuffer = 0;
 
    public:
+    void operator+=(const std::string& data) { this->add(data); }
+	void operator= (const std::string& data) { this->clear(); this->add(data); }
     void add(const std::string& data);
     void remove(size_t length);
+    std::string read(size_t length);
     void clear();
     void print(void);
     int getLine(std::string& line);
@@ -39,12 +42,28 @@ void Buffer::add(const std::string& data) {
     this->sizeOfBuffer += data.size();
 }
 
+std::string Buffer::read(size_t length) {
+    std::string data;
+    for (auto& item : this->buffer) {
+        for (size_t i = 0; i < item.size; i++) {
+            data += (char)item.data[i];
+            length--;
+            if (length == 0) {
+                data[i + 1] = '\0';
+                return data;
+            }
+        }
+    }
+    return data;
+}
+
 void Buffer::print(void) {
     for (auto& item : this->buffer) {
         for (size_t i = 0; i < item.size; i++) {
             std::cout << (char)item.data[i];
         }
     }
+    std::cout << std::endl;
 }
 
 void Buffer::remove(size_t length) {
@@ -108,37 +127,57 @@ int main(void) {
     Buffer buffer;
     buffer.add("Hello World!\nProep\r\n");
     buffer.print();
-    std::cout << "\tLines: " << buffer.lines() << std::endl;
-    std::cout << "\tSize: " << buffer.size() << std::endl;
+    std::cout << "\tLines: " << buffer.lines() << std::endl;  // 1
+    std::cout << "\tSize: " << buffer.size() << std::endl;    // 20
     buffer.add("Second line\r\n");
     buffer.print();
-    std::cout << "\tLines: " << buffer.lines() << std::endl;
-    std::cout << "\tSize: " << buffer.size() << std::endl;
+    std::cout << "\tLines: " << buffer.lines() << std::endl;  // 2
+    std::cout << "\tSize: " << buffer.size() << std::endl;    // 33
     std::string line;
-    std::cout << " Can we get a line? " << buffer.getLine(line) << std::endl;
-    std::cout << "Line got: [" << line << "]" << std::endl;
+    std::cout << " Can we get a line? " << buffer.getLine(line) << std::endl;  // true
+    std::cout << "Line got: [" << line << "]" << std::endl;                    // Hello World!\nProep
     buffer.print();
-    std::cout << "\tLines: " << buffer.lines() << std::endl;
-    std::cout << "\tSize: " << buffer.size() << std::endl;
-    std::cout << " Can we get a line? " << buffer.getLine(line) << std::endl;
-    std::cout << "Line got: [" << line << "]" << std::endl;
+    std::cout << "\tLines: " << buffer.lines() << std::endl;                   // 1
+    std::cout << "\tSize: " << buffer.size() << std::endl;                     // 13
+    std::cout << " Can we get a line? " << buffer.getLine(line) << std::endl;  // true
+    std::cout << "Line got: [" << line << "]" << std::endl;                    // Second line
     buffer.print();
-    std::cout << "\tLines: " << buffer.lines() << std::endl;
-    std::cout << "\tSize: " << buffer.size() << std::endl;
+    std::cout << "\tLines: " << buffer.lines() << std::endl;  // 0
+    std::cout << "\tSize: " << buffer.size() << std::endl;    // 0
+
+    std::cout << "\n\n";
 
     buffer.add("123456\r\n789");
     buffer.print();
-    std::cout << "\tLines: " << buffer.lines() << std::endl;
-    std::cout << "\tSize: " << buffer.size() << std::endl;
+    std::cout << "\tLines: " << buffer.lines() << std::endl;  // 1
+    std::cout << "\tSize: " << buffer.size() << std::endl;    // 11
     buffer.remove(5);
     buffer.print();
-    std::cout << "\tLines: " << buffer.lines() << std::endl;
-    std::cout << "\tSize: " << buffer.size() << std::endl;
+    std::cout << "\tLines: " << buffer.lines() << std::endl;  // 1
+    std::cout << "\tSize: " << buffer.size() << std::endl;    // 6
     buffer.remove(2);
     buffer.print();
-    std::cout << "\tLines: " << buffer.lines() << std::endl;
-    std::cout << "\tSize: " << buffer.size() << std::endl;
-    std::cout << " Can we get a line? " << buffer.getLine(line) << std::endl;
+    std::cout << "\tLines: " << buffer.lines() << std::endl;                   // 0
+    std::cout << "\tSize: " << buffer.size() << std::endl;                     // 4
+    std::cout << " Can we get a line? " << buffer.getLine(line) << std::endl;  // false
+
+    std::cout << "\n\n";
+    buffer.clear();
+    buffer.add("Imma read me some");
+    buffer.print();
+    std::cout << "[" << buffer.read(5) << "]" << std::endl;
+    buffer.print();
+
+	std::cout << "\n\n";
+
+	Buffer new_buffer; 
+	new_buffer = "New buffer with operator= overload";
+	new_buffer.print();
+	new_buffer += " and some more data";
+	new_buffer.print();
+	new_buffer = "New data in same buffer";
+	new_buffer.print();
+
 
     return 0;
 }

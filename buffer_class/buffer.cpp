@@ -16,11 +16,12 @@ class Buffer {
     size_t linesInBuffer = 0;
 
    public:
-    void operator+=(const std::string& data) { this->add(data); }
-	void operator= (const std::string& data) { this->clear(); this->add(data); }
+    void operator+=(const std::string& data);
+    void operator=(const std::string& data);
     void add(const std::string& data);
     void remove(size_t length);
     std::string read(size_t length);
+	size_t read(size_t length, std::string& data);
     void clear();
     void print(void);
     int getLine(std::string& line);
@@ -28,6 +29,31 @@ class Buffer {
     size_t size(void) { return this->sizeOfBuffer; };
 };
 
+
+/**
+ * @brief Operator += adds data to the end of the buffer
+ * 
+ * @param data the data to add
+ */
+void Buffer::operator+=(const std::string& data) {
+	this->add(data);
+}
+
+/**
+ * @brief Operator = replaces the contents of the buffer buffer with the data
+ * 
+ * @param data the data to replace the buffer with
+ */
+void Buffer::operator=(const std::string& data) {
+        this->clear();
+        this->add(data);
+}
+
+/**
+ * @brief Adds data to the end of the buffer
+ * 
+ * @param data the data to add
+ */
 void Buffer::add(const std::string& data) {
     BufferItem item;
     item.size = data.size();
@@ -42,13 +68,21 @@ void Buffer::add(const std::string& data) {
     this->sizeOfBuffer += data.size();
 }
 
+/**
+ * @brief Returns a string of length bytes from the buffer, leaves the buffer unchanged
+ * 
+ * @param length length of the string to return, if length is greater than the buffer size, the whole buffer is returned
+ * @return std::string 
+ */
 std::string Buffer::read(size_t length) {
     std::string data;
-    for (auto& item : this->buffer) {
+	size_t bytesRead = 0;
+    for (std::__1::list<BufferItem>::iterator::value_type& item : this->buffer) {
         for (size_t i = 0; i < item.size; i++) {
             data += (char)item.data[i];
             length--;
-            if (length == 0) {
+			bytesRead++;
+            if (length == 0 || bytesRead == this->sizeOfBuffer) {
                 data[i + 1] = '\0';
                 return data;
             }
@@ -57,8 +91,24 @@ std::string Buffer::read(size_t length) {
     return data;
 }
 
+/**
+ * @brief Reads length bytes from the buffer and stores them in data
+ * 
+ * @param length the number of bytes to read
+ * @param data the string to store the data in
+ * @return size_t the number of bytes read
+ */
+size_t Buffer::read(size_t length, std::string& data) {
+	data = this->read(length);
+	return data.size();
+}
+
+/**
+ * @brief Prints the buffer to the console
+ * 
+ */
 void Buffer::print(void) {
-    for (auto& item : this->buffer) {
+    for (std::__1::list<BufferItem>::iterator::value_type& item : this->buffer) {
         for (size_t i = 0; i < item.size; i++) {
             std::cout << (char)item.data[i];
         }
@@ -66,8 +116,13 @@ void Buffer::print(void) {
     std::cout << std::endl;
 }
 
+/**
+ * @brief Removes length bytes from the beginning of the buffer
+ * 
+ * @param length the number of bytes to remove
+ */
 void Buffer::remove(size_t length) {
-    if (length > this->sizeOfBuffer) {
+    if (length >= this->sizeOfBuffer) {
         this->clear();
         return;
     }
@@ -95,24 +150,30 @@ void Buffer::remove(size_t length) {
     }
 }
 
+/**
+ * @brief Clears the buffer
+ * 
+ */
 void Buffer::clear() {
     this->buffer.clear();
     this->sizeOfBuffer = 0;
     this->linesInBuffer = 0;
 }
 
+/**
+ * @brief Gets a line from the buffer
+ * 
+ * @param line the line to return
+ * @return int 1 if a line was found, 0 otherwise
+ */
 int Buffer::getLine(std::string& line) {
-    // clear line before adding new data ??
-    line.clear();
-
-    if (this->linesInBuffer == 0) {
+    if (this->linesInBuffer == 0)
         return 0;
-    }
     for (std::__1::list<BufferItem>::iterator::value_type& item : this->buffer) {
         if (item.lines > 0) {
             for (size_t i = 0; i < item.size; i++) {
                 if (item.data[i] == '\n' && i > 0 && item.data[i - 1] == '\r') {
-                    line[i - 1] = '\0';
+                    line = line.substr(0, line.size() - 1);
                     this->remove(i + 1);
                     return 1;
                 }
@@ -168,16 +229,26 @@ int main(void) {
     std::cout << "[" << buffer.read(5) << "]" << std::endl;
     buffer.print();
 
-	std::cout << "\n\n";
+    std::cout << "\n\n";
 
-	Buffer new_buffer; 
-	new_buffer = "New buffer with operator= overload";
-	new_buffer.print();
-	new_buffer += " and some more data";
-	new_buffer.print();
-	new_buffer = "New data in same buffer";
-	new_buffer.print();
-
+    Buffer new_buffer;
+    new_buffer = "New buffer with operator= overload";
+    new_buffer.print();
+    new_buffer += " and some more data";
+    new_buffer.print();
+    new_buffer = "New data in same buffer";
+    new_buffer.print();
+	std::cout << "Read too many bytes: [" << new_buffer.read(100) << "]" << "Whole buffer is returned" << std::endl;
+	new_buffer.clear();
+	line.clear();
+	size_t bytes_read =	new_buffer.read(100, line);
+	std::cout << "Read from empty buffer: [" << line << "]" << " Bytes read: " << bytes_read << std::endl;
+	new_buffer.add("123456\r\n789");
+	bytes_read = new_buffer.read(100, line);
+	std::cout << "Read 100 from buffer: [" << line << "]" << " Bytes read: " << bytes_read << std::endl;
+	line.clear();
+	bytes_read = new_buffer.read(5, line);
+	std::cout << "Read 5 from buffer: [" << line << "]" << " Bytes read: " << bytes_read << std::endl;
 
     return 0;
 }

@@ -1,4 +1,4 @@
-#include "buffer.hpp"
+#include "../includes/buffer.hpp"
 
 int main(void) {
     Buffer buffer;

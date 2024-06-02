@@ -12,7 +12,7 @@ cgiMessage::cgiMessage(std::string const& cgiPath, const httpRequest* request, s
     : _request(request), _addAsyncFdToPollArray(addAsyncFdToPollArray) {
     _makeEnvironment();
     infoLog << "Creating CGI Message" << CPPLog::end;
-    _cgi = AsyncProgram::create(cgiPath, _request->getPath(), _cgiEnv, std::bind(&cgiMessage::_cgiReadCb, this, std::placeholders::_1),
+    _cgi = AsyncProgram::create(cgiPath, std::filesystem::absolute(_request->getPath()), _cgiEnv, std::bind(&cgiMessage::_cgiReadCb, this, std::placeholders::_1),
                                 std::bind(&cgiMessage::_cgiWriteCb, this, std::placeholders::_1));
     _cgi->addToPollArray(_addAsyncFdToPollArray);
 }

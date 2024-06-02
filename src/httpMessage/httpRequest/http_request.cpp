@@ -13,14 +13,14 @@ httpRequest::httpRequest() {
     infoLog << "Creating empty request" << this << CPPLog::end;
 }
 
-/**
- * @brief Construct a new http Request::http Request object from an input stream
- *
- * @param fs
- */
-httpRequest::httpRequest(std::istream &fs) {
-    this->parseHeader(fs);
-}
+// /**
+//  * @brief Construct a new http Request::http Request object from an input stream
+//  *
+//  * @param fs
+//  */
+// httpRequest::httpRequest(std::istream &fs) {
+//     this->parseHeader(fs);
+// }
 
 /**
  * @brief CCopy constructor for httpRequest
@@ -68,6 +68,7 @@ httpRequest &httpRequest::operator=(const httpRequest &rhs) {
     this->_queryString = rhs._queryString;
     this->_nextChunkSize = rhs._nextChunkSize;
     this->_chunkSizeKnown = rhs._chunkSizeKnown;
+	this->_firstNewLineFound = rhs._firstNewLineFound;
     return *this;
 }
 

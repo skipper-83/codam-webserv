@@ -5,20 +5,21 @@
 #include "config.hpp"
 #include "httpMessage/http_message.hpp"
 #include "util.hpp"
+#include "buffer.hpp"
 
 extern MainConfig mainConfig;
 
 class httpRequest : public httpMessage {
    private:
     // PARSERS
-    void _parseHttpHeaders(std::istream &fs);
-    void _parseHttpStartLine(std::istream &fs);
+    void _parseHttpHeaders(Buffer &input);
+    void _parseHttpStartLine(Buffer &input);
     void _checkHttpHeaders(void);
 
     // HELPERS
-    void _addToFixedContentSize(std::istream &fs);
-    void _addChunkedContent(std::istream &fs);
-    void _addUntilNewline(std::istream &fs);
+    void _addToFixedContentSize(Buffer &input);
+    void _addChunkedContent(Buffer &input);
+    void _addUntilNewline(Buffer &input);
     bool _hasNewLine(std::string &str);
     // std::string _getLineWithCRLF(std::istream &is);
     std::string _readNumberOfBytesFromFileStream(std::istream &fs, size_t amountOfBytes);
@@ -48,11 +49,12 @@ class httpRequest : public httpMessage {
     size_t _clientMaxBodySize = DEFAULT_CLIENT_BODY_SIZE;
 	size_t _nextChunkSize = 0;
 	bool _chunkSizeKnown = false;
+	bool _firstNewLineFound = false;
 
    public:
     // CONSTRUCTORS
     httpRequest();
-    explicit httpRequest(std::istream &fs);
+    // explicit httpRequest(std::istream &fs);
     httpRequest(const httpRequest &src);
     ~httpRequest();
 
@@ -75,9 +77,9 @@ class httpRequest : public httpMessage {
     std::string getQueryString(void) const { return _queryString; }
 
     // PARSERS
-    void parseHeader(std::istream &fs);  // only called internally and for testing
-    void parseBody(std::istream &fs);    // only called internally and for testing
-    void parse(std::string &input, uint16_t port);
+    void parseHeader(Buffer &input);  // only called internally and for testing
+    void parseBody(Buffer &input);    // only called internally and for testing
+    void parse(Buffer &input, uint16_t port);
     void parseCookieHeader(std::string cookieHeader);
 
     // SETTERS

@@ -9,7 +9,7 @@ void Client::_buildResponse() {
     // If the request is for a CGI script, execute the script
     Cgi const* cgi;
     if ((cgi = _request.getServer()->getCgiFromPath(_request.getPath())) && cgi->allowed.methods.find(_request.getMethod())->second) {
-        clientLogI << "CGI request: " << _request.getPath() << "; executor: " << cgi->executor << CPPLog::end;
+        clientLogI << "CGI request: " << std::filesystem::absolute(_request.getPath()) << "; executor: " << cgi->executor << CPPLog::end;
         try {
             _cgiMessage = std::make_shared<cgiMessage>(cgi->executor, &_request, _addLocalFdToPollArray);
         } catch (const std::exception& e) {

@@ -4,16 +4,16 @@
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest parser");
 static CPPLog::Instance warningLog = logOut.instance(CPPLog::Level::WARNING, "httpRequest parser");
 
-void httpRequest::parse(std::string &input, uint16_t port) {
-    if (!this->_headerParseComplete && !this->_hasNewLine(input))  // header is not complete yet
+void httpRequest::parse(Buffer &input, uint16_t port) {
+    if (!this->_headerParseComplete && input.lines() == 0)  // header is not complete yet
     {
         infoLog << "Header incomplete, leaving buffer in place" << CPPLog::end;
         return;
     }
-    std::stringstream is(input);
+    // std::stringstream is(input);
 
     if (!this->_headerParseComplete)
-        parseHeader(is);
+        parseHeader(input);
     if (this->_headerParseComplete && this->_server == nullptr) {
         setServer(mainConfig, port);
     }
@@ -33,11 +33,11 @@ void httpRequest::parse(std::string &input, uint16_t port) {
         if (WebServUtil::isRequestWithoutBody(this->_httpMethod))
             this->_bodyComplete = true;
         else
-            parseBody(is);
+            parseBody(input);
     }
-    std::streampos pos = is.tellg();
-	if (pos >= 0 && static_cast<std::size_t>(pos) < is.str().size()) 
-    	input = is.str().substr(pos);
-	else 
-		input = "";
+    // std::streampos pos = is.tellg();
+	// if (pos >= 0 && static_cast<std::size_t>(pos) < is.str().size()) 
+    // 	input = is.str().substr(pos);
+	// else 
+	// 	input = "";
 	}

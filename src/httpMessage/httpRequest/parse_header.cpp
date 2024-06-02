@@ -7,19 +7,23 @@
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest header parser");
 static CPPLog::Instance warningLog = logOut.instance(CPPLog::Level::WARNING, "httpRequest header parser");
 
-void httpRequest::parseHeader(std::istream &fs) {
-    _parseHttpStartLine(fs);
-    _parseHttpHeaders(fs);
+void httpRequest::parseHeader(Buffer &input) {
+	// infoLog << "Parsing header, bufer is: " << input.read(input.size()) << CPPLog::end;
+    _parseHttpStartLine(input);
+    _parseHttpHeaders(input);
     this->_headerParseComplete = true;
     infoLog << "Request header parse succesfully";
 }
 
-void httpRequest::_parseHttpStartLine(std::istream &fs) {
+void httpRequest::_parseHttpStartLine(Buffer &input) {
     std::string line;
 
-    line = _getLineWithCRLF(fs);
-    while (fs && line.empty()) // skip empty lines before request
-        line = _getLineWithCRLF(fs);
+    // line = _getLineWithCRLF(fs);
+    // while (fs && line.empty()) // skip empty lines before request
+    //     line = _getLineWithCRLF(fs);
+	while (line.empty()) // skip empty lines before request
+		if (!input.getCRLFLine(line))
+			return; // no line to parse
     std::string::size_type request_type_pos, address_pos;
     infoLog << "Parsing Start Line: [" << line << "]";
     static const std::regex http_startline_pattern(
@@ -41,16 +45,21 @@ void httpRequest::_parseHttpStartLine(std::istream &fs) {
     return;
 }
 
-void httpRequest::_parseHttpHeaders(std::istream &fs) {
+void httpRequest::_parseHttpHeaders(Buffer &input) {
     std::string line;
     std::pair<std::string, std::string> key_value;
+	int lineParsed = 0;
 
-    while (fs) {
-        line = _getLineWithCRLF(fs);
+    while ((lineParsed = input.getCRLFLine(line))) {
         if (line.empty())
+		{
+			infoLog << "Empty line, end of headers" << CPPLog::end;
             break;
+		}
         try {
+			infoLog << "Parsing header line: " << line << CPPLog::end;
             key_value = _parseHeaderLine(line);
+			line.clear();
         } catch (const std::exception &e) {
             throw httpRequestException(400, "Invalid HTTP header");
         }
@@ -60,6 +69,8 @@ void httpRequest::_parseHttpHeaders(std::istream &fs) {
         }
         infoLog << "Header: " << key_value.first << ": " << key_value.second << CPPLog::end;
     }
+	if (!lineParsed) // no line to parse
+	 	return;
     _checkHttpHeaders();
     _setVars();
     return;

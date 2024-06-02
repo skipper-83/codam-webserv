@@ -41,6 +41,7 @@ set (SRCS
 	src/httpMessage/cgi_message.cpp
 	src/session.cpp
 	src/util.cpp
+	src/buffer.cpp
 )
 set (EXEC_NAME webserv)
 

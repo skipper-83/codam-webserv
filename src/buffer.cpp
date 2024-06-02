@@ -1,5 +1,7 @@
 #include "buffer.hpp"
+#include "logging.hpp"
 
+static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "buffer");
 
 /**
  * @brief Operator += adds data to the end of the buffer
@@ -35,6 +37,7 @@ void Buffer::add(const std::string& data) {
             item.lines++;
         }
     }
+	infoLog << "Added " << item.size << " bytes to buffer; lines now: " << this->linesInBuffer << CPPLog::end;
     this->buffer.push_back(item);
     this->sizeOfBuffer += data.size();
 }
@@ -104,6 +107,7 @@ void Buffer::print(void) {
  * @param length the number of bytes to remove
  */
 void Buffer::remove(size_t length) {
+	infoLog << "Removing " << length << " bytes from buffer" << CPPLog::end;
     if (length >= this->sizeOfBuffer) {
         this->clear();
         return;
@@ -121,12 +125,14 @@ void Buffer::remove(size_t length) {
             this->sizeOfBuffer -= length;
             this->linesInBuffer -= item.lines;
             item.lines = 0;
-            for (size_t i = 0; i < length; i++) {
+			infoLog << "Lines in buffer: " << this->linesInBuffer << "; re-adding lines now" << CPPLog::end;
+            for (size_t i = 0; i < item.size; i++) {
                 if (item.data[i] == '\n' && i > 0 && item.data[i - 1] == '\r') {
                     this->linesInBuffer++;
                     item.lines++;
                 }
             }
+			infoLog << "Lines in buffer: " << this->linesInBuffer << "; re-added lines" << CPPLog::end;
             length = 0;
         }
     }
@@ -149,19 +155,25 @@ void Buffer::clear() {
  * @return int 1 if a line was found, 0 otherwise
  */
 int Buffer::getCRLFLine(std::string& line) {
+	infoLog << "Getting line from buffer, lines: " << this->linesInBuffer << CPPLog::end;
+	size_t bytesRead = 0;
     if (this->linesInBuffer == 0)
         return 0;
     for (std::__1::list<BufferItem>::iterator::value_type& item : this->buffer) {
-        if (item.lines > 0) {
+        // if (item.lines > 0) {
             for (size_t i = 0; i < item.size; i++) {
                 if (item.data[i] == '\n' && i > 0 && item.data[i - 1] == '\r') {
-                    line = line.substr(0, line.size() - 1);
-                    this->remove(i + 1);
+                    line = line.substr(0, line.size() - 1); // remove the last character
+					// this->linesInBuffer--;
+					// item.lines--;
+                    this->remove(bytesRead + 1);
+					// infoLog << "Line got: [" << line << "], lines now: " << this->linesInBuffer << CPPLog::end;
                     return 1;
                 }
                 line += (char)item.data[i];
+				bytesRead++;
             }
-        }
+        // }
     }
     return 0;
 }

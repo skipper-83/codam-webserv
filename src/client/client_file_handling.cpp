@@ -32,7 +32,7 @@ void Client::_readFromFile() {
             }
         }
         _clientWriteBuffer += _response.transformLineForChunkedResponse(_inputFile->read());
-        clientLogI << "file buffer: " << _clientWriteBuffer << "size:" << _clientWriteBuffer.size() << CPPLog::end;
+        // clientLogI << "file buffer: " << _clientWriteBuffer.read(_clientWriteBuffer.size()) << "size:" << _clientWriteBuffer.size() << CPPLog::end;
     }
 
     if (_inputFile->eof()) {

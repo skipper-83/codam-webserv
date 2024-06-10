@@ -72,10 +72,11 @@ httpRequest &httpRequest::operator=(const httpRequest &rhs) {
     return *this;
 }
 
-void httpRequest::clear(void) {
+void httpRequest::clear(Buffer &buffer) {
     infoLog << "Clearing request" << CPPLog::end;
     httpRequest empty;
     *this = empty;
+	infoLog << "Request cleared, buffer now: " << buffer.read(buffer.size()) << CPPLog::end;
 }
 
 uint16_t httpRequest::getPort(void) const {

@@ -35,7 +35,7 @@ void Client::_buildResponse() {
         _response.setHeader("Content-Type", "text/html; charset=UTF-8");
         _response.setCode(200);
         _clientWriteBuffer = _response.getFixedBodyResponseAsString();
-        _request.clear();
+        _request.clear(this->_clientReadBuffer);
         return;
     }
 
@@ -59,7 +59,7 @@ void Client::_buildResponse() {
             _response.setHeader("Content-Type", "text/html; charset=UTF-8");
             _response.setFixedSizeBody("File " + _request.getAdress() + " deleted");
             _clientWriteBuffer = _response.getFixedBodyResponseAsString();
-            _request.clear();
+            _request.clear(this->_clientReadBuffer);
             break;
         }
         case WebServUtil::HttpMethod::OPTIONS: {

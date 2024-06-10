@@ -55,7 +55,7 @@ void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
             clientLogI << "Closing connection by request" << CPPLog::end;
         }
         this->_response.clear();
-        this->_request.clear();
+        this->_request.clear(this->_clientReadBuffer);
         _inputFile = nullptr;
         _bytesWrittenCounter = 0;
         clientLogI << "_clientWriteCb: client ready for input" << CPPLog::end;

@@ -5,7 +5,7 @@ static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequ
 static CPPLog::Instance warningLog = logOut.instance(CPPLog::Level::WARNING, "httpRequest parser");
 
 void httpRequest::parse(Buffer &input, uint16_t port) {
-    if (!this->_headerParseComplete && input.lines() == 0)  // header is not complete yet
+    if (!this->_headerParseComplete && input.emptyLines() == 0)  // header is not complete yet
     {
         infoLog << "Header incomplete, leaving buffer in place" << CPPLog::end;
         return;

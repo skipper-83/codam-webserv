@@ -21,9 +21,16 @@ void httpRequest::_parseHttpStartLine(Buffer &input) {
     // line = _getLineWithCRLF(fs);
     // while (fs && line.empty()) // skip empty lines before request
     //     line = _getLineWithCRLF(fs);
+    infoLog << "Buffer: " << input.read(input.size());
+    // line = _getLineWithCRLF(fs);
+    // while (fs && line.empty()) // skip empty lines before request
+    //     line = _getLineWithCRLF(fs);
 	while (line.empty()) // skip empty lines before request
+    {
+        infoLog << "empty line";
 		if (!input.getCRLFLine(line))
 			return; // no line to parse
+    }
     std::string::size_type request_type_pos, address_pos;
     infoLog << "Parsing Start Line: [" << line << "]";
     static const std::regex http_startline_pattern(

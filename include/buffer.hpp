@@ -14,8 +14,9 @@ struct BufferItem {
 class Buffer {
    private:
     std::list<BufferItem> buffer;
-    size_t sizeOfBuffer = 0;
-    size_t linesInBuffer = 0;
+    size_t _sizeOfBuffer = 0;
+    size_t _linesInBuffer = 0;
+	size_t _emptyLines = 0;
 
    public:
     void operator+=(const std::string& data);
@@ -28,6 +29,7 @@ class Buffer {
     void clear();
     void print(void);
     int getCRLFLine(std::string& line);
-    size_t lines(void) { return this->linesInBuffer; };
-    size_t size(void) { return this->sizeOfBuffer; };
+    size_t lines(void) { return this->_linesInBuffer; };
+    size_t size(void) { return this->_sizeOfBuffer; };
+	size_t emptyLines(void) { return this->_emptyLines; };
 };

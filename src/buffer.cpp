@@ -33,13 +33,15 @@ void Buffer::add(const std::string& data) {
     for (size_t i = 0; i < data.size(); i++) {
         item.data.push_back(data[i]);
         if (data[i] == '\n' && i > 0 && data[i - 1] == '\r') {
-            this->linesInBuffer++;
+			if (i == 1 || (i - 3 > 0 && data[i - 3] == '\r' && data[i - 2] == '\n'))  // if the line is empty
+				this->_emptyLines++;
+            this->_linesInBuffer++;
             item.lines++;
         }
     }
-	infoLog << "Added " << item.size << " bytes to buffer; lines now: " << this->linesInBuffer << CPPLog::end;
+	infoLog << "Added " << item.size << " bytes to buffer; lines now: " << this->_linesInBuffer << CPPLog::end;
     this->buffer.push_back(item);
-    this->sizeOfBuffer += data.size();
+    this->_sizeOfBuffer += data.size();
 }
 
 /**
@@ -56,7 +58,7 @@ std::string Buffer::read(size_t length) {
             data += (char)item.data[i];
             length--;
 			bytesRead++;
-            if (length == 0 || bytesRead == this->sizeOfBuffer) {
+            if (length == 0 || bytesRead == this->_sizeOfBuffer) {
                 data[i + 1] = '\0';
                 return data;
             }
@@ -108,31 +110,32 @@ void Buffer::print(void) {
  */
 void Buffer::remove(size_t length) {
 	infoLog << "Removing " << length << " bytes from buffer" << CPPLog::end;
-    if (length >= this->sizeOfBuffer) {
+    if (length >= this->_sizeOfBuffer) {
         this->clear();
+		infoLog << "Buffer cleared, size now: " << this->_sizeOfBuffer << CPPLog::end;
         return;
     }
     while (length > 0) {
         BufferItem& item = this->buffer.front();
         if (item.size <= length) {
             length -= item.size;
-            this->sizeOfBuffer -= item.size;
-            this->linesInBuffer -= item.lines;
+            this->_sizeOfBuffer -= item.size;
+            this->_linesInBuffer -= item.lines;
             this->buffer.pop_front();
         } else {
             item.data.erase(item.data.begin(), item.data.begin() + length);
             item.size -= length;
-            this->sizeOfBuffer -= length;
-            this->linesInBuffer -= item.lines;
+            this->_sizeOfBuffer -= length;
+            this->_linesInBuffer -= item.lines;
             item.lines = 0;
-			infoLog << "Lines in buffer: " << this->linesInBuffer << "; re-adding lines now" << CPPLog::end;
+			infoLog << "Lines in buffer: " << this->_linesInBuffer << "; re-adding lines now" << CPPLog::end;
             for (size_t i = 0; i < item.size; i++) {
                 if (item.data[i] == '\n' && i > 0 && item.data[i - 1] == '\r') {
-                    this->linesInBuffer++;
+                    this->_linesInBuffer++;
                     item.lines++;
                 }
             }
-			infoLog << "Lines in buffer: " << this->linesInBuffer << "; re-added lines" << CPPLog::end;
+			infoLog << "Lines in buffer: " << this->_linesInBuffer << "; re-added lines" << CPPLog::end;
             length = 0;
         }
     }
@@ -144,8 +147,9 @@ void Buffer::remove(size_t length) {
  */
 void Buffer::clear() {
     this->buffer.clear();
-    this->sizeOfBuffer = 0;
-    this->linesInBuffer = 0;
+    this->_sizeOfBuffer = 0;
+    this->_linesInBuffer = 0;
+	this->_emptyLines = 0;
 }
 
 /**
@@ -155,9 +159,9 @@ void Buffer::clear() {
  * @return int 1 if a line was found, 0 otherwise
  */
 int Buffer::getCRLFLine(std::string& line) {
-	infoLog << "Getting line from buffer, lines: " << this->linesInBuffer << CPPLog::end;
+	infoLog << "Getting line from buffer, lines: " << this->_linesInBuffer << CPPLog::end;
 	size_t bytesRead = 0;
-    if (this->linesInBuffer == 0)
+    if (this->_linesInBuffer == 0)
         return 0;
     for (std::list<BufferItem>::iterator::value_type& item : this->buffer) {
         // if (item.lines > 0) {

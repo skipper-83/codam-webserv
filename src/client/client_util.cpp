@@ -43,7 +43,7 @@ void Client::_returnHttpErrorToClient(int code, std::string message) {
     } else {
         this->_clientWriteBuffer = this->_response.getFixedBodyResponseAsString();
     }
-    this->_request.clear();
+    this->_request.clear(this->_clientReadBuffer);
     changeState(ClientState::ERROR);
     //
     clientLogI << "Buffer from error now: " << this->_clientWriteBuffer.read(_clientWriteBuffer.size()) << CPPLog::end;

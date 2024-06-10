@@ -84,7 +84,7 @@ class httpRequest : public httpMessage {
 
     // SETTERS
     void setServer(MainConfig &config, uint16_t port);
-    void clear(void);  // clears the request
+    void clear(Buffer &buffer);  // clears the request
     void setSession(bool session) { _sessionSet = session; }
 
     class httpRequestException : public std::exception {

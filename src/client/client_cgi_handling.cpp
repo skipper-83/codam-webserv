@@ -18,6 +18,6 @@ void Client::_readFromCgi() {
         _response.setFixedSizeBody(_cgiMessage->getBody());
         _clientWriteBuffer = _response.getFixedBodyResponseAsString();
         _cgiMessage = nullptr;
-        _request.clear();
+        _request.clear(this->_clientReadBuffer);
     }
 }

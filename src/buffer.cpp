@@ -51,7 +51,7 @@ void Buffer::add(const std::string& data) {
 std::string Buffer::read(size_t length) {
     std::string data;
 	size_t bytesRead = 0;
-    for (std::__1::list<BufferItem>::iterator::value_type& item : this->buffer) {
+    for (std::list<BufferItem>::iterator::value_type& item : this->buffer) {
         for (size_t i = 0; i < item.size; i++) {
             data += (char)item.data[i];
             length--;
@@ -93,7 +93,7 @@ void Buffer::readAndRemove(size_t length, std::string& data) {
  * 
  */
 void Buffer::print(void) {
-    for (std::__1::list<BufferItem>::iterator::value_type& item : this->buffer) {
+    for (std::list<BufferItem>::iterator::value_type& item : this->buffer) {
         for (size_t i = 0; i < item.size; i++) {
             std::cout << (char)item.data[i];
         }
@@ -159,7 +159,7 @@ int Buffer::getCRLFLine(std::string& line) {
 	size_t bytesRead = 0;
     if (this->linesInBuffer == 0)
         return 0;
-    for (std::__1::list<BufferItem>::iterator::value_type& item : this->buffer) {
+    for (std::list<BufferItem>::iterator::value_type& item : this->buffer) {
         // if (item.lines > 0) {
             for (size_t i = 0; i < item.size; i++) {
                 if (item.data[i] == '\n' && i > 0 && item.data[i - 1] == '\r') {

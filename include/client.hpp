@@ -60,7 +60,7 @@ class Client {
     size_t _bytesWrittenCounter = 0;
 
     Buffer _clientReadBuffer;
-    Buffer _clientWriteBuffer;
+    std::string _clientWriteBuffer;
     std::chrono::time_point<std::chrono::steady_clock> _lastActivityTime = std::chrono::steady_clock::now();
 
     std::function<void(std::weak_ptr<AsyncFD>)> _addLocalFdToPollArray;

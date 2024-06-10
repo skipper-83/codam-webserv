@@ -17,20 +17,18 @@ void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
         _readFromCgi();
 
     // If the buffer is empty, return
-    if (_clientWriteBuffer.size() == 0)
+    if (_clientWriteBuffer.empty())
         return;
 
     size_t bytesWrittenInCycle = 0;
     std::string writeCycleBuffer;
 
-	writeCycleBuffer = _clientWriteBuffer.read(DEFAULT_WRITE_SIZE);
-
     // If the buffer is too large, write only a part of it
-    // if (_clientWriteBuffer.size() > DEFAULT_WRITE_SIZE) {
-    //     writeCycleBuffer = _clientWriteBuffer.substr(0, DEFAULT_WRITE_SIZE);
-    // } else {
-    //     writeCycleBuffer = _clientWriteBuffer;
-    // }
+    if (_clientWriteBuffer.size() > DEFAULT_WRITE_SIZE) {
+        writeCycleBuffer = _clientWriteBuffer.substr(0, DEFAULT_WRITE_SIZE);
+    } else {
+        writeCycleBuffer = _clientWriteBuffer;
+    }
 
     try {
         changeState(ClientState::WRITE_RESPONSE);
@@ -40,7 +38,7 @@ void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
         changeState(ClientState::ERROR);
         return;
     }
-    _clientWriteBuffer.remove(bytesWrittenInCycle);
+    _clientWriteBuffer.erase(0, bytesWrittenInCycle);
     _bytesWrittenCounter += bytesWrittenInCycle;
     clientLogI << "_clientWriteCb: wrote " << bytesWrittenInCycle << " bytes to " << this->_port << CPPLog::end;
     clientLogI << "_clientWriteCb: " << _clientWriteBuffer.size() << " bytes left to write" << CPPLog::end;
@@ -48,7 +46,7 @@ void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
     clientLogI << "_clientWriteCb: response body complete? " << this->_response.isBodyComplete() << CPPLog::end;
 
     // If the response is complete, clear the response and the write counter
-    if (_clientWriteBuffer.size() == 0 && this->_response.isBodyComplete()) {
+    if (_clientWriteBuffer.empty() && this->_response.isBodyComplete()) {
         clientLogI << "respnse Connection type: " << this->_request.getHeader("Connection") << CPPLog::end;
         if (this->_request.getHeader("Connection") == "close" || (this->_response.getCode() >= 400 && this->_response.getCode() <= 599)) {
             _socketFd->close();
@@ -62,6 +60,7 @@ void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
         changeState(ClientState::READY_FOR_INPUT);
     }
 }
+
 void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
     // clientLogI << "_clientReadCb" << CPPLog::end;
     if (ClientState::ERROR == _state)  // if the client is in error state, do not read

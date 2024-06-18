@@ -33,7 +33,7 @@ void Client::_readFromFile() {
             }
         }
         _clientWriteBuffer += _response.transformLineForChunkedResponse(_inputFile->read());
-        // clientLogI << "file buffer (buffer full): " << _clientWriteBuffer.read(_clientWriteBuffer.size()) << "\n\nsize:" << _clientWriteBuffer.size() << CPPLog::end;
+        // clientLogI << "file buffer: " << _clientWriteBuffer.read(_clientWriteBuffer.size()) << "size:" << _clientWriteBuffer.size() << CPPLog::end;
     }
 
     if (_inputFile->eof()) {
@@ -53,6 +53,5 @@ void Client::_readFromFile() {
             _clientWriteBuffer += _response.transformLineForChunkedResponse(tempFileBuffer);
             _clientWriteBuffer += _response.transformLineForChunkedResponse("");
         }
-        // clientLogI << "file buffer (eof): " << _clientWriteBuffer.read(_clientWriteBuffer.size()) << "\n\nsize:" << _clientWriteBuffer.size() << CPPLog::end;
     }
 }

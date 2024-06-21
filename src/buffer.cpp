@@ -33,7 +33,7 @@ void Buffer::add(const std::string& data) {
     for (size_t i = 0; i < data.size(); i++) {
         item.data.push_back(data[i]);
         if (data[i] == '\n' && i > 0 && data[i - 1] == '\r') {
-			if (i == 1 || (i - 3 > 0 && data[i - 3] == '\r' && data[i - 2] == '\n'))  // if the line is empty
+			if (i == 1 || (i >=3  && data[i - 3] == '\r' && data[i - 2] == '\n'))  // if the line is empty
 				this->_emptyLines++;
             this->_linesInBuffer++;
             item.lines++;
@@ -159,7 +159,7 @@ void Buffer::clear() {
  * @return int 1 if a line was found, 0 otherwise
  */
 int Buffer::getCRLFLine(std::string& line) {
-	infoLog << "Getting line from buffer, lines: " << this->_linesInBuffer << CPPLog::end;
+	infoLog << "Getting line from buffer, lines: " << this->_linesInBuffer << " size: " << this->_sizeOfBuffer <<  CPPLog::end;
 	size_t bytesRead = 0;
     if (this->_linesInBuffer == 0)
         return 0;

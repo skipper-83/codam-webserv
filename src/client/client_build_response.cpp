@@ -11,6 +11,8 @@ void Client::_buildResponse() {
     if ((cgi = _request.getServer()->getCgiFromPath(_request.getPath())) && cgi->allowed.methods.find(_request.getMethod())->second) {
         clientLogI << "CGI request: " << std::filesystem::absolute(_request.getPath()) << "; executor: " << cgi->executor << CPPLog::end;
         try {
+			if (std::filesystem::exists(cgi->executor) == false)
+				throw std::runtime_error("CGI executor not found");
             _cgiMessage = std::make_shared<cgiMessage>(cgi->executor, &_request, _addLocalFdToPollArray);
         } catch (const std::exception& e) {
             clientLogE << "_clientReadCb: " << e.what() << CPPLog::end;

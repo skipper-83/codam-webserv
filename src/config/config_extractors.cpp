@@ -3,6 +3,7 @@
 
 // CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::DEBUG, "parse config");
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "parse config");
+extern MainConfig mainConfig;
 
 /**
  * @brief  Used if input is expected on single line (ie: [listen 8080;\n])
@@ -142,9 +143,16 @@ static void setLocationRoot(std::istream& is, Location& rhs) {
         if (word.find(';') == std::string::npos)
             throw(std::invalid_argument("Missing terminating ; after root"));
     }
+    if (rhs.root[0] != '.' && rhs.root[0] != '/')
+        throw(std::invalid_argument("Please supply absolute path or relative path starting with '.', not: [" + word + "]"));
     // infoLog << "root last char []"
     if (rhs.root[rhs.root.size() - 1] != '/')
         rhs.root += '/';
+    if (rhs.root[0] != '/')
+        rhs.root = mainConfig.getConfigPath() + rhs.root.substr(rhs.root.find_first_of('/'), rhs.root.size() - 1);
+    if (!std::filesystem::exists(rhs.root))
+        throw(std::invalid_argument("Path [" + rhs.root + "] does not exist"));
+
     infoLog << "root set to " << rhs.root << CPPLog::end;
 }
 
@@ -298,8 +306,7 @@ std::istream& operator>>(std::istream& is, Cgi& rhs) {
             if (WebServUtil::stringToHttpMethod(word) != WebServUtil::HttpMethod::UNKNOWN) {
                 infoLog << "Method: " << word << CPPLog::end;
                 rhs.allowed.methods[WebServUtil::stringToHttpMethod(word)] = true;
-            } else
-            {
+            } else {
                 infoLog << "setting executor: " << word;
                 rhs.executor = word;
             }

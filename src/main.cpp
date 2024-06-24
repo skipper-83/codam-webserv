@@ -44,8 +44,8 @@ void parseConfig(int argc, char** argv) {
 
     if (!file)
         throw std::runtime_error(std::string("failed to open config file: ") + argv[1]);
-
     try {
+        mainConfig.setConfigPath(std::filesystem::absolute(argv[1]));
         file >> mainConfig;
     } catch (const std::exception& e) {
         logOut.stream(CPPLog::Level::FATAL, "parseConfig") << e.what();

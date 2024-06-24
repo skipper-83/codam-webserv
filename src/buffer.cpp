@@ -52,7 +52,7 @@ void Buffer::add(const std::string& data) {
         {
             if(this->buffer.size() > 0 && this->buffer.back().endsWithCR())
             {
-                if (this->buffer.back().size > 3 && this->buffer.back().data[this->buffer.back().size - 2] == '\n' && this->buffer.back().data[this->buffer.back().size - 3] == '\r')
+                if (this->buffer.back().size > 2 && this->buffer.back().data[this->buffer.back().size - 2] == '\n' && this->buffer.back().data[this->buffer.back().size - 3] == '\r')
                     this->_emptyLines++;
                 this->_linesInBuffer++;
                 item.lines++;

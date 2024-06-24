@@ -105,6 +105,11 @@ const std::vector<uint16_t> &MainConfig::getPorts(void) {
     return (_ports);
 }
 
+void MainConfig::setConfigPath(std::string const &path ) {
+    infoLog << "setPath: " << path.substr(0, path.find_last_of('/') + 1);
+    _configPath =  path.substr(0, path.find_last_of('/') + 1);
+}
+
 std::string ServerConfig::getErrorPage(int errorCode) const {
     for (auto it : this->errorPages) {
         for (size_t i = 0; i < it.errorNumbers.size(); ++i) {

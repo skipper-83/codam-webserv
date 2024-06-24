@@ -105,6 +105,7 @@ class MainConfig {
     std::unordered_map<uint16_t, ServerConfig*> _portsToServers;
     std::map<std::pair<uint16_t, std::string>, ServerConfig*> _portsNamesToServers;
     std::vector<uint16_t> _ports;
+    std::string _configPath;
     void _overrideDefaults(void);
     void _setServerNameAndPortArrays(void);
 
@@ -115,6 +116,8 @@ class MainConfig {
     const ServerConfig* getServerFromPortAndName(uint16_t port, std::string name);
     const ServerConfig* getServer(uint16_t port, std::string name);
     const std::vector<uint16_t>& getPorts(void);
+    void setConfigPath(std::string const &path);
+    std::string const &getConfigPath() const {return _configPath;}
 
     friend std::istream& operator>>(std::istream& is, ErrorPage& rhs);
     friend std::istream& operator>>(std::istream& is, AllowedMethods& rhs);

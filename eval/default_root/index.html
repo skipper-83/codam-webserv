@@ -1,0 +1,20 @@
+<html>
+	<head>
+		<title>Default Root</title>
+	</head>
+	<body>
+		<h1>Default Root</h1>
+		<p>This is the default root page.</p>
+		<p>It is displayed when no file is specified in the URL.</p>
+
+		<p>Here are some other pages you can visit:</p>
+		<ul>
+			<li><a href="default_root_submap_no_index">Submap with no index</a></li>
+			<li><a href="default_root_submap">Submap with index</a></li>
+			<li><a href="default_root_submap_wrong_index">Submap with index with wrong name</a></li>
+		</ul>
+		<form action="http://only-post.localhost:888/" method="POST">
+			<input type="submit" value="POST to server that only accepts POST requests">
+			<input type="hidden" name="data" value="This is a POST request">
+		</form>
+</html>

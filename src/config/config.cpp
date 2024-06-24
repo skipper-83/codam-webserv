@@ -33,6 +33,15 @@ void MainConfig::_overrideDefaults() {
                 it_loc.clientMaxBodySize.value = it.clientMaxBodySize.value;
                 it_loc.clientMaxBodySize.defaultValue = false;
             }
+            if (!it.autoIndex.defaultValue && it_loc.autoIndex.defaultValue)
+            {
+                it_loc.autoIndex.on = it.autoIndex.on;
+                it_loc.autoIndex.defaultValue = false;
+            }
+            if (!it.cgis.empty() && it_loc.cgis.empty())
+            {
+                it_loc.cgis = it.cgis;
+            }
         }
     }
 }
@@ -120,7 +129,7 @@ std::string ServerConfig::getErrorPage(int errorCode) const {
     return std::string();
 }
 
-Cgi const *ServerConfig::getCgiFromPath(std::string path) const {
+Cgi const *Location::getCgiFromPath(std::string path) const {
     size_t extensionPos = path.find_last_of('.');
     if (this->cgis.empty() || extensionPos == std::string::npos)
         return nullptr;

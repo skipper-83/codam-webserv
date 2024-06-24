@@ -86,6 +86,7 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
 
     // If the header is not complete and the buffer is too large, return 413
     if (!this->_request.headerComplete() && _clientReadBuffer.size() > DEFAULT_MAX_HEADER_SIZE) {
+        clientLogI << "Header too large";
         this->_returnHttpErrorToClient(413);
     }
 

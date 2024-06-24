@@ -85,7 +85,10 @@ void httpRequest::_addChunkedContent(Buffer &input) {
         }
         // throw exception if body size is larger than max body size
         if (this->_bodyLength + _nextChunkSize > this->_clientMaxBodySize)
+        {
+            infoLog << "Chunked request too large: " << this->_bodyLength << " + " << _nextChunkSize << " + " << this->_clientMaxBodySize;
             throw httpRequestException(413, "Request body larger than max body size");
+        }
 
         // if the chunk size is 0, the body is complete and we can return
         if (_nextChunkSize == 0) {  // end of body

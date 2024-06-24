@@ -155,7 +155,7 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
             Cgi const *cgi;
             if (!std::filesystem::exists(_path) &&
                 !(_httpMethod == WebServUtil::HttpMethod::PUT) &&  // if the file does not exist and the method is not PUT
-                ((cgi = this->_server->getCgiFromPath(_path)) == nullptr ||
+                ((cgi = this->_location->getCgiFromPath(_path)) == nullptr ||
                  cgi->allowed.methods.find(_httpMethod) == cgi->allowed.methods.end())) {  // and the path is not a cgi
                 infoLog << "File not found, returning 404: " << _path << CPPLog::end;
                 throw(httpRequestException(404, "File not found"));
@@ -172,7 +172,7 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
                  */
                 // if (path[path.size() - 1] != '/')  // if the path does not end with a slash, redirect
                 //     throw(httpRequestException(301, _httpAdress + '/'));
-                if (_server->autoIndex.on) {
+                if (_location->autoIndex.on) {
                     infoLog << "Autoindex is on" << CPPLog::end;
                     _returnAutoIndex = true;
                     _path = path;

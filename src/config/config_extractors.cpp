@@ -216,43 +216,6 @@ std::istream& operator>>(std::istream& is, BodySize& rhs) {
     return is;
 }
 
-/**
- * @brief Location extractor overload. Extracts the referrer (the URI after the location keyword)
- * 		and calls setLocationIndex() and/or setLocationRoot() for indices and root respectively
- *
- * @param is
- * @param rhs
- * @return std::istream&
- */
-std::istream& operator>>(std::istream& is, Location& rhs) {
-    std::string word;
-    SubParsers subParsers = {{"root", [&rhs](std::istream& is) { setLocationRoot(is, rhs); }},
-                             {"index", [&rhs](std::istream& is) { setLocationIndex(is, rhs); }},
-                             {"allowed_methods", [&rhs](std::istream& is) { is >> rhs.allowed; }},
-                             {"client_max_body_size", [&rhs](std::istream& is) { is >> rhs.clientMaxBodySize; }}};
-
-    is >> rhs.ref >> word;
-    if (!is || rhs.ref.find('{') != std::string::npos)
-        throw(std::invalid_argument("Wrong referrer for location"));  // todo check referrer more thoroughly
-    if (word.find('{') == std::string::npos)
-        throw(std::invalid_argument("Missing opening { in location"));
-    infoLog << "Referrer: " << rhs.ref << CPPLog::end;
-    while (is >> word) {
-        if (!is)
-            throw(std::invalid_argument("Wrong input for location"));
-        else if (word.find('}') != std::string::npos) {
-            if (rhs.root == "")
-                throw(std::invalid_argument("No root for location"));
-            break;
-        } else if (subParsers[word])
-            subParsers[word](is);
-        else if (word == "location")
-            throw(std::invalid_argument("Nested location blocks are not allowed"));
-        else
-            throw(std::invalid_argument("Unexpected input for location: " + word));
-    }
-    return is;
-}
 
 /**
  * @brief Extractor for listenport
@@ -315,6 +278,51 @@ std::istream& operator>>(std::istream& is, Cgi& rhs) {
                     throw(std::invalid_argument("Cgi executor does not exist: " + word));
             }
         }
+    }
+    return is;
+}
+
+
+/**
+ * @brief Location extractor overload. Extracts the referrer (the URI after the location keyword)
+ * 		and calls setLocationIndex() and/or setLocationRoot() for indices and root respectively
+ *
+ * @param is
+ * @param rhs
+ * @return std::istream&
+ */
+std::istream& operator>>(std::istream& is, Location& rhs) {
+    std::string word;
+    SubParsers subParsers = {{"root", [&rhs](std::istream& is) { setLocationRoot(is, rhs); }},
+                             {"index", [&rhs](std::istream& is) { setLocationIndex(is, rhs); }},
+                             {"allowed_methods", [&rhs](std::istream& is) { is >> rhs.allowed; }},
+                             {"client_max_body_size", [&rhs](std::istream& is) { is >> rhs.clientMaxBodySize; }},
+                             {"autoindex", [&rhs](std::istream& is) { is >> rhs.autoIndex; }},
+                             {"cgi", [&rhs](std::istream& is) {
+                                  Cgi new_cgi;
+                                  is >> new_cgi;
+                                  rhs.cgis.push_back(new_cgi);
+                              }}};
+
+    is >> rhs.ref >> word;
+    if (!is || rhs.ref.find('{') != std::string::npos)
+        throw(std::invalid_argument("Wrong referrer for location"));  // todo check referrer more thoroughly
+    if (word.find('{') == std::string::npos)
+        throw(std::invalid_argument("Missing opening { in location"));
+    infoLog << "Referrer: " << rhs.ref << CPPLog::end;
+    while (is >> word) {
+        if (!is)
+            throw(std::invalid_argument("Wrong input for location"));
+        else if (word.find('}') != std::string::npos) {
+            if (rhs.root == "")
+                throw(std::invalid_argument("No root for location"));
+            break;
+        } else if (subParsers[word])
+            subParsers[word](is);
+        else if (word == "location")
+            throw(std::invalid_argument("Nested location blocks are not allowed"));
+        else
+            throw(std::invalid_argument("Unexpected input for location: " + word));
     }
     return is;
 }

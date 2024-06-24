@@ -47,14 +47,6 @@ struct AllowedMethods {
     bool defaultValue = true;
 };
 
-struct Location {
-    std::string ref;
-    std::string root;
-    AllowedMethods allowed;
-    BodySize clientMaxBodySize;
-    std::vector<std::string> index_vec;
-};
-
 struct ServerNames {
     std::vector<std::string> name_vec;
 };
@@ -75,6 +67,17 @@ struct Cgi {
     AllowedMethods allowed;
 };
 
+struct Location {
+    std::string ref;
+    std::string root;
+    AllowedMethods allowed;
+    AutoIndex autoIndex;
+    std::vector<Cgi> cgis = {};
+    BodySize clientMaxBodySize;
+    std::vector<std::string> index_vec;
+    Cgi const* getCgiFromPath(std::string path) const;
+};
+
 class ServerConfig {
    public:
     ServerNames names;
@@ -88,7 +91,7 @@ class ServerConfig {
     int rank;  // deprecated, used for sorting, still used in tests
 
     std::string getErrorPage(int errorCode) const;
-    Cgi const* getCgiFromPath(std::string path) const;
+
 
    private:
     void sortLocations(void);

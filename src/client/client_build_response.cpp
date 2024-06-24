@@ -29,6 +29,7 @@ void Client::_buildResponse() {
         } catch (const std::exception& e) {
             clientLogE << "_buildResponse: " << e.what() << CPPLog::end;
             _returnHttpErrorToClient(500);
+            return;
         }
 
         _response.setHeader("Content-Type", "text/html; charset=UTF-8");
@@ -52,8 +53,10 @@ void Client::_buildResponse() {
             break;
         }
         case WebServUtil::HttpMethod::DELETE: {
-            if (std::remove(_request.getPath().c_str()) != 0)
+            if (std::remove(_request.getPath().c_str()) != 0) {
                 _returnHttpErrorToClient(500);
+                break;
+            }
             _response.setCode(200);
             _response.setHeader("Content-Type", "text/html; charset=UTF-8");
             _response.setFixedSizeBody("File " + _request.getAdress() + " deleted");

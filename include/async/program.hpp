@@ -25,6 +25,7 @@ class AsyncProgram {
 
 	std::string read(size_t size);
 	size_t write(std::string &data);
+    size_t write(const char *data, ssize_t length = -1);
 
 	bool hasPendingRead();
 	bool hasPendingWrite();

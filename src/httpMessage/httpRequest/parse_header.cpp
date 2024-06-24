@@ -184,7 +184,7 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
                 // if (path[path.size() - 1] != '/')  // if the path does not end with a slash, redirect
                 //     throw(httpRequestException(301, _httpAdress + '/'));
 
-                if (!_location->index_vec.empty() && !_location->autoIndex.on) {
+                if (!_location->index_vec.empty()) {
                     infoLog << "checking for index files in config" << CPPLog::end;
                     for (auto &rootIndexFile : _location->index_vec) {
                         infoLog << "checking" << _path + rootIndexFile;
@@ -193,7 +193,8 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
                             return;
                         }
                     }
-                    throw httpRequestException(404, "No directory index, and autoindex is off");
+                    if (!_location->autoIndex.on)
+                        throw httpRequestException(404, "No directory index, and autoindex is off");
                 }
 
                 if (_location->autoIndex.on) {

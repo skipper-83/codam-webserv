@@ -5,7 +5,7 @@ header("Expires: 0"); // Proxies
 // Function to set cookie for dark/night mode
 function setDarkModeCookie($mode) {
     // Set cookie with name "dark_mode" and value $mode (either "dark" or "light")
-    setcookie("dark_mode", $mode, time() + 120); // Lifetime: 2 minutes
+    setcookie("dark_mode", $mode, time() + 120, "/"); // Lifetime: 2 minutes
 }
 
 // Check if user has submitted form
@@ -46,5 +46,13 @@ if ($mode === "dark") {
     echo '<style>body { background-color: #fff; color: #222; }</style>';
     echo '<h1>Welcome to Light Mode</h1>';
 }
+
+echo '<form method="post" action="">';
+echo '<label for="dark">Dark mode</label>';
+echo '<input type="radio" name="mode" value="dark" id="dark">';
+echo '<label for="light">Light mode</label>';
+echo '<input type="radio" name="mode" value="light" id="light">';
+echo '<input type="submit" value="Set Mode">';
+echo '</form>';
 
 ?>

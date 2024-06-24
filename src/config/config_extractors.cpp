@@ -245,6 +245,7 @@ std::istream& operator>>(std::istream& is, ListenPort& rhs) {
 std::istream& operator>>(std::istream& is, Cgi& rhs) {
     std::string line, word;
     std::stringstream lineStream;
+    bool methodSet = false;
 
     infoLog << "Cgi extractor" << CPPLog::end;
     checkTerminator(is, line, "cgi");
@@ -267,6 +268,7 @@ std::istream& operator>>(std::istream& is, Cgi& rhs) {
             if (WebServUtil::stringToHttpMethod(word) != WebServUtil::HttpMethod::UNKNOWN) {
                 infoLog << "Method: " << word << CPPLog::end;
                 rhs.allowed.methods[WebServUtil::stringToHttpMethod(word)] = true;
+                methodSet = true;
             } else {
                 infoLog << "setting executor: " << word;
                 rhs.executor = word;
@@ -279,6 +281,8 @@ std::istream& operator>>(std::istream& is, Cgi& rhs) {
             }
         }
     }
+    if (!methodSet)
+        throw(std::invalid_argument("Please set at least one method for this CGI"));
     return is;
 }
 

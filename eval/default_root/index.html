@@ -12,9 +12,21 @@
 			<li><a href="default_root_submap_no_index">Submap with no index</a></li>
 			<li><a href="default_root_submap">Submap with index</a></li>
 			<li><a href="default_root_submap_wrong_index">Submap with index with wrong name</a></li>
+			<li><a href="doesnt-exist">This file doesn't exist, but it will give you a custom 404</a></li>
 		</ul>
-		<form action="http://only-post.localhost:888/" method="POST">
+		<form action="http://only-post.localhost:8080/" method="POST">
 			<input type="submit" value="POST to server that only accepts POST requests">
 			<input type="hidden" name="data" value="This is a POST request">
 		</form>
+		<p>Some more cgi action</p>
+		<ul>
+			<li><a href="/php/test.php">Test PHP file</a></li>
+			<li>Post to a php page
+				<form id="postForm" action="/php/test.php" method="POST">
+					<label for="data">Enter Data:</label><br>
+					<textarea id="data" name="data" rows="4" cols="50"></textarea><br><br>
+					<input type="submit" value="Submit">
+				  </form>
+			</li>
+		</ul>
 </html>

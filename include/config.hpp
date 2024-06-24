@@ -98,7 +98,6 @@ class ServerConfig {
 
     std::string getErrorPage(int errorCode) const;
 
-
    private:
     void sortLocations(void);
 
@@ -125,8 +124,8 @@ class MainConfig {
     const ServerConfig* getServerFromPortAndName(uint16_t port, std::string name);
     const ServerConfig* getServer(uint16_t port, std::string name);
     const std::vector<uint16_t>& getPorts(void);
-    void setConfigPath(std::string const &path);
-    std::string const &getConfigPath() const {return _configPath;}
+    void setConfigPath(std::string const& path);
+    std::string const& getConfigPath() const { return _configPath; }
 
     friend std::istream& operator>>(std::istream& is, ErrorPage& rhs);
     friend std::istream& operator>>(std::istream& is, AllowedMethods& rhs);

@@ -152,6 +152,12 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
                 throw(httpRequestException(301, location.redirect.path));
             }
 
+            if (this->_location->allowed.methods.find(_httpMethod)->second == false)
+                throw(httpRequestException(405, "Method Not Allowed"));
+    //     infoLog << "Method not allowed" << CPPLog::end;
+    //     throw httpRequestException(405, "Method Not Allowed");
+    // }
+
             infoLog << "Client max body size: " << location.clientMaxBodySize.value << " bytes" << CPPLog::end;
             _clientMaxBodySize = location.clientMaxBodySize.value;
 

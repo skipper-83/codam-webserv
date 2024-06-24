@@ -38,7 +38,6 @@ class httpRequest : public httpMessage {
     bool _contentSizeSet = false;
     bool _returnAutoIndex = false;
     bool _pathSet = false;
-    bool _methodCheck = false;
     bool _sessionSet = false;
     const ServerConfig *_server = nullptr;
     const Location *_location = nullptr;

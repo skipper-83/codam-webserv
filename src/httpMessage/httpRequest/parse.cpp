@@ -23,11 +23,7 @@ void httpRequest::parse(Buffer &input, uint16_t port) {
         } catch (const httpRequestException &e) {
             throw httpRequestException(e.errorNo(), e.what());
         }
-    if (!_methodCheck && this->_location->allowed.methods.find(_httpMethod)->second == false) {
-        infoLog << "Method not allowed" << CPPLog::end;
-        throw httpRequestException(405, "Method Not Allowed");
-    }
-    _methodCheck = true;
+
     if (this->_headerParseComplete && !this->_bodyComplete) {
         if (WebServUtil::isRequestWithoutBody(this->_httpMethod))
             this->_bodyComplete = true;

@@ -131,7 +131,7 @@ std::istream& operator>>(std::istream& is, ServerNames& rhs) {
 static void setLocationRoot(std::istream& is, Location& rhs) {
     std::string word;
 
-    is >> rhs.root;  // todo: check this stuff ?
+    is >> rhs.root;
     if (!is)
         throw(std::invalid_argument("Incorrect input for location root"));
     if (rhs.root[rhs.root.size() - 1] == ';')
@@ -145,7 +145,6 @@ static void setLocationRoot(std::istream& is, Location& rhs) {
     }
     if (rhs.root[0] != '.' && rhs.root[0] != '/')
         throw(std::invalid_argument("Please supply absolute path or relative path starting with '.', not: [" + word + "]"));
-    // infoLog << "root last char []"
     if (rhs.root[rhs.root.size() - 1] != '/')
         rhs.root += '/';
     if (rhs.root[0] != '/')
@@ -281,7 +280,6 @@ std::istream& operator>>(std::istream& is, ListenPort& rhs) {
 }
 
 std::istream& operator>>(std::istream& is, Cgi& rhs) {
-    // TODO: insert return statement here
     std::string line, word;
     std::stringstream lineStream;
 
@@ -309,15 +307,13 @@ std::istream& operator>>(std::istream& is, Cgi& rhs) {
             } else {
                 infoLog << "setting executor: " << word;
                 rhs.executor = word;
-				if (rhs.executor[0] != '/' && rhs.executor[0] != '.')
-					throw(std::invalid_argument("Cgi executor must be an absolute or relative path: " + word));
-				if (rhs.executor[0] == '.')
-					rhs.executor = mainConfig.getConfigPath() + rhs.executor.substr(1, rhs.executor.size() - 1);
-				if (!std::filesystem::exists(rhs.executor))
-					throw(std::invalid_argument("Cgi executor does not exist: " + word));
-				
+                if (rhs.executor[0] != '/' && rhs.executor[0] != '.')
+                    throw(std::invalid_argument("Cgi executor must be an absolute or relative path: " + word));
+                if (rhs.executor[0] == '.')
+                    rhs.executor = mainConfig.getConfigPath() + rhs.executor.substr(1, rhs.executor.size() - 1);
+                if (!std::filesystem::exists(rhs.executor))
+                    throw(std::invalid_argument("Cgi executor does not exist: " + word));
             }
-            // break;
         }
     }
     return is;

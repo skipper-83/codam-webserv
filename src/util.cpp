@@ -3,7 +3,6 @@
 #include <chrono>
 #include <cstring>
 #include <ctime>
-// #include <format>
 #include <filesystem>
 #include <iomanip>
 #include <sstream>
@@ -87,8 +86,8 @@ std::string WebServUtil::directoryIndexList(const std::string& path, const std::
         index_listing << "\t";
         try {
             std::filesystem::file_time_type ftime = std::filesystem::last_write_time(it);
-            std::chrono::system_clock::time_point sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(ftime - std::filesystem::file_time_type::clock::now() +
-                                                                                          std::chrono::system_clock::now());
+            std::chrono::system_clock::time_point sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+                ftime - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
             std::time_t cftime = std::chrono::system_clock::to_time_t(sctp);
             index_listing << std::put_time(std::localtime(&cftime), "%Y-%m-%d %H:%M:%S");
         } catch (std::exception& e) {

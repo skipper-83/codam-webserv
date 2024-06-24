@@ -1,6 +1,6 @@
-#include <logging.hpp>
-
 #include "async/io.hpp"
+
+#include <logging.hpp>
 
 static CPPLog::Instance logI = logOut.instance(CPPLog::Level::INFO, "Async");
 static CPPLog::Instance logD = logOut.instance(CPPLog::Level::DEBUG, "Async");

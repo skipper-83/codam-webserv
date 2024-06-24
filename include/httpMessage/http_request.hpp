@@ -2,10 +2,10 @@
 #ifndef HTTP_REQUEST_HPP
 #define HTTP_REQUEST_HPP
 
+#include "buffer.hpp"
 #include "config.hpp"
 #include "httpMessage/http_message.hpp"
 #include "util.hpp"
-#include "buffer.hpp"
 
 extern MainConfig mainConfig;
 
@@ -21,7 +21,6 @@ class httpRequest : public httpMessage {
     void _addChunkedContent(Buffer &input);
     void _addUntilNewline(Buffer &input);
     bool _hasNewLine(std::string &str);
-    // std::string _getLineWithCRLF(std::istream &is);
     std::string _readNumberOfBytesFromFileStream(std::istream &fs, size_t amountOfBytes);
     size_t _remainingLength(std::istream &fs);
 
@@ -47,14 +46,13 @@ class httpRequest : public httpMessage {
     std::string _path;
     std::string _queryString = "";
     size_t _clientMaxBodySize = DEFAULT_CLIENT_BODY_SIZE;
-	size_t _nextChunkSize = 0;
-	bool _chunkSizeKnown = false;
-	bool _firstNewLineFound = false;
+    size_t _nextChunkSize = 0;
+    bool _chunkSizeKnown = false;
+    bool _firstNewLineFound = false;
 
    public:
     // CONSTRUCTORS
     httpRequest();
-    // explicit httpRequest(std::istream &fs);
     httpRequest(const httpRequest &src);
     ~httpRequest();
 

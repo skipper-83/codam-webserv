@@ -28,12 +28,11 @@ void Client::_readFromFile() {
                 clientLogI << "HEAD request" << CPPLog::end;
                 _response.transformLineForChunkedResponse("");
                 clientLogI << "setting inputfile to nullptr" << CPPLog::end;
-				_inputFile = nullptr;
+                _inputFile = nullptr;
                 return;
             }
         }
         _clientWriteBuffer += _response.transformLineForChunkedResponse(_inputFile->read());
-        // clientLogI << "file buffer: " << _clientWriteBuffer.read(_clientWriteBuffer.size()) << "size:" << _clientWriteBuffer.size() << CPPLog::end;
     }
 
     if (_inputFile->eof()) {

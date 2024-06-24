@@ -8,7 +8,6 @@ static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequ
 static CPPLog::Instance warningLog = logOut.instance(CPPLog::Level::WARNING, "httpRequest header parser");
 
 void httpRequest::parseHeader(Buffer &input) {
-	// infoLog << "Parsing header, bufer is: " << input.read(input.size()) << CPPLog::end;
     _parseHttpStartLine(input);
     _parseHttpHeaders(input);
     this->_headerParseComplete = true;
@@ -18,18 +17,12 @@ void httpRequest::parseHeader(Buffer &input) {
 void httpRequest::_parseHttpStartLine(Buffer &input) {
     std::string line;
 
-    // line = _getLineWithCRLF(fs);
-    // while (fs && line.empty()) // skip empty lines before request
-    //     line = _getLineWithCRLF(fs);
     infoLog << "Buffer: " << input.read(input.size());
-    // line = _getLineWithCRLF(fs);
-    // while (fs && line.empty()) // skip empty lines before request
-    //     line = _getLineWithCRLF(fs);
-	while (line.empty()) // skip empty lines before request
+    while (line.empty())  // skip empty lines before request
     {
         infoLog << "empty line";
-		if (!input.getCRLFLine(line))
-			return; // no line to parse
+        if (!input.getCRLFLine(line))
+            return;  // no line to parse
     }
     std::string::size_type request_type_pos, address_pos;
     infoLog << "Parsing Start Line: [" << line << "]";
@@ -55,18 +48,17 @@ void httpRequest::_parseHttpStartLine(Buffer &input) {
 void httpRequest::_parseHttpHeaders(Buffer &input) {
     std::string line;
     std::pair<std::string, std::string> key_value;
-	int lineParsed = 0;
+    int lineParsed = 0;
 
     while ((lineParsed = input.getCRLFLine(line))) {
-        if (line.empty())
-		{
-			infoLog << "Empty line, end of headers" << CPPLog::end;
+        if (line.empty()) {
+            infoLog << "Empty line, end of headers" << CPPLog::end;
             break;
-		}
+        }
         try {
-			infoLog << "Parsing header line: " << line << CPPLog::end;
+            infoLog << "Parsing header line: " << line << CPPLog::end;
             key_value = _parseHeaderLine(line);
-			line.clear();
+            line.clear();
         } catch (const std::exception &e) {
             throw httpRequestException(400, "Invalid HTTP header");
         }
@@ -76,8 +68,8 @@ void httpRequest::_parseHttpHeaders(Buffer &input) {
         }
         infoLog << "Header: " << key_value.first << ": " << key_value.second << CPPLog::end;
     }
-	if (!lineParsed) // no line to parse
-	 	return;
+    if (!lineParsed)  // no line to parse
+        return;
     _checkHttpHeaders();
     _setVars();
     return;
@@ -141,17 +133,17 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
 
     _pathSet = true;
     infoLog << "Resolving path for " << this->_httpAdress << CPPLog::end;
-	std::string locationResolvePath = this->_httpAdress;
-	   if (locationResolvePath.find('.') == std::string::npos && locationResolvePath[locationResolvePath.size() - 1] != '/')  //
+    std::string locationResolvePath = this->_httpAdress;
+    if (locationResolvePath.find('.') == std::string::npos && locationResolvePath[locationResolvePath.size() - 1] != '/')  //
         locationResolvePath += '/';
-	
+
     for (auto &location : this->_server->locations) {
         if (location.ref == locationResolvePath.substr(0, location.ref.size())) {
             infoLog << "Matched location: " << location.ref << CPPLog::end;
-			if (_httpAdress.size() > location.ref.size())
-				path = location.root + this->_httpAdress.substr(location.ref.size(), this->_httpAdress.size());
-			else
-				path = location.root;
+            if (_httpAdress.size() > location.ref.size())
+                path = location.root + this->_httpAdress.substr(location.ref.size(), this->_httpAdress.size());
+            else
+                path = location.root;
             infoLog << path << CPPLog::end;
             _path = path;
             _location = &location;
@@ -170,11 +162,10 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
             }
             if (std::filesystem::is_directory(_path)) {
                 infoLog << "Path is a directory, request: [" << _httpAdress << "] ref: [" << _location->ref << "]" << CPPLog::end;
-				if (_httpAdress[_httpAdress.size() - 1] != '/')
-				{  //
-        			_httpAdress += '/';
-					_path += '/';
-				}
+                if (_httpAdress[_httpAdress.size() - 1] != '/') {  //
+                    _httpAdress += '/';
+                    _path += '/';
+                }
 
                 /*
                  * I used to throw a redirect here, but the intra tester expects the server to add a trailing slash to the path
@@ -190,7 +181,7 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
                 if (!_location->index_vec.empty()) {
                     infoLog << "checking for index files in config" << CPPLog::end;
                     for (auto &rootIndexFile : _location->index_vec) {
-                            infoLog << "checking" << _path + rootIndexFile;
+                        infoLog << "checking" << _path + rootIndexFile;
                         if (std::filesystem::exists(_path + rootIndexFile)) {
                             _path = _path + rootIndexFile;
                             return;

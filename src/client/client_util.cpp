@@ -20,7 +20,6 @@ void Client::_returnHttpErrorToClient(int code, std::string message) {
     this->_clientReadBuffer.clear();
     this->_response.deleteHeader("Content-Type");
     this->_response.setCode(code);
-    // clientLogI << _response.getFixedBodyResponseAsString() << CPPLog::end;
     if (code == 301)  // if the """error""" is a redirect, set the location header
         _response.setHeader("Location", message);
     if (_request.getServer() && !(error_page = _request.getServer()->getErrorPage(code)).empty()) {
@@ -45,7 +44,5 @@ void Client::_returnHttpErrorToClient(int code, std::string message) {
     }
     this->_request.clear(this->_clientReadBuffer);
     changeState(ClientState::ERROR);
-    //
-    // clientLogI << "Buffer from error now: " << this->_clientWriteBuffer.read(_clientWriteBuffer.size()) << CPPLog::end;
     clientLogW << "HTTP error " << code << ": " << WebServUtil::codeDescription(code);
 }

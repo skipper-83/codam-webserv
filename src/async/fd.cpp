@@ -77,7 +77,6 @@ void AsyncFD::close() {
 }
 
 bool AsyncFD::isValid() const {
-    // logD << "AsyncFD::isValid() called";
     return _fd >= 0;
 }
 

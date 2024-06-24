@@ -97,14 +97,10 @@ void httpMessage::_httpMessageAssign(const httpMessage &rhs) {
 std::string httpMessage::_getLineWithCRLF(std::istream &is) {
     std::string line;
 
-    // infoLog << "Getting line with CRLF (is type)\n";
     if (!std::getline(is, line)) {
-        // infoLog << "No line\n";
         return "";
     }
-    // infoLog << "Line: [" << line << "]" << CPPLog::end;
     if (!line.empty() && line.back() == '\r') {
-        // infoLog << "Removing \\r\n";
         line.pop_back();
     }
     return line;
@@ -114,7 +110,6 @@ std::string httpMessage::_getLineWithCRLF(std::string &input) {
     std::string::size_type pos = input.find('\n');
     std::string line;
 
-    // infoLog << "Getting line with CRLF\n";
     if (pos == std::string::npos || input.empty())
         return "";
     line = input.substr(0, pos);
@@ -126,17 +121,10 @@ std::string httpMessage::_getLineWithCRLF(std::string &input) {
 }
 
 std::pair<std::string, std::string> httpMessage::_parseHeaderLine(std::string line) {
-    // std::string key, value;
-    // std::string::size_type key_end, val_start;
-
     std::regex pattern("^([^\\s:]+):\\s*(.*)");
     std::smatch match;
 
-    if (std::regex_match(line, match, pattern)) {
-        // std::cout << "Header Name: " << match[1] << std::endl;
-        // std::cout << "Header Value: " << match[2] << std::endl;
-    } else {
+    if (!std::regex_match(line, match, pattern))
         throw std::runtime_error("Invalid header line");
-    }
     return std::make_pair(match[1], match[2]);
 }

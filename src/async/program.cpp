@@ -1,10 +1,10 @@
 #include "async/program.hpp"
 
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <cstring>
-#include <sys/types.h>
-#include <sys/wait.h>
 
 #include "logging.hpp"
 
@@ -44,7 +44,7 @@ Environment::Environment(const std::map<std::string, std::string> &environment) 
             std::string keyvalue = key + '=' + value;
             _env[i] = new char[keyvalue.length() + 1];
             std::strcpy(_env[i], keyvalue.c_str());
-			i++;
+            i++;
         }
     } catch (std::bad_alloc &e) {
         logE << "Environment::Environment(const std::map<std::string, std::string>&) failed: " << e.what();
@@ -109,7 +109,13 @@ static void _closePipeFds(int *pipeFds) {
 
 AsyncProgram::AsyncProgram(const std::string &exec, const std::string &file, const std::map<std::string, std::string> &environment,
                            const ProgramCallback &programReadReadyCb, const ProgramCallback &programWriteReadyCb)
-    : _pipeReadFD(nullptr), _pipeWriteFD(nullptr), _programReadReadyCb(programReadReadyCb), _programWriteReadyCb(programWriteReadyCb), _pid(-1), _running(false), _exitStatus(-1){
+    : _pipeReadFD(nullptr),
+      _pipeWriteFD(nullptr),
+      _programReadReadyCb(programReadReadyCb),
+      _programWriteReadyCb(programWriteReadyCb),
+      _pid(-1),
+      _running(false),
+      _exitStatus(-1) {
     logD << "AsyncProgram::AsyncProgram(const std::string&, const std::map<std::string, std::string>&, const ProgramCallback&, const "
             "ProgramCallback&) called";
     Environment env(environment);
@@ -146,8 +152,6 @@ AsyncProgram::AsyncProgram(const std::string &exec, const std::string &file, con
              << std::strerror(errno);
         throw std::runtime_error(std::strerror(errno));
     }
-
-
 
     pid_t pid = fork();
     if (pid == -1) {  // if fork() fails
@@ -305,8 +309,6 @@ void AsyncProgram::_internalReadReadyCb(AsyncFD &) {
 }
 
 void AsyncProgram::_internalWriteReadyCb(AsyncFD &) {
-    // logD << "AsyncProgram::_internalWriteReadyCb(AsyncFD&) called";
-
     if (_programWriteReadyCb) {
         _programWriteReadyCb(*this);
     }

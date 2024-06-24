@@ -1,5 +1,7 @@
 #include "async/output.hpp"
+
 #include <unistd.h>
+
 #include <cstring>
 #include <logging.hpp>
 
@@ -74,7 +76,7 @@ size_t AsyncOutput::write(const char *data, ssize_t length) {
 size_t AsyncOutput::write(std::string &data) {
     logD << "AsyncOutput::write(const std::string&) called";
 
-    return write(data.data(), data.size()); 
+    return write(data.data(), data.size());
 }
 
 bool AsyncOutput::hasPendingWrite() const {
@@ -84,7 +86,6 @@ bool AsyncOutput::hasPendingWrite() const {
 }
 
 void AsyncOutput::_internalOutCb(AsyncFD &fd) {
-    // logD << "AsyncOutput::_internalOutCb(AsyncFD&) called";
     AsyncOutput &output = dynamic_cast<AsyncOutput &>(fd);
     output._hasPendingWrite = true;
     if (output._outCb) {

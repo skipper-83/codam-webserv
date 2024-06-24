@@ -16,8 +16,6 @@ struct BufferItem {
     std::vector<char> data;
     size_t size = 0;
     size_t lines = 0;
-    bool endsWithCRLF();
-    bool endsWithCR();
 };
 
 class Buffer {

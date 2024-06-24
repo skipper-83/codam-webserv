@@ -22,7 +22,6 @@ WebServSession& WebServSession::operator=(const WebServSession& rhs) {
     if (this == &rhs)
         return *this;
     _sessionId = rhs._sessionId;
-    // _sessionData = rhs._sessionData;
     _lastActivityTime = rhs._lastActivityTime;
     _pathTrail = rhs._pathTrail;
     return *this;

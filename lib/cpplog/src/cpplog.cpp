@@ -14,10 +14,10 @@ CPPLog::Instance CPPLog::instance(Level level, const std::string &scope) {
 
 void CPPLog::log(Level level, const std::string &scope, const std::string &message) {
     if (level < _minLevel)
-		return;
-	if (!_scopes.empty() && _scopes.find(scope) == _scopes.end())
-		return;
-	
+        return;
+    if (!_scopes.empty() && _scopes.find(scope) == _scopes.end())
+        return;
+
     _printPrefix(level, scope);
     _output << message << std::endl;
 }

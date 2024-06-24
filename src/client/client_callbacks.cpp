@@ -1,12 +1,10 @@
 #include <filesystem>
-// #include "httpMessage/cgi_message.hpp"
 #include "client.hpp"
 #include "logging.hpp"
 
 static CPPLog::Instance clientLogI = logOut.instance(CPPLog::Level::INFO, "client");
 static CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "client");
 static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "client");
-// static CPPLog::Instance sessionLogI = logOut.instance(CPPLog::Level::DEBUG, "WebServSession");
 
 void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
     // read from file (if available)
@@ -62,7 +60,6 @@ void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
 }
 
 void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
-    // clientLogI << "_clientReadCb" << CPPLog::end;
     if (ClientState::ERROR == _state)  // if the client is in error state, do not read
         return;
 
@@ -75,7 +72,6 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
     }
 
     clientLogI << "read: " << _clientReadBuffer.size() << " bytes from " << this->_port << CPPLog::end;
-    // clientLogI << "buffer contents: " << _clientReadBuffer.read(_clientReadBuffer.size()) << CPPLog::end;
     if (_clientReadBuffer.size() == 0)  // if the buffer is empty, return
         return;
 

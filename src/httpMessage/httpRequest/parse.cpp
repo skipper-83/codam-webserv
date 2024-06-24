@@ -21,7 +21,7 @@ void httpRequest::parse(Buffer &input, uint16_t port) {
         try {
             _resolvePathAndLocationBlock();
         } catch (const httpRequestException &e) {
-            throw httpRequestException(e.errorNo(), e.codeDescription());
+            throw httpRequestException(e.errorNo(), e.what());
         }
     if (!_methodCheck && this->_location->allowed.methods.find(_httpMethod)->second == false) {
         infoLog << "Method not allowed" << CPPLog::end;

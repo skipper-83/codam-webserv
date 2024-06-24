@@ -147,6 +147,11 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
             infoLog << path << CPPLog::end;
             _path = path;
             _location = &location;
+
+            if (location.redirect.set) { // if the location is a redirect, immediately return the path with a 301 status code.
+                throw(httpRequestException(301, location.redirect.path));
+            }
+
             infoLog << "Client max body size: " << location.clientMaxBodySize.value << " bytes" << CPPLog::end;
             _clientMaxBodySize = location.clientMaxBodySize.value;
 
@@ -172,12 +177,7 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
                  */
                 // if (path[path.size() - 1] != '/')  // if the path does not end with a slash, redirect
                 //     throw(httpRequestException(301, _httpAdress + '/'));
-                if (_location->autoIndex.on) {
-                    infoLog << "Autoindex is on" << CPPLog::end;
-                    _returnAutoIndex = true;
-                    _path = path;
-                    return;
-                }
+               
                 if (!_location->index_vec.empty()) {
                     infoLog << "checking for index files in config" << CPPLog::end;
                     for (auto &rootIndexFile : _location->index_vec) {
@@ -187,9 +187,15 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
                             return;
                         }
                     }
-                    throw(httpRequestException(404, "Directory index file not found, and autoindex is off"));
-                    // }
                 }
+                
+                if (_location->autoIndex.on) {
+                    infoLog << "Autoindex is on" << CPPLog::end;
+                    _returnAutoIndex = true;
+                    _path = path;
+                    return;
+                }
+          
                 infoLog << "No index files found, checking if autoindex is on" << CPPLog::end;
 
                 infoLog << "Autoindex is off, returning 403 Forbidden" << CPPLog::end;

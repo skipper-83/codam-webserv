@@ -67,6 +67,11 @@ struct Cgi {
     AllowedMethods allowed;
 };
 
+struct Redirect {
+    bool set = false;
+    std::string path;
+};
+
 struct Location {
     std::string ref;
     std::string root;
@@ -75,6 +80,7 @@ struct Location {
     std::vector<Cgi> cgis = {};
     BodySize clientMaxBodySize;
     std::vector<std::string> index_vec;
+    Redirect redirect;
     Cgi const* getCgiFromPath(std::string path) const;
 };
 

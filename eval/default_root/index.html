@@ -29,7 +29,7 @@
 		<p>This is the default root page.</p>
 		<p>It is displayed when no file is specified in the URL.</p>
 
-		<p>Here are some other pages you can visit:</p>
+		<h3>Here are some other pages you can visit:</h3>
 		<ul>
 			<li><a href="default_root_submap_no_index">Submap with no index</a></li>
 			<li><a href="default_root_submap">Submap with index</a></li>
@@ -40,7 +40,7 @@
 			<input type="submit" value="POST to server that only accepts POST requests">
 			<input type="hidden" name="data" value="This is a POST request">
 		</form>
-		<p>Some more cgi action</p>
+		<h3>Some more cgi action</h3>
 		<ul>
 			<li><a href="/php/test.php">Test PHP file</a></li>
 			<li>
@@ -66,5 +66,11 @@
 			</li>
 			<li><a href="/php/upload_test.php">Upload a file</a></li>
 			<li><a href="#" onclick="sendDeleteRequest()">Delete deleteme.txt</a></li>
+		</ul>
+		<h3>Some cookie action</h3>
+		<ul>
+			<li><a href="/php/cookie_test.php">Test PHP cookie</a></li>
+			<li><a href="/php/cookie_test.php?delete=true">Delete PHP cookie</a></li>
+			<li><a href="/php/dark_mode.php">Set dark mode</a></li>
 		</ul>
 </html>

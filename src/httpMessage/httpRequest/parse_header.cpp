@@ -187,7 +187,7 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
                             return;
                         }
                     }
-                    throw httpRequestException(404, "cannot find index file in directory");
+                    throw httpRequestException(404, "No directory index, and autoindex is off");
                 }
 
                 if (_location->autoIndex.on) {

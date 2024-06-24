@@ -1,6 +1,28 @@
 <html>
 	<head>
 		<title>Default Root</title>
+		<script>
+			async function sendDeleteRequest() {
+	
+			
+	
+				// Send the DELETE request
+				try {
+					const response = await fetch(`uploads/deleteme.txt`, {
+						method: 'DELETE',
+					});
+	
+					if (response.ok) {
+						alert('Item deleted successfully!');
+					} else {
+						alert('Failed to delete item.');
+					}
+				} catch (error) {
+					console.error('Error:', error);
+					alert('An error occurred while trying to delete the item.');
+				}
+			}
+		</script>
 	</head>
 	<body>
 		<h1>Default Root</h1>
@@ -21,13 +43,28 @@
 		<p>Some more cgi action</p>
 		<ul>
 			<li><a href="/php/test.php">Test PHP file</a></li>
-			<li>Post to a php page
+			<li>
 				<form id="postForm" action="/php/test.php" method="POST">
-					<label for="data">Enter Data:</label><br>
+					<label for="data">Post to a php page</label><br>
+					<textarea id="data" name="data" rows="4" cols="50"></textarea><br><br>
+					<input type="submit" value="Submit">
+				  </form>
+			</li>
+			<li>
+				<form id="postForm" action="python/python_post.py" method="POST">
+					<label for="data">Post to a python page</label><br>
+					<textarea id="data" name="data" rows="4" cols="50"></textarea><br><br>
+					<input type="submit" value="Submit">
+				  </form>
+			</li>
+			<li>
+				<form id="postForm" action="python-with-maxbody/python_post.py" method="POST">
+					<label for="data">Post to a python with a limit of 10</label><br>
 					<textarea id="data" name="data" rows="4" cols="50"></textarea><br><br>
 					<input type="submit" value="Submit">
 				  </form>
 			</li>
 			<li><a href="/php/upload_test.php">Upload a file</a></li>
+			<li><a href="#" onclick="sendDeleteRequest()">Delete deleteme.txt</a></li>
 		</ul>
 </html>

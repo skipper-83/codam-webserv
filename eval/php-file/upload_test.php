@@ -1,6 +1,6 @@
 <?php
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["file"])) {
-    $targetDir = "/Users/albertvanandel/Documents/CODAM/webserv/webroot/uploads/";
+    $targetDir = "../uploads/";
     $targetFile = $targetDir . basename($_FILES["file"]["name"]);
     $uploadOk = 1;
     $fileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
@@ -30,8 +30,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["file"])) {
     }
 
     // Allow certain file formats
-    if ($fileType != "jpg" && $fileType != "png" && $fileType != "jpeg" && $fileType != "gif" && $fileType != "php") {
-        echo "Sorry, only JPG, JPEG, PNG & GIF files are allowed.";
+    if ($fileType != "jpg" && $fileType != "png" && $fileType != "jpeg" && $fileType != "gif"  && $fileType != "txt") {
+        echo "Sorry, only JPG, JPEG, PNG, GIF and TXT files are allowed.";
         $uploadOk = 0;
     }
 

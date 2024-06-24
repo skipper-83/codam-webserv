@@ -1,6 +1,6 @@
 <?php 
-echo "hello world\n\n"; 
 header("Content-Type: text/html");
+echo "hello world\n\n"; 
 var_dump(headers_list());
 
 echo "<h3>Server Variables</h3>";

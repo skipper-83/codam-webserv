@@ -248,6 +248,12 @@ size_t AsyncProgram::write(std::string &data) {
     return _pipeWriteFD->write(data);
 }
 
+size_t AsyncProgram::write(const char *data, ssize_t length) {
+    logD << "AsyncProgram::write(const char*, ssize_t) called";
+
+    return _pipeWriteFD->write(data, length);
+}
+
 bool AsyncProgram::hasPendingRead() {
     logD << "AsyncProgram::hasPendingRead() called";
 

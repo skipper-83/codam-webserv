@@ -15,6 +15,7 @@ class AsyncOutput : virtual public AsyncFD {
 	AsyncOutput& operator=(AsyncOutput&&) = delete;
 
 	size_t write(std::string & data);
+	size_t write(const char* data, ssize_t length = -1);
 	bool hasPendingWrite() const;
 
    protected:

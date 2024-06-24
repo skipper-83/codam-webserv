@@ -118,11 +118,10 @@ void cgiMessage::_cgiWriteCb(AsyncProgram& cgi) {
     // (void)_writeBuffer;
     (void)cgi;
     int bytesWritten;
-    std::string writeChunk;
     if (_request && _request->getMethod() == WebServUtil::HttpMethod::POST && _writeCounter < _request->getBodyLength()) {
         infoLog << "Writing body to cgi, counter is at: " << _writeCounter << CPPLog::end;
-        writeChunk = _request->getBody().substr(_writeCounter, DEFAULT_WRITE_SIZE);
-        bytesWritten = cgi.write(writeChunk);
+        std::string body = _request->getBody();
+        bytesWritten = cgi.write(body.c_str() + _writeCounter, body.size() - _writeCounter);
         if (bytesWritten < 0) {
             fatalLog << "Error writing to cgi" << CPPLog::end;
             cgi.kill();

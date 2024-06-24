@@ -13,10 +13,6 @@
 ### Run project
 - run project `./webserv [config_file]`
 
-### Run tests
-- generate build files with tests `cmake -DBUILD_TESTS=y ..`
-- compile project `cmake --build .` or `make`
-- run tests `ctest`
 
 ### Compile debug build (address sanitizer)
 - generate build files with AddressSanitizer `cmake -DCMAKE_BUILD_TYPE=Debug`

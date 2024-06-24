@@ -19,7 +19,6 @@ Client::Client(std::shared_ptr<AsyncSocketClient>& socketFd, std::function<void(
                WebServSessionList& sessionList)
     : _response(&this->_request), _sessionList(sessionList), _socketFd(socketFd), _addLocalFdToPollArray(addLocalFdToPollArray) {
     this->_port = this->_socketFd->getPort();
-    // this->_request.setServer(mainConfig, this->_port);
     _registerCallbacks();
 }
 
@@ -66,7 +65,7 @@ uint16_t Client::port() const {
 void Client::changeState(ClientState newState) {
     _state = newState;
     setLastActivityTime();
-    clientLogI << "Time changed" << CPPLog::end;
+    // clientLogI << "Time changed" << CPPLog::end;
 }
 
 void Client::setLastActivityTime() {

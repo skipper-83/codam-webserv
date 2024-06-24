@@ -17,7 +17,7 @@
 #define DEFAULT_READ_SIZE 6000000
 #define DEFAULT_WRITE_SIZE 6000000
 #define DEFAULT_MAX_WRITE_SIZE 32768
-#define DEFAULT_TIMEOUT_SECONDS 40
+#define DEFAULT_TIMEOUT_SECONDS 30
 #define DEFAULT_FD_BACKLOG_SIZE 150
 #define DEFAULT_LOCAL_FILE_READBUFFER 60000
 #define DEFAULT_ALLOWED_METHODS                                                                                                        \
@@ -47,14 +47,6 @@ struct AllowedMethods {
     bool defaultValue = true;
 };
 
-struct Location {
-    std::string ref;
-    std::string root;
-    AllowedMethods allowed;
-    BodySize clientMaxBodySize;
-    std::vector<std::string> index_vec;
-};
-
 struct ServerNames {
     std::vector<std::string> name_vec;
 };
@@ -75,6 +67,23 @@ struct Cgi {
     AllowedMethods allowed;
 };
 
+struct Redirect {
+    bool set = false;
+    std::string path;
+};
+
+struct Location {
+    std::string ref;
+    std::string root;
+    AllowedMethods allowed;
+    AutoIndex autoIndex;
+    std::vector<Cgi> cgis = {};
+    BodySize clientMaxBodySize;
+    std::vector<std::string> index_vec;
+    Redirect redirect;
+    Cgi const* getCgiFromPath(std::string path) const;
+};
+
 class ServerConfig {
    public:
     ServerNames names;
@@ -88,7 +97,6 @@ class ServerConfig {
     int rank;  // deprecated, used for sorting, still used in tests
 
     std::string getErrorPage(int errorCode) const;
-    Cgi const* getCgiFromPath(std::string path) const;
 
    private:
     void sortLocations(void);
@@ -105,6 +113,7 @@ class MainConfig {
     std::unordered_map<uint16_t, ServerConfig*> _portsToServers;
     std::map<std::pair<uint16_t, std::string>, ServerConfig*> _portsNamesToServers;
     std::vector<uint16_t> _ports;
+    std::string _configPath;
     void _overrideDefaults(void);
     void _setServerNameAndPortArrays(void);
 
@@ -115,6 +124,8 @@ class MainConfig {
     const ServerConfig* getServerFromPortAndName(uint16_t port, std::string name);
     const ServerConfig* getServer(uint16_t port, std::string name);
     const std::vector<uint16_t>& getPorts(void);
+    void setConfigPath(std::string const& path);
+    std::string const& getConfigPath() const { return _configPath; }
 
     friend std::istream& operator>>(std::istream& is, ErrorPage& rhs);
     friend std::istream& operator>>(std::istream& is, AllowedMethods& rhs);

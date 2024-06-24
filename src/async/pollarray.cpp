@@ -64,7 +64,7 @@ void AsyncPollArray::poll(int timeout) {
     if (ret == 0) {
         return;
     }
-    
+
     std::list<std::weak_ptr<AsyncFD>>::iterator wfdIt;
     std::vector<pollfd>::iterator pfdIt;
     for (wfdIt = _weakFDs.begin(), pfdIt = pollfds.begin(); wfdIt != _weakFDs.end() && pfdIt != pollfds.end(); ++wfdIt, ++pfdIt) {
@@ -74,7 +74,7 @@ void AsyncPollArray::poll(int timeout) {
                 if (!fd)
                     continue;
                 auto cbIt = fd->_eventCallbacks.find(eventType);
-                if (cbIt == fd->_eventCallbacks.end()) 
+                if (cbIt == fd->_eventCallbacks.end())
                     continue;
                 cbIt->second(*fd);
             }

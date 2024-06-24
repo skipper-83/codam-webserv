@@ -33,7 +33,6 @@ void mainClientAvailableCb(AsyncSocket& socket, AsyncPollArray& pollArray, std::
         sessionList);
     mainLogI << "adding client to pollArray" << CPPLog::end;
     pollArray.add(newSocketClient);
-    // usleep(5000);
 }
 
 void parseConfig(int argc, char** argv) {
@@ -44,8 +43,8 @@ void parseConfig(int argc, char** argv) {
 
     if (!file)
         throw std::runtime_error(std::string("failed to open config file: ") + argv[1]);
-
     try {
+        mainConfig.setConfigPath(std::filesystem::absolute(argv[1]));
         file >> mainConfig;
     } catch (const std::exception& e) {
         logOut.stream(CPPLog::Level::FATAL, "parseConfig") << e.what();
@@ -85,7 +84,6 @@ int main(int argc, char** argv) {
 
     while (true) {
         pollArray.poll(5);
-        // mainLogI << "client array size " << clientsList.size() << CPPLog::end;
         clientsList.erase(std::remove_if(clientsList.begin(), clientsList.end(),
                                          [](const Client& client) {
                                              std::chrono::time_point<std::chrono::steady_clock> now = std::chrono::steady_clock::now();
@@ -107,6 +105,5 @@ int main(int argc, char** argv) {
                                          }),
                           clientsList.end());
         sessionList.removeExpiredSessions(std::chrono::steady_clock::now());
-        // usleep(1000);
     }
 }

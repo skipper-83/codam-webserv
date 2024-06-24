@@ -8,9 +8,11 @@ static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "cl
 void Client::_buildResponse() {
     // If the request is for a CGI script, execute the script
     Cgi const* cgi;
-    if ((cgi = _request.getServer()->getCgiFromPath(_request.getPath())) && cgi->allowed.methods.find(_request.getMethod())->second) {
-        clientLogI << "CGI request: " << _request.getPath() << "; executor: " << cgi->executor << CPPLog::end;
+    if ((cgi = _request.getLocation()->getCgiFromPath(_request.getPath())) && cgi->allowed.methods.find(_request.getMethod())->second) {
+        clientLogI << "CGI request: " << std::filesystem::absolute(_request.getPath()) << "; executor: " << cgi->executor << CPPLog::end;
         try {
+            if (std::filesystem::exists(cgi->executor) == false)
+                throw std::runtime_error("CGI executor not found");
             _cgiMessage = std::make_shared<cgiMessage>(cgi->executor, &_request, _addLocalFdToPollArray);
         } catch (const std::exception& e) {
             clientLogE << "_clientReadCb: " << e.what() << CPPLog::end;
@@ -22,20 +24,18 @@ void Client::_buildResponse() {
 
     // If the request is for a directory, return the directory index
     if (_request.returnAutoIndex()) {
-		try
-		{
-        	_response.setFixedSizeBody(WebServUtil::directoryIndexList(this->_request.getPath(), _request.getAdress()));
-		}
-		catch(const std::exception& e)
-		{
-			clientLogE << "_buildResponse: " << e.what() << CPPLog::end;
-			_returnHttpErrorToClient(500);
-		}
-		
+        try {
+            _response.setFixedSizeBody(WebServUtil::directoryIndexList(this->_request.getPath(), _request.getAdress()));
+        } catch (const std::exception& e) {
+            clientLogE << "_buildResponse: " << e.what() << CPPLog::end;
+            _returnHttpErrorToClient(500);
+            return;
+        }
+
         _response.setHeader("Content-Type", "text/html; charset=UTF-8");
         _response.setCode(200);
         _clientWriteBuffer = _response.getFixedBodyResponseAsString();
-        _request.clear();
+        _request.clear(this->_clientReadBuffer);
         return;
     }
 
@@ -53,13 +53,15 @@ void Client::_buildResponse() {
             break;
         }
         case WebServUtil::HttpMethod::DELETE: {
-            if (std::remove(_request.getPath().c_str()) != 0)
+            if (std::remove(_request.getPath().c_str()) != 0) {
                 _returnHttpErrorToClient(500);
+                break;
+            }
             _response.setCode(200);
             _response.setHeader("Content-Type", "text/html; charset=UTF-8");
             _response.setFixedSizeBody("File " + _request.getAdress() + " deleted");
             _clientWriteBuffer = _response.getFixedBodyResponseAsString();
-            _request.clear();
+            _request.clear(this->_clientReadBuffer);
             break;
         }
         case WebServUtil::HttpMethod::OPTIONS: {

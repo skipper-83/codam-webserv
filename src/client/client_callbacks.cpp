@@ -1,12 +1,11 @@
 #include <filesystem>
-// #include "httpMessage/cgi_message.hpp"
+
 #include "client.hpp"
 #include "logging.hpp"
 
 static CPPLog::Instance clientLogI = logOut.instance(CPPLog::Level::INFO, "client");
 static CPPLog::Instance clientLogW = logOut.instance(CPPLog::Level::WARNING, "client");
 static CPPLog::Instance clientLogE = logOut.instance(CPPLog::Level::WARNING, "client");
-// static CPPLog::Instance sessionLogI = logOut.instance(CPPLog::Level::DEBUG, "WebServSession");
 
 void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
     // read from file (if available)
@@ -53,15 +52,15 @@ void Client::_clientWriteCb(AsyncSocketClient& asyncSocketClient) {
             clientLogI << "Closing connection by request" << CPPLog::end;
         }
         this->_response.clear();
-        this->_request.clear();
+        this->_request.clear(this->_clientReadBuffer);
         _inputFile = nullptr;
         _bytesWrittenCounter = 0;
         clientLogI << "_clientWriteCb: client ready for input" << CPPLog::end;
         changeState(ClientState::READY_FOR_INPUT);
     }
 }
+
 void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
-    // clientLogI << "_clientReadCb" << CPPLog::end;
     if (ClientState::ERROR == _state)  // if the client is in error state, do not read
         return;
 
@@ -74,7 +73,6 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
     }
 
     clientLogI << "read: " << _clientReadBuffer.size() << " bytes from " << this->_port << CPPLog::end;
-    clientLogI << "buffer contents: " << _clientReadBuffer << CPPLog::end;
     if (_clientReadBuffer.size() == 0)  // if the buffer is empty, return
         return;
 
@@ -84,11 +82,13 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
         changeState(ClientState::READ_REQUEST);
         this->_request.parse(this->_clientReadBuffer, this->_port);
     } catch (const httpRequest::httpRequestException& e) {
+        clientLogI << "Error catched, code is " << e.errorNo() << " description is " << e.codeDescription() << " what() is " << e.what();
         this->_returnHttpErrorToClient(e.errorNo(), e.what());
     }
 
     // If the header is not complete and the buffer is too large, return 413
     if (!this->_request.headerComplete() && _clientReadBuffer.size() > DEFAULT_MAX_HEADER_SIZE) {
+        clientLogI << "Header too large";
         this->_returnHttpErrorToClient(413);
     }
 

@@ -3,6 +3,7 @@
 
 // CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::DEBUG, "parse config");
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "parse config");
+extern MainConfig mainConfig;
 
 /**
  * @brief  Used if input is expected on single line (ie: [listen 8080;\n])
@@ -119,6 +120,125 @@ std::istream& operator>>(std::istream& is, ServerNames& rhs) {
 };
 
 /**
+ * @brief Extractor for client_max_body_size
+ *
+ * @param is
+ * @param rhs
+ * @return std::istream&
+ */
+std::istream& operator>>(std::istream& is, BodySize& rhs) {
+    double num;
+    // int	multiplier = 1;
+    std::stringstream lineStream;
+    std::string line, size, sizeNames = "kmg";
+    std::map<char, int> sizes = {{'b', 1}, {'k', 1000}, {'m', 1000000}, {'g', 1000000000}};
+
+    checkTerminator(is, line, "client_max_body_size");
+    lineStream.str(line);
+    lineStream >> num >> size;
+    infoLog << "num: " << num;
+    if (!lineStream) {
+        throw(std::invalid_argument("Invalid value for client_max_body_size"));
+    }
+    if (size[0] != ';' && !sizes[size[0]]) {
+        throw(std::invalid_argument("Invalid size type for client_max_body_size. Allowed: g, m, k, b or no identifier"));
+    }
+    if (size[0] != ';') {
+        num *= sizes[size[0]];
+    }
+    rhs.value = num;
+    rhs.defaultValue = false;
+    return is;
+}
+
+/**
+ * @brief Extractor for listenport
+ *
+ * @param is
+ * @param rhs
+ * @return std::istream&
+ */
+std::istream& operator>>(std::istream& is, ListenPort& rhs) {
+    int num;
+    std::stringstream lineStream;
+    std::string line, word;
+
+    checkTerminator(is, line, "listen");
+    lineStream.str(line);
+    lineStream >> num;
+    if (!lineStream || num < 0 || num > 65535)
+        throw(std::invalid_argument("Invalid value for port"));
+    lineStream >> word;
+    if (word.find_first_not_of(";") != std::string::npos)
+        throw(std::invalid_argument("Invalid value for port"));
+    rhs.value = num;
+    infoLog << "ListenPort set for " << num << CPPLog::end;
+    return is;
+}
+
+std::istream& operator>>(std::istream& is, Redirect& rhs) {
+    std::string line, word;
+    std::stringstream lineStream;
+
+    checkTerminator(is, line, "redirect");
+    // chop off the terminator
+    infoLog << "redirect line before: [" << line << "]";
+    lineStream.str(line);
+    lineStream >> word;
+    if (word.find(";") != std::string::npos)
+        word = word.substr(0, line.size() - 2);
+
+    infoLog << "redirect word: " << word;
+    rhs.path = word;
+    rhs.set = true;
+    return is;
+}
+
+std::istream& operator>>(std::istream& is, Cgi& rhs) {
+    std::string line, word;
+    std::stringstream lineStream;
+    bool methodSet = false;
+
+    infoLog << "Cgi extractor" << CPPLog::end;
+    checkTerminator(is, line, "cgi");
+    lineStream.str(line);
+    while (lineStream >> word) {
+        infoLog << "Word: " << word << CPPLog::end;
+        if (!lineStream)
+            throw(std::invalid_argument("Unexpected input for cgi"));
+        if (word.find(';') != std::string::npos) {
+            if (word.length() > 1)
+                word = word.substr(0, word.length() - 1);
+        }
+        if (word[0] == '.' && word[1] != '/')
+            rhs.extensions.push_back(word);
+        else {
+            if (rhs.extensions.size() < 1)
+                throw(std::invalid_argument("No extensions given for cgi"));
+            if (word.find(';') != std::string::npos)
+                word = word.substr(0, word.length() - 1);
+            if (WebServUtil::stringToHttpMethod(word) != WebServUtil::HttpMethod::UNKNOWN) {
+                infoLog << "Method: " << word << CPPLog::end;
+                rhs.allowed.methods[WebServUtil::stringToHttpMethod(word)] = true;
+                methodSet = true;
+            } else {
+                infoLog << "setting executor: " << word;
+                rhs.executor = word;
+                if (rhs.executor[0] != '/' && rhs.executor[0] != '.')
+                    throw(std::invalid_argument("Cgi executor must be an absolute or relative path: " + word));
+                if (rhs.executor[0] == '.')
+                    rhs.executor = mainConfig.getConfigPath() + rhs.executor.substr(1, rhs.executor.size() - 1);
+                if (!std::filesystem::exists(rhs.executor))
+                    throw(std::invalid_argument("Cgi executor does not exist: " + word));
+            }
+        }
+    }
+    if (!methodSet)
+        throw(std::invalid_argument("Please set at least one method for this CGI"));
+    return is;
+}
+
+/**
  * @brief Helper for Server extraction operator. Called when [root] is encountered by
  * 		the location extraction operator. Currently only checks for terminator and
  * 		extraction error.
@@ -130,7 +250,7 @@ std::istream& operator>>(std::istream& is, ServerNames& rhs) {
 static void setLocationRoot(std::istream& is, Location& rhs) {
     std::string word;
 
-    is >> rhs.root;  // todo: check this stuff ?
+    is >> rhs.root;
     if (!is)
         throw(std::invalid_argument("Incorrect input for location root"));
     if (rhs.root[rhs.root.size() - 1] == ';')
@@ -142,9 +262,15 @@ static void setLocationRoot(std::istream& is, Location& rhs) {
         if (word.find(';') == std::string::npos)
             throw(std::invalid_argument("Missing terminating ; after root"));
     }
-    // infoLog << "root last char []"
+    if (rhs.root[0] != '.' && rhs.root[0] != '/')
+        throw(std::invalid_argument("Please supply absolute path or relative path starting with '.', not: [" + word + "]"));
     if (rhs.root[rhs.root.size() - 1] != '/')
         rhs.root += '/';
+    if (rhs.root[0] != '/')
+        rhs.root = mainConfig.getConfigPath() + rhs.root.substr(rhs.root.find_first_of('/'), rhs.root.size() - 1);
+    if (!std::filesystem::exists(rhs.root))
+        throw(std::invalid_argument("Path [" + rhs.root + "] does not exist"));
+
     infoLog << "root set to " << rhs.root << CPPLog::end;
 }
 
@@ -178,38 +304,6 @@ static void setLocationIndex(std::istream& is, Location& rhs) {
 }
 
 /**
- * @brief Extractor for client_max_body_size
- *
- * @param is
- * @param rhs
- * @return std::istream&
- */
-std::istream& operator>>(std::istream& is, BodySize& rhs) {
-    double num;
-    // int	multiplier = 1;
-    std::stringstream lineStream;
-    std::string line, size, sizeNames = "kmg";
-    std::map<char, int> sizes = {{'b', 1}, {'k', 1000}, {'m', 1000000}, {'g', 1000000000}};
-
-    checkTerminator(is, line, "client_max_body_size");
-    lineStream.str(line);
-    lineStream >> num >> size;
-    infoLog << "num: " << num;
-    if (!lineStream) {
-        throw(std::invalid_argument("Invalid value for client_max_body_size"));
-    }
-    if (size[0] != ';' && !sizes[size[0]]) {
-        throw(std::invalid_argument("Invalid size type for client_max_body_size. Allowed: g, m, k, b or no identifier"));
-    }
-    if (size[0] != ';') {
-        num *= sizes[size[0]];
-    }
-    rhs.value = num;
-    rhs.defaultValue = false;
-    return is;
-}
-
-/**
  * @brief Location extractor overload. Extracts the referrer (the URI after the location keyword)
  * 		and calls setLocationIndex() and/or setLocationRoot() for indices and root respectively
  *
@@ -222,7 +316,14 @@ std::istream& operator>>(std::istream& is, Location& rhs) {
     SubParsers subParsers = {{"root", [&rhs](std::istream& is) { setLocationRoot(is, rhs); }},
                              {"index", [&rhs](std::istream& is) { setLocationIndex(is, rhs); }},
                              {"allowed_methods", [&rhs](std::istream& is) { is >> rhs.allowed; }},
-                             {"client_max_body_size", [&rhs](std::istream& is) { is >> rhs.clientMaxBodySize; }}};
+                             {"client_max_body_size", [&rhs](std::istream& is) { is >> rhs.clientMaxBodySize; }},
+                             {"autoindex", [&rhs](std::istream& is) { is >> rhs.autoIndex; }},
+                             {"redirect", [&rhs](std::istream& is) { is >> rhs.redirect; }},
+                             {"cgi", [&rhs](std::istream& is) {
+                                  Cgi new_cgi;
+                                  is >> new_cgi;
+                                  rhs.cgis.push_back(new_cgi);
+                              }}};
 
     is >> rhs.ref >> word;
     if (!is || rhs.ref.find('{') != std::string::npos)
@@ -234,7 +335,7 @@ std::istream& operator>>(std::istream& is, Location& rhs) {
         if (!is)
             throw(std::invalid_argument("Wrong input for location"));
         else if (word.find('}') != std::string::npos) {
-            if (rhs.root == "")
+            if (rhs.root == "" && !rhs.redirect.set)
                 throw(std::invalid_argument("No root for location"));
             break;
         } else if (subParsers[word])
@@ -243,68 +344,6 @@ std::istream& operator>>(std::istream& is, Location& rhs) {
             throw(std::invalid_argument("Nested location blocks are not allowed"));
         else
             throw(std::invalid_argument("Unexpected input for location: " + word));
-    }
-    return is;
-}
-
-/**
- * @brief Extractor for listenport
- *
- * @param is
- * @param rhs
- * @return std::istream&
- */
-std::istream& operator>>(std::istream& is, ListenPort& rhs) {
-    int num;
-    std::stringstream lineStream;
-    std::string line, word;
-
-    checkTerminator(is, line, "listen");
-    lineStream.str(line);
-    lineStream >> num;
-    if (!lineStream || num < 0 || num > 65535)
-        throw(std::invalid_argument("Invalid value for port"));
-    lineStream >> word;
-    if (word.find_first_not_of(";") != std::string::npos)
-        throw(std::invalid_argument("Invalid value for port"));
-    rhs.value = num;
-    infoLog << "ListenPort set for " << num << CPPLog::end;
-    return is;
-}
-
-std::istream& operator>>(std::istream& is, Cgi& rhs) {
-    // TODO: insert return statement here
-    std::string line, word;
-    std::stringstream lineStream;
-
-    infoLog << "Cgi extractor" << CPPLog::end;
-    checkTerminator(is, line, "cgi");
-    lineStream.str(line);
-    while (lineStream >> word) {
-        infoLog << "Word: " << word << CPPLog::end;
-        if (!lineStream)
-            throw(std::invalid_argument("Unexpected input for cgi"));
-        if (word.find(';') != std::string::npos) {
-            if (word.length() > 1)
-                word = word.substr(0, word.length() - 1);
-        }
-        if (word[0] == '.' && word[1] != '/')
-            rhs.extensions.push_back(word);
-        else {
-            if (rhs.extensions.size() < 1)
-                throw(std::invalid_argument("No extensions given for cgi"));
-            if (word.find(';') != std::string::npos)
-                word = word.substr(0, word.length() - 1);
-            if (WebServUtil::stringToHttpMethod(word) != WebServUtil::HttpMethod::UNKNOWN) {
-                infoLog << "Method: " << word << CPPLog::end;
-                rhs.allowed.methods[WebServUtil::stringToHttpMethod(word)] = true;
-            } else
-            {
-                infoLog << "setting executor: " << word;
-                rhs.executor = word;
-            }
-            // break;
-        }
     }
     return is;
 }

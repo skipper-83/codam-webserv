@@ -41,6 +41,8 @@ void httpResponse::extractHeaders(const httpMessage* message) {
 }
 
 void httpResponse::setCode(int code) {
+    if (_responseCode > -1) // don't overwrite a code that has already been set
+        return;
     this->_responseCodeDescription = WebServUtil::codeDescription(code);
     this->_responseCode = code;
     if ((this->_responseCode >= 400 && this->_responseCode <= 599) || this->_responseCode == 999)

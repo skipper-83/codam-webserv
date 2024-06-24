@@ -7,19 +7,23 @@
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpRequest header parser");
 static CPPLog::Instance warningLog = logOut.instance(CPPLog::Level::WARNING, "httpRequest header parser");
 
-void httpRequest::parseHeader(std::istream &fs) {
-    _parseHttpStartLine(fs);
-    _parseHttpHeaders(fs);
+void httpRequest::parseHeader(Buffer &input) {
+    _parseHttpStartLine(input);
+    _parseHttpHeaders(input);
     this->_headerParseComplete = true;
     infoLog << "Request header parse succesfully";
 }
 
-void httpRequest::_parseHttpStartLine(std::istream &fs) {
+void httpRequest::_parseHttpStartLine(Buffer &input) {
     std::string line;
 
-    line = _getLineWithCRLF(fs);
-    while (fs && line.empty()) // skip empty lines before request
-        line = _getLineWithCRLF(fs);
+    infoLog << "Buffer: " << input.read(input.size());
+    while (line.empty())  // skip empty lines before request
+    {
+        infoLog << "empty line";
+        if (!input.getCRLFLine(line))
+            return;  // no line to parse
+    }
     std::string::size_type request_type_pos, address_pos;
     infoLog << "Parsing Start Line: [" << line << "]";
     static const std::regex http_startline_pattern(
@@ -41,16 +45,20 @@ void httpRequest::_parseHttpStartLine(std::istream &fs) {
     return;
 }
 
-void httpRequest::_parseHttpHeaders(std::istream &fs) {
+void httpRequest::_parseHttpHeaders(Buffer &input) {
     std::string line;
     std::pair<std::string, std::string> key_value;
+    int lineParsed = 0;
 
-    while (fs) {
-        line = _getLineWithCRLF(fs);
-        if (line.empty())
+    while ((lineParsed = input.getCRLFLine(line))) {
+        if (line.empty()) {
+            infoLog << "Empty line, end of headers" << CPPLog::end;
             break;
+        }
         try {
+            infoLog << "Parsing header line: " << line << CPPLog::end;
             key_value = _parseHeaderLine(line);
+            line.clear();
         } catch (const std::exception &e) {
             throw httpRequestException(400, "Invalid HTTP header");
         }
@@ -60,6 +68,8 @@ void httpRequest::_parseHttpHeaders(std::istream &fs) {
         }
         infoLog << "Header: " << key_value.first << ": " << key_value.second << CPPLog::end;
     }
+    if (!lineParsed)  // no line to parse
+        return;
     _checkHttpHeaders();
     _setVars();
     return;
@@ -123,20 +133,31 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
 
     _pathSet = true;
     infoLog << "Resolving path for " << this->_httpAdress << CPPLog::end;
-	std::string locationResolvePath = this->_httpAdress;
-	   if (locationResolvePath.find('.') == std::string::npos && locationResolvePath[locationResolvePath.size() - 1] != '/')  //
+    std::string locationResolvePath = this->_httpAdress;
+    if (locationResolvePath.find('.') == std::string::npos && locationResolvePath[locationResolvePath.size() - 1] != '/')  //
         locationResolvePath += '/';
-	
+
     for (auto &location : this->_server->locations) {
         if (location.ref == locationResolvePath.substr(0, location.ref.size())) {
             infoLog << "Matched location: " << location.ref << CPPLog::end;
-			if (_httpAdress.size() > location.ref.size())
-				path = location.root + this->_httpAdress.substr(location.ref.size(), this->_httpAdress.size());
-			else
-				path = location.root;
+            if (_httpAdress.size() > location.ref.size())
+                path = location.root + this->_httpAdress.substr(location.ref.size(), this->_httpAdress.size());
+            else
+                path = location.root;
             infoLog << path << CPPLog::end;
             _path = path;
             _location = &location;
+
+            if (location.redirect.set) {  // if the location is a redirect, immediately return the path with a 301 status code.
+                throw(httpRequestException(301, location.redirect.path));
+            }
+
+            if (this->_location->allowed.methods.find(_httpMethod)->second == false)
+                throw(httpRequestException(405, "Method Not Allowed"));
+    //     infoLog << "Method not allowed" << CPPLog::end;
+    //     throw httpRequestException(405, "Method Not Allowed");
+    // }
+
             infoLog << "Client max body size: " << location.clientMaxBodySize.value << " bytes" << CPPLog::end;
             _clientMaxBodySize = location.clientMaxBodySize.value;
 
@@ -145,42 +166,44 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
             Cgi const *cgi;
             if (!std::filesystem::exists(_path) &&
                 !(_httpMethod == WebServUtil::HttpMethod::PUT) &&  // if the file does not exist and the method is not PUT
-                ((cgi = this->_server->getCgiFromPath(_path)) == nullptr ||
+                ((cgi = this->_location->getCgiFromPath(_path)) == nullptr ||
                  cgi->allowed.methods.find(_httpMethod) == cgi->allowed.methods.end())) {  // and the path is not a cgi
                 infoLog << "File not found, returning 404: " << _path << CPPLog::end;
                 throw(httpRequestException(404, "File not found"));
             }
             if (std::filesystem::is_directory(_path)) {
                 infoLog << "Path is a directory, request: [" << _httpAdress << "] ref: [" << _location->ref << "]" << CPPLog::end;
-				if (_httpAdress[_httpAdress.size() - 1] != '/')
-				{  //
-        			_httpAdress += '/';
-					_path += '/';
-				}
+                if (_httpAdress[_httpAdress.size() - 1] != '/') {  //
+                    _httpAdress += '/';
+                    _path += '/';
+                }
 
                 /*
                  * I used to throw a redirect here, but the intra tester expects the server to add a trailing slash to the path
                  */
                 // if (path[path.size() - 1] != '/')  // if the path does not end with a slash, redirect
                 //     throw(httpRequestException(301, _httpAdress + '/'));
-                if (_server->autoIndex.on) {
-                    infoLog << "Autoindex is on" << CPPLog::end;
-                    _returnAutoIndex = true;
-                    _path = path;
-                    return;
-                }
+
                 if (!_location->index_vec.empty()) {
                     infoLog << "checking for index files in config" << CPPLog::end;
                     for (auto &rootIndexFile : _location->index_vec) {
-                            infoLog << "checking" << _path + rootIndexFile;
+                        infoLog << "checking" << _path + rootIndexFile;
                         if (std::filesystem::exists(_path + rootIndexFile)) {
                             _path = _path + rootIndexFile;
                             return;
                         }
                     }
-                    throw(httpRequestException(404, "Directory index file not found, and autoindex is off"));
-                    // }
+                    if (!_location->autoIndex.on)
+                        throw httpRequestException(404, "No directory index, and autoindex is off");
                 }
+
+                if (_location->autoIndex.on) {
+                    infoLog << "Autoindex is on" << CPPLog::end;
+                    _returnAutoIndex = true;
+                    _path = path;
+                    return;
+                }
+
                 infoLog << "No index files found, checking if autoindex is on" << CPPLog::end;
 
                 infoLog << "Autoindex is off, returning 403 Forbidden" << CPPLog::end;

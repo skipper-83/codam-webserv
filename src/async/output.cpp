@@ -1,5 +1,7 @@
 #include "async/output.hpp"
+
 #include <unistd.h>
+
 #include <cstring>
 #include <logging.hpp>
 
@@ -38,28 +40,43 @@ AsyncOutput::~AsyncOutput() {
     logD << "AsyncOutput::~AsyncOutput() called";
 }
 
-size_t AsyncOutput::write(std::string &data) {
-    logD << "AsyncOutput::write(const std::string&) called";
+size_t AsyncOutput::write(const char *data, ssize_t length) {
+    logD << "AsyncOutput::write(const char*, ssize_t) called";
 
     if (!_hasPendingWrite) {
-        logW << "AsyncOutput::write(const std::string&) called without pending write";
+        logW << "AsyncOutput::write(const char*, ssize_t) called without pending write";
         return 0;
     }
 
-    if (data.empty()) {
-        logW << "AsyncOutput::write(const std::string&) called with empty data";
+    if (!data) {
+        logW << "AsyncOutput::write(const char*, ssize_t) called with null data";
+        return 0;
+    }
+
+    if (length < 0) {
+        length = std::strlen(data);
+    }
+
+    if (length == 0) {
+        logW << "AsyncOutput::write(const char*, ssize_t) called with empty data";
         return 0;
     }
 
     _hasPendingWrite = false;
 
-    ssize_t bytesWritten = ::write(_fd, data.data(), data.size());
+    ssize_t bytesWritten = ::write(_fd, data, length);
     if (bytesWritten < 0) {
-        logE << "AsyncOutput::write(const std::string&) failed: " << std::strerror(errno);
+        logE << "AsyncOutput::write(const char*, ssize_t) failed: " << std::strerror(errno);
         throw std::runtime_error(std::strerror(errno));
     }
 
     return static_cast<size_t>(bytesWritten);
+}
+
+size_t AsyncOutput::write(std::string &data) {
+    logD << "AsyncOutput::write(const std::string&) called";
+
+    return write(data.data(), data.size());
 }
 
 bool AsyncOutput::hasPendingWrite() const {
@@ -69,7 +86,6 @@ bool AsyncOutput::hasPendingWrite() const {
 }
 
 void AsyncOutput::_internalOutCb(AsyncFD &fd) {
-    // logD << "AsyncOutput::_internalOutCb(AsyncFD&) called";
     AsyncOutput &output = dynamic_cast<AsyncOutput &>(fd);
     output._hasPendingWrite = true;
     if (output._outCb) {

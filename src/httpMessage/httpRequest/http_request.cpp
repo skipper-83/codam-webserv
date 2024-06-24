@@ -14,15 +14,6 @@ httpRequest::httpRequest() {
 }
 
 /**
- * @brief Construct a new http Request::http Request object from an input stream
- *
- * @param fs
- */
-httpRequest::httpRequest(std::istream &fs) {
-    this->parseHeader(fs);
-}
-
-/**
  * @brief CCopy constructor for httpRequest
  *
  * @param src
@@ -62,19 +53,20 @@ httpRequest &httpRequest::operator=(const httpRequest &rhs) {
     this->_clientMaxBodySize = rhs._clientMaxBodySize;
     this->_returnAutoIndex = rhs._returnAutoIndex;
     this->_pathSet = rhs._pathSet;
-    this->_methodCheck = rhs._methodCheck;
     this->_sessionSet = rhs._sessionSet;
     this->_path = rhs._path;
     this->_queryString = rhs._queryString;
     this->_nextChunkSize = rhs._nextChunkSize;
     this->_chunkSizeKnown = rhs._chunkSizeKnown;
+    this->_firstNewLineFound = rhs._firstNewLineFound;
     return *this;
 }
 
-void httpRequest::clear(void) {
+void httpRequest::clear(Buffer &buffer) {
     infoLog << "Clearing request" << CPPLog::end;
     httpRequest empty;
     *this = empty;
+    infoLog << "Request cleared, buffer now: " << buffer.read(buffer.size()) << CPPLog::end;
 }
 
 uint16_t httpRequest::getPort(void) const {

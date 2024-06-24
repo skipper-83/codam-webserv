@@ -10,6 +10,7 @@
 #include "httpMessage/http_response.hpp"
 #include "httpMessage/cgi_message.hpp"
 #include "session.hpp"
+#include "buffer.hpp"
 
 enum class ClientState {
     READY_FOR_INPUT,
@@ -52,14 +53,13 @@ class Client {
 
     std::shared_ptr<AsyncSocketClient> _socketFd;
     std::shared_ptr<InFileHandler> _inputFile = nullptr;
-    // std::shared_ptr<AsyncProgram> _cgi = nullptr;
 	std::shared_ptr<cgiMessage> _cgiMessage;
 
     uint16_t _port = 0;
 
     size_t _bytesWrittenCounter = 0;
 
-    std::string _clientReadBuffer;
+    Buffer _clientReadBuffer;
     std::string _clientWriteBuffer;
     std::chrono::time_point<std::chrono::steady_clock> _lastActivityTime = std::chrono::steady_clock::now();
 

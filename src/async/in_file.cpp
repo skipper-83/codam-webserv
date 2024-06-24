@@ -1,12 +1,12 @@
+#include "async/in_file.hpp"
+
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
 
+#include <cstring>
 #include <logging.hpp>
 #include <stdexcept>
-#include <cstring>
-
-#include "async/in_file.hpp"
 
 static CPPLog::Instance logI = logOut.instance(CPPLog::Level::INFO, "Async");
 static CPPLog::Instance logD = logOut.instance(CPPLog::Level::DEBUG, "Async");

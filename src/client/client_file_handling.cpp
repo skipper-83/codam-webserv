@@ -28,11 +28,11 @@ void Client::_readFromFile() {
                 clientLogI << "HEAD request" << CPPLog::end;
                 _response.transformLineForChunkedResponse("");
                 clientLogI << "setting inputfile to nullptr" << CPPLog::end;
+                _inputFile = nullptr;
                 return;
             }
         }
         _clientWriteBuffer += _response.transformLineForChunkedResponse(_inputFile->read());
-        clientLogI << "file buffer: " << _clientWriteBuffer << "size:" << _clientWriteBuffer.size() << CPPLog::end;
     }
 
     if (_inputFile->eof()) {
@@ -40,7 +40,6 @@ void Client::_readFromFile() {
         clientLogI << "file is at eof" << CPPLog::end;
         std::string tempFileBuffer = _inputFile->read();
         _inputFile = nullptr;
-        clientLogI << "file buffer: " << tempFileBuffer << "size:" << tempFileBuffer.size() << CPPLog::end;
         if (!_response.isChunked()) {
             _response.setCode(200);
             _response.setFixedSizeBody(tempFileBuffer);

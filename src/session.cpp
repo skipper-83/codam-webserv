@@ -22,7 +22,6 @@ WebServSession& WebServSession::operator=(const WebServSession& rhs) {
     if (this == &rhs)
         return *this;
     _sessionId = rhs._sessionId;
-    // _sessionData = rhs._sessionData;
     _lastActivityTime = rhs._lastActivityTime;
     _pathTrail = rhs._pathTrail;
     return *this;
@@ -67,7 +66,7 @@ std::string WebServSession::generateSessionId() {
 }
 
 WebServSessionList::WebServSessionList() {
-    infoLog << "Session list created" << CPPLog::end;
+    // infoLog << "Session list created" << CPPLog::end;
 }
 
 WebServSessionList::WebServSessionList(const WebServSessionList& rhs) {
@@ -84,7 +83,7 @@ WebServSessionList& WebServSessionList::operator=(const WebServSessionList& rhs)
 }
 
 WebServSessionList::~WebServSessionList() {
-    infoLog << "Session list destroyed" << CPPLog::end;
+    // infoLog << "Session list destroyed" << CPPLog::end;
 }
 
 std::shared_ptr<WebServSession> WebServSessionList::getSession(std::string sessionId) {

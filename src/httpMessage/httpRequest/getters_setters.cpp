@@ -61,7 +61,6 @@ void httpRequest::setServer(MainConfig &config, uint16_t port) {
     this->_server = config.getServer(port, this->getHeader("Host"));
     if (this->_server == nullptr)
         throw httpRequestException(500, "No server match found");
-    // this->_clientMaxBodySize = this->_server->clientMaxBodySize.value;
 }
 
 const ServerConfig *httpRequest::getServer(void) const {

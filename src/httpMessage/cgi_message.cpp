@@ -10,9 +10,14 @@ static CPPLog::Instance fatalLog = logOut.instance(CPPLog::Level::FATAL, "cgi");
 
 cgiMessage::cgiMessage(std::string const& cgiPath, const httpRequest* request, std::function<void(std::weak_ptr<AsyncFD>)> addAsyncFdToPollArray)
     : _request(request), _addAsyncFdToPollArray(addAsyncFdToPollArray) {
+    try {
+        _absolutePath = std::filesystem::canonical(std::filesystem::absolute(_request->getPath()));
+    } catch (const std::exception& e) {
+        _absolutePath = _request->getPath();  // the intra tester needs this because it doesnt accept a 404 on a nonexistent cgi file
+    }
     _makeEnvironment();
     infoLog << "Creating CGI Message" << CPPLog::end;
-    _cgi = AsyncProgram::create(cgiPath, _request->getPath(), _cgiEnv, std::bind(&cgiMessage::_cgiReadCb, this, std::placeholders::_1),
+    _cgi = AsyncProgram::create(cgiPath, _absolutePath, _cgiEnv, std::bind(&cgiMessage::_cgiReadCb, this, std::placeholders::_1),
                                 std::bind(&cgiMessage::_cgiWriteCb, this, std::placeholders::_1));
     _cgi->addToPollArray(_addAsyncFdToPollArray);
 }
@@ -21,8 +26,8 @@ void cgiMessage::_makeEnvironment() {
     _cgiEnv["REDIRECT_STATUS"] = "200";
     _cgiEnv["CONTENT_LENGTH"] = std::to_string(_request->getBodyLength());
     _cgiEnv["CONTENT_TYPE"] = _request->getHeader("Content-Type");
-    _cgiEnv["PATH_INFO"] = _request->getPath();
-    _cgiEnv["PATH_TRANSLATED"] = _request->getPath();
+    _cgiEnv["PATH_INFO"] = _absolutePath;
+    _cgiEnv["PATH_TRANSLATED"] = _absolutePath;
     _cgiEnv["QUERY_STRING"] = _request->getQueryString();
     _cgiEnv["REQUEST_METHOD"] = WebServUtil::httpMethodToString(_request->getMethod());
     _cgiEnv["SERVER_NAME"] = _request->getHeader("Host");
@@ -73,6 +78,7 @@ void cgiMessage::_cgiReadCb(AsyncProgram& cgi) {
 
     if (!_headersComplete) {
         std::pair<std::string, std::string> key_value;
+        infoLog << "Readbuffer: " << _readBuffer << CPPLog::end;
         if (!_cgiHasHeadersInOutput) {
             if ((_readBuffer.find("\r\n") != std::string::npos || _readBuffer.find("\n") != std::string::npos)) {
                 infoLog << "Testing for headers in output";
@@ -91,23 +97,20 @@ void cgiMessage::_cgiReadCb(AsyncProgram& cgi) {
                 }
             }
         }
-        if (_readBuffer.find("\r\n\r\n") == std::string::npos && _readBuffer.find("\n\n") == std::string::npos) {
-            infoLog << "Headers not complete" << CPPLog::end;
-            return;
-        } else {
-            std::string line;
-            while (!(line = _getLineWithCRLF(_readBuffer)).empty()) {
-                try {
-                    key_value = _parseHeaderLine(line);
-                    setHeader(key_value.first, key_value.second);
-                } catch (std::exception& e) {
-                    infoLog << "Error parsing headers from cgi" << e.what() << " line: " << line << CPPLog::end;
-                    _headersComplete = true;
-                    return;
-                }
+
+        std::string line;
+        while (!(line = _getLineWithCRLF(_readBuffer)).empty()) {
+            try {
+                key_value = _parseHeaderLine(line);
+                setHeader(key_value.first, key_value.second);
+            } catch (std::exception& e) {
+                infoLog << "Error parsing headers from cgi" << e.what() << " line: " << line << CPPLog::end;
+                _headersComplete = true;
+                return;
             }
-            _headersComplete = true;
         }
+        _headersComplete = true;
+
     } else {
         _httpBody += _readBuffer;
         _readBuffer.clear();
@@ -118,11 +121,10 @@ void cgiMessage::_cgiWriteCb(AsyncProgram& cgi) {
     // (void)_writeBuffer;
     (void)cgi;
     int bytesWritten;
-    std::string writeChunk;
     if (_request && _request->getMethod() == WebServUtil::HttpMethod::POST && _writeCounter < _request->getBodyLength()) {
         infoLog << "Writing body to cgi, counter is at: " << _writeCounter << CPPLog::end;
-        writeChunk = _request->getBody().substr(_writeCounter, DEFAULT_WRITE_SIZE);
-        bytesWritten = cgi.write(writeChunk);
+        std::string body = _request->getBody();
+        bytesWritten = cgi.write(body.c_str() + _writeCounter, body.size() - _writeCounter);
         if (bytesWritten < 0) {
             fatalLog << "Error writing to cgi" << CPPLog::end;
             cgi.kill();

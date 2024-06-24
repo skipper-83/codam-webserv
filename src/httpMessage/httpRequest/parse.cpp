@@ -8,6 +8,7 @@ void httpRequest::parse(Buffer &input, uint16_t port) {
     if (!this->_headerParseComplete && input.emptyLines() == 0)  // header is not complete yet
     {
         infoLog << "Header incomplete, leaving buffer in place" << CPPLog::end;
+        infoLog << input.read(input.size()) << CPPLog::end;
         return;
     }
     // std::stringstream is(input);

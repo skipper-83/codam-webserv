@@ -30,19 +30,47 @@ void Buffer::operator=(const std::string& data) {
 void Buffer::add(const std::string& data) {
     BufferItem item;
     item.size = data.size();
+    //     infoLog << "Data to add: " << data << CPPLog::end;
+    //     infoLog << "Size of data " << data.size() << CPPLog::end;
+	// infoLog << "lines now: " << this->_linesInBuffer << "\nemptylines now: " << this->_emptyLines << CPPLog::end;
+    // infoLog << "Buffer now: " << this->read((this->size()));
     for (size_t i = 0; i < data.size(); i++) {
         item.data.push_back(data[i]);
+        // infoLog << "char: " << data[i];
         if (data[i] == '\n' && i > 0 && data[i - 1] == '\r') {
+            // infoLog << "newline char!" <<CPPLog::end;
 			if (i == 1 || (i >=3  && data[i - 3] == '\r' && data[i - 2] == '\n'))  // if the line is empty
 				this->_emptyLines++;
+            else if (this->buffer.size() > 0 && this->buffer.back().endsWithCRLF())
+                this->_emptyLines++;
+            if(i > 2 && data[i - 2] == '\n' && this->buffer.size() > 0 && this->buffer.back().endsWithCR())
+                this->_emptyLines++;
             this->_linesInBuffer++;
             item.lines++;
         }
+        else if (i == 0 && data[i] == '\n')
+        {
+            if(this->buffer.size() > 0 && this->buffer.back().endsWithCR())
+            {
+                if (this->buffer.back().size > 3 && this->buffer.back().data[this->buffer.back().size - 2] == '\n' && this->buffer.back().data[this->buffer.back().size - 3] == '\r')
+                    this->_emptyLines++;
+                this->_linesInBuffer++;
+                item.lines++;
+            }
+        }
     }
-	infoLog << "Added " << item.size << " bytes to buffer; lines now: " << this->_linesInBuffer << CPPLog::end;
-    this->buffer.push_back(item);
     this->_sizeOfBuffer += data.size();
+    this->buffer.push_back(item);
+    // infoLog << "Data added: " << data << CPPLog::end;
+	// infoLog << "Added " << item.size << " bytes to buffer; lines now: " << this->_linesInBuffer << "\nemptylines now: " << this->_emptyLines << CPPLog::end;
+    // infoLog << "Buffer now: " << this->read((this->size()));
 }
+
+// GET /directory HTTP/1.1  
+// Host: localhost:8081  
+// User-Agent: Go-http-client/1.1  
+// Accept-Encoding: gzip  
+  
 
 /**
  * @brief Returns a string of length bytes from the buffer, leaves the buffer unchanged
@@ -59,7 +87,7 @@ std::string Buffer::read(size_t length) {
             length--;
 			bytesRead++;
             if (length == 0 || bytesRead == this->_sizeOfBuffer) {
-                data[i + 1] = '\0';
+                // data[i + 1] = '\0';
                 return data;
             }
         }
@@ -166,12 +194,14 @@ int Buffer::getCRLFLine(std::string& line) {
     for (std::list<BufferItem>::iterator::value_type& item : this->buffer) {
         // if (item.lines > 0) {
             for (size_t i = 0; i < item.size; i++) {
-                if (item.data[i] == '\n' && i > 0 && item.data[i - 1] == '\r') {
+                if (item.data[i] == '\n' && bytesRead > 0 && line[bytesRead - 1] == '\r') {
                     line = line.substr(0, line.size() - 1); // remove the last character
+                    // line[i + 1] = '\0';
 					// this->linesInBuffer--;
 					// item.lines--;
                     this->remove(bytesRead + 1);
 					// infoLog << "Line got: [" << line << "], lines now: " << this->linesInBuffer << CPPLog::end;
+                    // line[]
                     return 1;
                 }
                 line += (char)item.data[i];
@@ -182,3 +212,14 @@ int Buffer::getCRLFLine(std::string& line) {
     return 0;
 }
 
+bool BufferItem::endsWithCRLF() {
+    if(data.size() > 1 && data[data.size() - 1] == '\n' && data[data.size() - 2] == '\r')
+        return true;
+    return false;
+}
+
+bool BufferItem::endsWithCR() {
+    if(data.size() > 0 && data[data.size() - 1] == '\r')
+        return true;
+    return false;
+}

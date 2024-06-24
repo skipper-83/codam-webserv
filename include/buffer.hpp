@@ -5,6 +5,13 @@
 #include <string>
 #include <vector>
 
+enum NewLineStatus {
+	NO_NEWLINE,
+	CR,
+	CRLF,
+	CRLFCR,
+};
+
 struct BufferItem {
     std::vector<char> data;
     size_t size = 0;
@@ -19,12 +26,14 @@ class Buffer {
     size_t _sizeOfBuffer = 0;
     size_t _linesInBuffer = 0;
 	size_t _emptyLines = 0;
+	NewLineStatus _newLineStatus = NO_NEWLINE;
 
    public:
     void operator+=(const std::string& data);
     void operator=(const std::string& data);
     void add(const std::string& data);
     void remove(size_t length);
+	char operator[](size_t index);
     std::string read(size_t length);
 	size_t read(size_t length, std::string& data);
 	void readAndRemove(size_t length, std::string& data);

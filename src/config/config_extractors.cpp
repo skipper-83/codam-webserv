@@ -309,6 +309,13 @@ std::istream& operator>>(std::istream& is, Cgi& rhs) {
             } else {
                 infoLog << "setting executor: " << word;
                 rhs.executor = word;
+				if (rhs.executor[0] != '/' && rhs.executor[0] != '.')
+					throw(std::invalid_argument("Cgi executor must be an absolute or relative path: " + word));
+				if (rhs.executor[0] == '.')
+					rhs.executor = mainConfig.getConfigPath() + rhs.executor.substr(1, rhs.executor.size() - 1);
+				if (!std::filesystem::exists(rhs.executor))
+					throw(std::invalid_argument("Cgi executor does not exist: " + word));
+				
             }
             // break;
         }

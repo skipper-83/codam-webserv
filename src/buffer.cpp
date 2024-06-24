@@ -36,28 +36,48 @@ void Buffer::add(const std::string& data) {
     // infoLog << "Buffer now: " << this->read((this->size()));
     for (size_t i = 0; i < data.size(); i++) {
         item.data.push_back(data[i]);
-        // infoLog << "char: " << data[i];
-        if (data[i] == '\n' && i > 0 && data[i - 1] == '\r') {
-            // infoLog << "newline char!" <<CPPLog::end;
-			if (i == 1 || (i >=3  && data[i - 3] == '\r' && data[i - 2] == '\n'))  // if the line is empty
-				this->_emptyLines++;
-            else if (this->buffer.size() > 0 && this->buffer.back().endsWithCRLF())
-                this->_emptyLines++;
-            if(i > 2 && data[i - 2] == '\n' && this->buffer.size() > 0 && this->buffer.back().endsWithCR())
-                this->_emptyLines++;
-            this->_linesInBuffer++;
-            item.lines++;
-        }
-        else if (i == 0 && data[i] == '\n')
-        {
-            if(this->buffer.size() > 0 && this->buffer.back().endsWithCR())
-            {
-                if (this->buffer.back().size > 2 && this->buffer.back().data[this->buffer.back().size - 2] == '\n' && this->buffer.back().data[this->buffer.back().size - 3] == '\r')
-                    this->_emptyLines++;
-                this->_linesInBuffer++;
-                item.lines++;
-            }
-        }
+		switch (data[i]) {
+			case '\r':
+			switch (_newLineStatus)
+			{
+			case CRLF:
+				_newLineStatus = CRLFCR;
+				break;
+			
+			case NO_NEWLINE:
+				_newLineStatus = CR;
+				break;
+			
+			default:
+				_newLineStatus = NO_NEWLINE;
+			}
+			break ;
+
+			case '\n':
+			switch (_newLineStatus)
+			{
+			case CR:
+				_linesInBuffer++;
+				item.lines++;
+				_newLineStatus = CRLF;
+				break;
+
+			case CRLFCR:
+				_linesInBuffer++;
+				item.lines++;
+				_emptyLines++;
+				break;
+			
+			default:
+				_newLineStatus = NO_NEWLINE;
+				break;
+			}
+			break ;
+
+			default:
+				_newLineStatus = NO_NEWLINE;
+		}
+
     }
     this->_sizeOfBuffer += data.size();
     this->buffer.push_back(item);
@@ -167,6 +187,17 @@ void Buffer::remove(size_t length) {
             length = 0;
         }
     }
+}
+
+char Buffer::operator[](size_t index) {
+	size_t currentLength = 0;
+
+	for (auto item : this->buffer) {
+		if (index < currentLength + item.size)
+			return item.data[index - currentLength];
+		currentLength += item.size;
+	}
+    return 0;
 }
 
 /**

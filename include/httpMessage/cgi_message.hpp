@@ -24,6 +24,7 @@ class cgiMessage : public httpMessage {
 		bool _cgiHasHeadersInOutput = false;
 		bool _cgiIsRunning = true;
 		int _cgiExitCode = 0;
+		std::string _absolutePath;
 		std::string _readBuffer;
 		std::string::size_type _writeCounter = 0;
 		std::map<std::string, std::string> _cgiEnv;

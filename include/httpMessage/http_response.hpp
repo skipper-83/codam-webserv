@@ -9,7 +9,7 @@ extern MainConfig mainConfig;
 
 class httpResponse : public httpMessage {
    private:
-    int _responseCode;
+    int _responseCode = -1;
 	bool _bodyComplete = false;
     std::string _responseCodeDescription;
 	const httpRequest* _precedingRequest;

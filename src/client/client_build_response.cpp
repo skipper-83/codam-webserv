@@ -11,8 +11,8 @@ void Client::_buildResponse() {
     if ((cgi = _request.getLocation()->getCgiFromPath(_request.getPath())) && cgi->allowed.methods.find(_request.getMethod())->second) {
         clientLogI << "CGI request: " << std::filesystem::absolute(_request.getPath()) << "; executor: " << cgi->executor << CPPLog::end;
         try {
-			if (std::filesystem::exists(cgi->executor) == false)
-				throw std::runtime_error("CGI executor not found");
+            if (std::filesystem::exists(cgi->executor) == false)
+                throw std::runtime_error("CGI executor not found");
             _cgiMessage = std::make_shared<cgiMessage>(cgi->executor, &_request, _addLocalFdToPollArray);
         } catch (const std::exception& e) {
             clientLogE << "_clientReadCb: " << e.what() << CPPLog::end;
@@ -24,16 +24,13 @@ void Client::_buildResponse() {
 
     // If the request is for a directory, return the directory index
     if (_request.returnAutoIndex()) {
-		try
-		{
-        	_response.setFixedSizeBody(WebServUtil::directoryIndexList(this->_request.getPath(), _request.getAdress()));
-		}
-		catch(const std::exception& e)
-		{
-			clientLogE << "_buildResponse: " << e.what() << CPPLog::end;
-			_returnHttpErrorToClient(500);
-		}
-		
+        try {
+            _response.setFixedSizeBody(WebServUtil::directoryIndexList(this->_request.getPath(), _request.getAdress()));
+        } catch (const std::exception& e) {
+            clientLogE << "_buildResponse: " << e.what() << CPPLog::end;
+            _returnHttpErrorToClient(500);
+        }
+
         _response.setHeader("Content-Type", "text/html; charset=UTF-8");
         _response.setCode(200);
         _clientWriteBuffer = _response.getFixedBodyResponseAsString();

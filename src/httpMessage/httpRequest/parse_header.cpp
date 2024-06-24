@@ -148,7 +148,7 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
             _path = path;
             _location = &location;
 
-            if (location.redirect.set) { // if the location is a redirect, immediately return the path with a 301 status code.
+            if (location.redirect.set) {  // if the location is a redirect, immediately return the path with a 301 status code.
                 throw(httpRequestException(301, location.redirect.path));
             }
 
@@ -177,8 +177,8 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
                  */
                 // if (path[path.size() - 1] != '/')  // if the path does not end with a slash, redirect
                 //     throw(httpRequestException(301, _httpAdress + '/'));
-               
-                if (!_location->index_vec.empty()) {
+
+                if (!_location->index_vec.empty() && !_location->autoIndex.on) {
                     infoLog << "checking for index files in config" << CPPLog::end;
                     for (auto &rootIndexFile : _location->index_vec) {
                         infoLog << "checking" << _path + rootIndexFile;
@@ -187,15 +187,16 @@ void httpRequest::_resolvePathAndLocationBlock(void) {
                             return;
                         }
                     }
+                    throw httpRequestException(404, "cannot find index file in directory");
                 }
-                
+
                 if (_location->autoIndex.on) {
                     infoLog << "Autoindex is on" << CPPLog::end;
                     _returnAutoIndex = true;
                     _path = path;
                     return;
                 }
-          
+
                 infoLog << "No index files found, checking if autoindex is on" << CPPLog::end;
 
                 infoLog << "Autoindex is off, returning 403 Forbidden" << CPPLog::end;

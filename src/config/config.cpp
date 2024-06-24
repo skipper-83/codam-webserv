@@ -136,7 +136,7 @@ Cgi const *Location::getCgiFromPath(std::string path) const {
     std::string extension = path.substr(extensionPos);
     for (auto &it : this->cgis) {
         for (size_t i = 0; i < it.extensions.size(); ++i) {
-            if (path == it.extensions[i])
+            if (path.substr(path.find_last_of(".", path.size() - 1)) == it.extensions[i])
                 return &it;
         }
     }

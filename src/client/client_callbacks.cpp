@@ -1,4 +1,5 @@
 #include <filesystem>
+
 #include "client.hpp"
 #include "logging.hpp"
 
@@ -81,7 +82,7 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
         changeState(ClientState::READ_REQUEST);
         this->_request.parse(this->_clientReadBuffer, this->_port);
     } catch (const httpRequest::httpRequestException& e) {
-        clientLogI << "Error catched, code is " << e.errorNo() << " description is " << e.codeDescription() << " what() is " << e.what() ;
+        clientLogI << "Error catched, code is " << e.errorNo() << " description is " << e.codeDescription() << " what() is " << e.what();
         this->_returnHttpErrorToClient(e.errorNo(), e.what());
     }
 

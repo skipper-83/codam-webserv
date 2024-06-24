@@ -65,7 +65,7 @@ uint16_t Client::port() const {
 void Client::changeState(ClientState newState) {
     _state = newState;
     setLastActivityTime();
-    clientLogI << "Time changed" << CPPLog::end;
+    // clientLogI << "Time changed" << CPPLog::end;
 }
 
 void Client::setLastActivityTime() {

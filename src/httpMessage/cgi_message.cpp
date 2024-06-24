@@ -12,7 +12,7 @@ cgiMessage::cgiMessage(std::string const& cgiPath, const httpRequest* request, s
     : _request(request), _addAsyncFdToPollArray(addAsyncFdToPollArray) {
     _makeEnvironment();
     infoLog << "Creating CGI Message" << CPPLog::end;
-    _cgi = AsyncProgram::create(cgiPath, std::filesystem::absolute(_request->getPath()), _cgiEnv, std::bind(&cgiMessage::_cgiReadCb, this, std::placeholders::_1),
+    _cgi = AsyncProgram::create(cgiPath, std::filesystem::canonical(std::filesystem::absolute(_request->getPath())), _cgiEnv, std::bind(&cgiMessage::_cgiReadCb, this, std::placeholders::_1),
                                 std::bind(&cgiMessage::_cgiWriteCb, this, std::placeholders::_1));
     _cgi->addToPollArray(_addAsyncFdToPollArray);
 }
@@ -21,8 +21,8 @@ void cgiMessage::_makeEnvironment() {
     _cgiEnv["REDIRECT_STATUS"] = "200";
     _cgiEnv["CONTENT_LENGTH"] = std::to_string(_request->getBodyLength());
     _cgiEnv["CONTENT_TYPE"] = _request->getHeader("Content-Type");
-    _cgiEnv["PATH_INFO"] = _request->getPath();
-    _cgiEnv["PATH_TRANSLATED"] = _request->getPath();
+    _cgiEnv["PATH_INFO"] = std::filesystem::canonical( std::filesystem::absolute(_request->getPath()));
+    _cgiEnv["PATH_TRANSLATED"] = std::filesystem::canonical(std::filesystem::absolute(_request->getPath()));
     _cgiEnv["QUERY_STRING"] = _request->getQueryString();
     _cgiEnv["REQUEST_METHOD"] = WebServUtil::httpMethodToString(_request->getMethod());
     _cgiEnv["SERVER_NAME"] = _request->getHeader("Host");

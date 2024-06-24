@@ -1,4 +1,6 @@
 #include "client.hpp"
+#include "logging.hpp"
+static CPPLog::Instance clientLogI = logOut.instance(CPPLog::Level::INFO, "client");
 
 void Client::_readFromCgi() {
     int exitCode = _cgiMessage->checkProgramStatus();

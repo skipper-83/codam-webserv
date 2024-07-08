@@ -20,6 +20,7 @@ cgiMessage::cgiMessage(std::string const& cgiPath, const httpRequest* request, s
     _cgi = AsyncProgram::create(cgiPath, _absolutePath, _cgiEnv, std::bind(&cgiMessage::_cgiReadCb, this, std::placeholders::_1),
                                 std::bind(&cgiMessage::_cgiWriteCb, this, std::placeholders::_1));
     _cgi->addToPollArray(_addAsyncFdToPollArray);
+    _startTime = std::chrono::steady_clock::now();
 }
 
 void cgiMessage::_makeEnvironment() {

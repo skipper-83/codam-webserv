@@ -20,6 +20,8 @@
 #define DEFAULT_TIMEOUT_SECONDS 30
 #define DEFAULT_FD_BACKLOG_SIZE 150
 #define DEFAULT_LOCAL_FILE_READBUFFER 60000
+#define CGI_MAX_BODY_SIZE 100000000
+#define CGI_TIMEOUT std::chrono::seconds(100)
 #define DEFAULT_ALLOWED_METHODS                                                                                                        \
     {WebServUtil::HttpMethod::GET, false}, {WebServUtil::HttpMethod::POST, false}, {WebServUtil::HttpMethod::PUT, false},              \
         {WebServUtil::HttpMethod::DELETE, false}, {WebServUtil::HttpMethod::HEAD, false}, {WebServUtil::HttpMethod::OPTIONS, false}, { \

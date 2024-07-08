@@ -117,6 +117,8 @@ std::string httpMessage::_getLineWithCRLF(std::string &input) {
         line.pop_back();  // remove \r
     if (pos + 1 < input.size())
         input = input.substr(pos + 1, input.size());  // remove line from input
+    else
+        input.clear();
     return line;
 }
 

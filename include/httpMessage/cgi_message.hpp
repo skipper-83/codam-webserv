@@ -13,6 +13,8 @@ class cgiMessage : public httpMessage {
 		bool isBodyComplete() const { return _bodyComplete; }
 		int	checkProgramStatus();
 		void setRequest(const httpRequest* request) { _request = request; }
+		void setStartCgiTime() { _startTime = std::chrono::steady_clock::now(); }
+		std::chrono::time_point<std::chrono::steady_clock> getStartTime() const { return _startTime; }
 		// void assignBuffer(std::string &buffer) { _writeBuffer = buffer; }
 
 	private:
@@ -34,4 +36,6 @@ class cgiMessage : public httpMessage {
 		void _cgiWriteCb(AsyncProgram& cgi);
 		void _makeEnvironment();
 		std::function<void(std::weak_ptr<AsyncFD>)> _addAsyncFdToPollArray;
+		std::chrono::time_point<std::chrono::steady_clock> _startTime = std::chrono::steady_clock::now();
+
 };

@@ -5,6 +5,11 @@ static CPPLog::Instance clientLogI = logOut.instance(CPPLog::Level::INFO, "clien
 void Client::_readFromCgi() {
     int exitCode = _cgiMessage->checkProgramStatus();
 
+    if (std::chrono::steady_clock::now() - _cgiMessage->getStartTime() > CGI_TIMEOUT) {
+        _cgiMessage = nullptr;
+        _returnHttpErrorToClient(408);
+        return;
+    }
     if (exitCode != 0) {
         _cgiMessage = nullptr;
         _returnHttpErrorToClient(500);
@@ -21,5 +26,9 @@ void Client::_readFromCgi() {
         _clientWriteBuffer = _response.getFixedBodyResponseAsString();
         _cgiMessage = nullptr;
         _request.clear(this->_clientReadBuffer);
+    }
+    else if (_cgiMessage->getBody().size() > CGI_MAX_BODY_SIZE) {
+        _cgiMessage = nullptr;
+        _returnHttpErrorToClient(413);
     }
 }

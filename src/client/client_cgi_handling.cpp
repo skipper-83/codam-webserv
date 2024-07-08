@@ -11,6 +11,11 @@ void Client::_readFromCgi() {
         return;
     }
     if (exitCode != 0) {
+        if (_cgiMessage->isTooLarge()) {
+            _cgiMessage = nullptr;
+            _returnHttpErrorToClient(413);
+            return;
+        }
         _cgiMessage = nullptr;
         _returnHttpErrorToClient(500);
         return;
@@ -27,8 +32,8 @@ void Client::_readFromCgi() {
         _cgiMessage = nullptr;
         _request.clear(this->_clientReadBuffer);
     }
-    else if (_cgiMessage->getBody().size() > CGI_MAX_BODY_SIZE) {
-        _cgiMessage = nullptr;
-        _returnHttpErrorToClient(413);
-    }
+    // else if (_cgiMessage->getBody().size() > CGI_MAX_BODY_SIZE) {
+    //     _cgiMessage = nullptr;
+    //     _returnHttpErrorToClient(413);
+    // }
 }

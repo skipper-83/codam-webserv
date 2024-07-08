@@ -75,6 +75,12 @@ void cgiMessage::_cgiReadCb(AsyncProgram& cgi) {
         return;
     }
     _readBuffer += cgi.read(DEFAULT_READ_SIZE);
+    if (_readBuffer.size() + _httpBody.size() > CGI_MAX_BODY_SIZE) {
+        _readBuffer.clear();
+        _httpBody.clear();
+        _cgi->kill();
+        _tooLarge = true;
+    }
     // infoLog << "read buffer: " << _readBuffer << " size: " << _readBuffer.size() << CPPLog::end;
 
     if (!_headersComplete) {

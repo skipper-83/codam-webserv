@@ -11,16 +11,16 @@
 
 #include "util.hpp"
 
-#define DEFAULT_CLIENT_BODY_SIZE 1000000
+#define DEFAULT_CLIENT_BODY_SIZE 1'000'000
 #define DEFAULT_PORT 80
 #define DEFAULT_MAX_HEADER_SIZE 4096
-#define DEFAULT_READ_SIZE 6000000
-#define DEFAULT_WRITE_SIZE 6000000
+#define DEFAULT_READ_SIZE 6'000'000
+#define DEFAULT_WRITE_SIZE 6'000'000
 #define DEFAULT_MAX_WRITE_SIZE 32768
 #define DEFAULT_TIMEOUT_SECONDS 30
 #define DEFAULT_FD_BACKLOG_SIZE 150
-#define DEFAULT_LOCAL_FILE_READBUFFER 60000
-#define CGI_MAX_BODY_SIZE 100000000
+#define DEFAULT_LOCAL_FILE_READBUFFER 60'000
+#define CGI_MAX_BODY_SIZE 100'000'000
 #define CGI_TIMEOUT std::chrono::seconds(100)
 #define DEFAULT_ALLOWED_METHODS                                                                                                        \
     {WebServUtil::HttpMethod::GET, false}, {WebServUtil::HttpMethod::POST, false}, {WebServUtil::HttpMethod::PUT, false},              \

@@ -16,6 +16,7 @@ class cgiMessage : public httpMessage {
 		void setStartCgiTime() { _startTime = std::chrono::steady_clock::now(); }
 		std::chrono::time_point<std::chrono::steady_clock> getStartTime() const { return _startTime; }
 		// void assignBuffer(std::string &buffer) { _writeBuffer = buffer; }
+		bool isTooLarge() const { return _tooLarge; }
 
 	private:
 		// std::string _cgiPath;
@@ -37,5 +38,6 @@ class cgiMessage : public httpMessage {
 		void _makeEnvironment();
 		std::function<void(std::weak_ptr<AsyncFD>)> _addAsyncFdToPollArray;
 		std::chrono::time_point<std::chrono::steady_clock> _startTime = std::chrono::steady_clock::now();
+		bool _tooLarge = false;
 
 };

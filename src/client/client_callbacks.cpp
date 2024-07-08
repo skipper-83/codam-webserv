@@ -79,11 +79,18 @@ void Client::_clientReadCb(AsyncSocketClient& asyncSocketClient) {
     // Try to parse the buffer as http request. If request is incomplete, parse will leave the buffer in place. On error, it will reply with a http
     // error response
     try {
-        changeState(ClientState::READ_REQUEST);
-        this->_request.parse(this->_clientReadBuffer, this->_port);
-    } catch (const httpRequest::httpRequestException& e) {
-        clientLogI << "Error catched, code is " << e.errorNo() << " description is " << e.codeDescription() << " what() is " << e.what();
-        this->_returnHttpErrorToClient(e.errorNo(), e.what());
+        try {
+            changeState(ClientState::READ_REQUEST);
+            this->_request.parse(this->_clientReadBuffer, this->_port);
+        } catch (const httpRequest::httpRequestException& e) {
+            clientLogI << "Error catched, code is " << e.errorNo() << " description is " << e.codeDescription() << " what() is " << e.what();
+            this->_returnHttpErrorToClient(e.errorNo(), e.what());
+        }
+    } catch (const std::exception& e) {
+        clientLogE << "_clientReadCb: " << e.what() << CPPLog::end;
+        changeState(ClientState::ERROR);
+        this->_returnHttpErrorToClient(500);
+        return;
     }
 
     // If the header is not complete and the buffer is too large, return 413

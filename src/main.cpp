@@ -83,27 +83,31 @@ int main(int argc, char** argv) {
     }
 
     while (true) {
-        pollArray.poll(5);
-        clientsList.erase(std::remove_if(clientsList.begin(), clientsList.end(),
-                                         [](const Client& client) {
-                                             std::chrono::time_point<std::chrono::steady_clock> now = std::chrono::steady_clock::now();
-                                             if (client.socketFd().eof()) {
-                                                 mainLogI << "removing client due to EOF" << CPPLog::end;
-                                                 client.socketFd().close();
-                                                 return true;
-                                             }
-                                             if ((now - client.getLastActivityTime()) > mainConfig._timeOutDuration) {
-                                                 mainLogI << "removing client due to inactivity" << CPPLog::end;
-                                                 client.socketFd().close();
-                                                 return true;
-                                             }
-                                             if (!client.socketFd().isValid()) {
-                                                 mainLogI << "removing invalid client" << CPPLog::end;
-                                                 return true;
-                                             }
-                                             return false;
-                                         }),
-                          clientsList.end());
-        sessionList.removeExpiredSessions(std::chrono::steady_clock::now());
+        try {
+            pollArray.poll(5);
+            clientsList.erase(std::remove_if(clientsList.begin(), clientsList.end(),
+                                             [](const Client& client) {
+                                                 std::chrono::time_point<std::chrono::steady_clock> now = std::chrono::steady_clock::now();
+                                                 if (client.socketFd().eof()) {
+                                                     mainLogI << "removing client due to EOF" << CPPLog::end;
+                                                     client.socketFd().close();
+                                                     return true;
+                                                 }
+                                                 if ((now - client.getLastActivityTime()) > mainConfig._timeOutDuration) {
+                                                     mainLogI << "removing client due to inactivity" << CPPLog::end;
+                                                     client.socketFd().close();
+                                                     return true;
+                                                 }
+                                                 if (!client.socketFd().isValid()) {
+                                                     mainLogI << "removing invalid client" << CPPLog::end;
+                                                     return true;
+                                                 }
+                                                 return false;
+                                             }),
+                              clientsList.end());
+            sessionList.removeExpiredSessions(std::chrono::steady_clock::now());
+        } catch (const std::exception& e) {
+            mainLogW << "main loop exception: " << e.what() << CPPLog::end;
+        }
     }
 }

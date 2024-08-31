@@ -21,6 +21,7 @@ class httpRequest : public httpMessage {
     void _addChunkedContent(Buffer &input);
     void _addUntilNewline(Buffer &input);
     bool _hasNewLine(std::string &str);
+	void _checkPermissions(const std::filesystem::path& currentPath);
     std::string _readNumberOfBytesFromFileStream(std::istream &fs, size_t amountOfBytes);
     size_t _remainingLength(std::istream &fs);
 

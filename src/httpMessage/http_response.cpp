@@ -6,17 +6,20 @@
 
 static CPPLog::Instance infoLog = logOut.instance(CPPLog::Level::INFO, "httpResponse");
 
-httpResponse::httpResponse() {
+httpResponse::httpResponse()
+{
     _httpProtocol = DEFAULT_RESPONSE_PROTOCOL;
     setHeader("Server", DEFAULT_SERVER_NAME);
 }
 
-httpResponse::httpResponse(httpRequest* callingRequest) : httpResponse() {
+httpResponse::httpResponse(httpRequest *callingRequest) : httpResponse()
+{
     infoLog << "Constructor with preceding req" << CPPLog::end;
     this->setPrecedingRequest(callingRequest);
 }
 
-httpResponse& httpResponse::operator=(const httpResponse& rhs) {
+httpResponse &httpResponse::operator=(const httpResponse &rhs)
+{
     if (this == &rhs)
         return *this;
     _httpMessageAssign(rhs);
@@ -29,27 +32,31 @@ httpResponse& httpResponse::operator=(const httpResponse& rhs) {
     return *this;
 }
 
-void httpResponse::setPrecedingRequest(httpRequest* const callingRequest) {
+void httpResponse::setPrecedingRequest(httpRequest *const callingRequest)
+{
     infoLog << "Setting preceding request" << CPPLog::end;
     _precedingRequest = callingRequest;
 }
 
-void httpResponse::extractHeaders(const httpMessage* message) {
+void httpResponse::extractHeaders(const httpMessage *message)
+{
     infoLog << "Extracting headers" << CPPLog::end;
     for (auto header : message->getHeaderMap())
         setHeader(header.first, header.second);
 }
 
-void httpResponse::setCode(int code) {
+void httpResponse::setCode(int code, std::string description)
+{
     if (_responseCode > -1) // don't overwrite a code that has already been set
         return;
     this->_responseCodeDescription = WebServUtil::codeDescription(code);
     this->_responseCode = code;
     if ((this->_responseCode >= 400 && this->_responseCode <= 599) || this->_responseCode == 999)
-        this->_setErrorBody();
+        this->_setErrorBody(description);
 }
 
-void httpResponse::_setErrorBody() {
+void httpResponse::_setErrorBody(std::string message)
+{
     std::string error_page;
 
     infoLog << "Setting up error page for " << this->_responseCode << CPPLog::end;
@@ -59,7 +66,13 @@ void httpResponse::_setErrorBody() {
         .append("</title></head><body><center><h1>")
         .append(std::to_string(this->_responseCode))
         .append(" " + this->_responseCodeDescription)
-        .append("</h1></center><hr><center>")
+        .append("</h1></center>");
+    if (!message.empty())
+        error_page.append("<center><p>")
+            .append(message)
+            .append("</p></center>");
+
+    error_page.append("<hr><center>")
         .append(DEFAULT_SERVER_NAME)
         .append("</center>")
         .append("</body></html>");
@@ -69,7 +82,8 @@ void httpResponse::_setErrorBody() {
     infoLog << "Error page set to: " << error_page << CPPLog::end;
 }
 
-void httpResponse::setFixedSizeBody(std::string body) {
+void httpResponse::setFixedSizeBody(std::string body)
+{
     this->_httpBody = body;
     this->_bodyLength = this->_httpBody.length();
     deleteHeader("Content-Length");
@@ -77,11 +91,13 @@ void httpResponse::setFixedSizeBody(std::string body) {
     this->_bodyComplete = true;
 }
 
-std::string httpResponse::getStartLine(void) const {
+std::string httpResponse::getStartLine(void) const
+{
     return this->getProtocol() + " " + std::to_string(this->_responseCode) + " " + this->_responseCodeDescription + "\r\n";
 }
 
-std::string httpResponse::getHeadersForChunkedResponse(void) {
+std::string httpResponse::getHeadersForChunkedResponse(void)
+{
     std::string ret;
 
     _chunked = true;
@@ -95,16 +111,19 @@ std::string httpResponse::getHeadersForChunkedResponse(void) {
     return ret;
 }
 
-std::string httpResponse::transformLineForChunkedResponse(std::string line) {
+std::string httpResponse::transformLineForChunkedResponse(std::string line)
+{
     std::stringstream ret;
 
     if (line.empty())
         _bodyComplete = true;
-    ret << std::hex << line.size() << "\r\n" << line << "\r\n";
+    ret << std::hex << line.size() << "\r\n"
+        << line << "\r\n";
     return (ret.str());
 }
 
-std::string httpResponse::getFixedBodyResponseAsString(void) {
+std::string httpResponse::getFixedBodyResponseAsString(void)
+{
     std::string ret;
 
     deleteHeader("Date");
@@ -115,18 +134,21 @@ std::string httpResponse::getFixedBodyResponseAsString(void) {
     return ret;
 }
 
-bool httpResponse::isBodyComplete(void) const {
+bool httpResponse::isBodyComplete(void) const
+{
     return _bodyComplete;
 }
 
-bool httpResponse::isChunked(void) const {
+bool httpResponse::isChunked(void) const
+{
     return _chunked;
 }
 
-void httpResponse::clear(void) {
+void httpResponse::clear(void)
+{
     infoLog << "Clearing response but preserving precedingRequest pointer" << CPPLog::end;
     httpResponse empty;
-    const httpRequest* tmpPrecedingRequest = this->_precedingRequest;
+    const httpRequest *tmpPrecedingRequest = this->_precedingRequest;
 
     *this = empty;
     this->_precedingRequest = tmpPrecedingRequest;

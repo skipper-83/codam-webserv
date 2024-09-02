@@ -16,8 +16,16 @@ void Client::_readFromCgi() {
             _returnHttpErrorToClient(413);
             return;
         }
+        std::string cgiErrorMsg = _cgiMessage->getBuffer();
+        _response.extractHeaders(_cgiMessage.get());
         _cgiMessage = nullptr;
-        _returnHttpErrorToClient(500);
+        clientLogI << "CGI error: " << cgiErrorMsg << CPPLog::end;
+        std::string cgiErorCode = _response.getHeader("Status");
+        if (!cgiErorCode.empty())
+            _returnHttpErrorToClient(std::stoi(cgiErorCode), cgiErrorMsg);
+        else
+            _returnHttpErrorToClient(500, cgiErrorMsg);
+        // _returnHttpErrorToClient(500, cgiErrorMsg);
         return;
     }
     changeState(ClientState::CGI_WRITE);

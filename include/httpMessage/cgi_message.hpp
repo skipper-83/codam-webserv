@@ -17,6 +17,7 @@ class cgiMessage : public httpMessage {
 		std::chrono::time_point<std::chrono::steady_clock> getStartTime() const { return _startTime; }
 		// void assignBuffer(std::string &buffer) { _writeBuffer = buffer; }
 		bool isTooLarge() const { return _tooLarge; }
+		std::string getBuffer() const { return _readBuffer; }
 
 	private:
 		// std::string _cgiPath;

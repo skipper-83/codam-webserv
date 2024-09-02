@@ -15,7 +15,7 @@ class httpResponse : public httpMessage {
 	const httpRequest* _precedingRequest;
 	bool _chunked = false;
 	void _setBody(std::string body);
-	void _setErrorBody();
+	void _setErrorBody(std::string message = "");
 	bool _sessionSet = false;
 
    public:
@@ -23,7 +23,7 @@ class httpResponse : public httpMessage {
 	httpResponse(httpRequest* const callingRequest);
 	httpResponse& operator=(const httpResponse& rhs);
 
-    void setCode(int code);
+    void setCode(int code, std::string description = "");
 	int getCode(void) const { return _responseCode; };
     void setFixedSizeBody(std::string body);
 	void setPrecedingRequest(httpRequest* const callingRequest);

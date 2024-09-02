@@ -19,7 +19,7 @@ void Client::_returnHttpErrorToClient(int code, std::string message) {
     this->_clientWriteBuffer.clear();
     this->_clientReadBuffer.clear();
     this->_response.deleteHeader("Content-Type");
-    this->_response.setCode(code);
+    this->_response.setCode(code, message);
     if (code == 301)  // if the """error""" is a redirect, set the location header
     {
         _response.setHeader("Location", message);

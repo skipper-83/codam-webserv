@@ -11,16 +11,20 @@
 #include "config.hpp"
 #include "logging.hpp"
 
-std::string WebServUtil::codeDescription(int httpCode) {
+static CPPLog::Instance utilLogI = logOut.instance(CPPLog::Level::INFO, "util");
+
+std::string WebServUtil::codeDescription(int httpCode)
+{
     std::string ret = "Unknown HTTP Status Code";
-    std::map<int, std::string> const& codes = _getStatusCodes();
+    std::map<int, std::string> const &codes = _getStatusCodes();
     auto it = codes.find(httpCode);
     if (it != codes.end())
         return it->second;
     return ret;
 }
 
-std::string WebServUtil::getContentTypeFromPath(const std::string& path) {
+std::string WebServUtil::getContentTypeFromPath(const std::string &path)
+{
     const std::unordered_map<std::string, std::string> mimeTypes = _getFileTypes();
     std::string extension = std::filesystem::path(path).extension().string();
     auto it = mimeTypes.find(extension);
@@ -29,16 +33,27 @@ std::string WebServUtil::getContentTypeFromPath(const std::string& path) {
     return (DEFAULT_MIMETYPE);
 }
 
-bool WebServUtil::_compareDirectoryContents(const std::filesystem::path& one, const std::filesystem::path& two) {
-    bool oneIsDir = std::filesystem::is_directory(one);
-    bool twoIsDir = std::filesystem::is_directory(two);
+bool WebServUtil::_compareDirectoryContents(const std::filesystem::path &one, const std::filesystem::path &two)
+{
+    utilLogI << "_compareDirectoryContents: one: " << one << "; two: " << two << CPPLog::end;
 
-    if (oneIsDir == twoIsDir)
+    try
+    {
+        bool oneIsDir = std::filesystem::is_directory(one);
+        bool twoIsDir = std::filesystem::is_directory(two);
+        utilLogI << "done declaring oneIsDir and twoIsDir" << CPPLog::end;
+        if (oneIsDir == twoIsDir)
+            return one.filename().string() < two.filename().string();
+        return oneIsDir > twoIsDir;
+    }
+    catch (const std::exception &e)
+    {
         return one.filename().string() < two.filename().string();
-    return oneIsDir > twoIsDir;
+    }
 }
 
-std::string WebServUtil::_fileTimeToString(const std::filesystem::file_time_type& fileTime) {
+std::string WebServUtil::_fileTimeToString(const std::filesystem::file_time_type &fileTime)
+{
     using namespace std::chrono;
 
     // Extracting the duration since the epoch
@@ -63,40 +78,61 @@ std::string WebServUtil::_fileTimeToString(const std::filesystem::file_time_type
     ss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
     return ss.str();
 }
-std::string WebServUtil::directoryIndexList(const std::string& path, const std::string& request_adress) {
+std::string WebServUtil::directoryIndexList(const std::string &path, const std::string &request_adress)
+{
     std::vector<std::filesystem::path> entries;
     std::string title, filename;
     std::stringstream index_listing;
 
+    utilLogI << "directoryIndexList: path: " << path << "; request_adress: " << request_adress << CPPLog::end;
     title = "Index of " + request_adress;
     index_listing << "<html><head><title>" << title << "</title></head><body>\n";
     index_listing << "<h1>" << title << "</h1><hr><pre>\n";
     index_listing << ("<a href=\"../\">../</a>\n");
-    for (const auto& it : std::filesystem::directory_iterator(path))
+    for (const auto &it : std::filesystem::directory_iterator(path))
+    {
+        utilLogI << "directoryIndexList: it.path(): " << it.path() << CPPLog::end;
         entries.push_back(it.path());
+    }
     std::sort(entries.begin(), entries.end(), _compareDirectoryContents);
-    for (const auto& it : entries) {
+    utilLogI << "directoryIndexList: entries.size(): " << entries.size() << CPPLog::end;
+    for (const auto &it : entries)
+    {
+
         filename = it.filename().string();
+        utilLogI << "directoryIndexList: filename: " << filename << CPPLog::end;
+        try {
         if (std::filesystem::is_directory(it))
             filename += "/";
+        }
+        catch (const std::exception &e) {
+            utilLogI << "directoryIndexList: exception: " << e.what() << CPPLog::end;
+        }
+
         if (filename.length() > DEFAULT_MAX_FILENAME_DISPLAY)
             filename = filename.substr(0, DEFAULT_MAX_FILENAME_DISPLAY) + "..>";
         index_listing << "<a href=\"" << request_adress << it.filename().string() << "\">" << std::setw(DEFAULT_MAX_FILENAME_DISPLAY) << std::left
                       << filename + "</a>";
         index_listing << "\t";
-        try {
+        try
+        {
             std::filesystem::file_time_type ftime = std::filesystem::last_write_time(it);
             std::chrono::system_clock::time_point sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
                 ftime - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
             std::time_t cftime = std::chrono::system_clock::to_time_t(sctp);
             index_listing << std::put_time(std::localtime(&cftime), "%Y-%m-%d %H:%M:%S");
-        } catch (std::exception& e) {
+        }
+        catch (std::exception &e)
+        {
             index_listing << "-\t\t";
         }
         index_listing << "\t";
-        try {
+        try
+        {
             index_listing << std::filesystem::file_size(it);
-        } catch (std::exception& e) {
+        }
+        catch (std::exception &e)
+        {
             index_listing << "-";
         }
         index_listing << "\n";
@@ -105,11 +141,18 @@ std::string WebServUtil::directoryIndexList(const std::string& path, const std::
     return index_listing.str();
 }
 
-WebServUtil::HttpMethod WebServUtil::stringToHttpMethod(std::string method) {
+WebServUtil::HttpMethod WebServUtil::stringToHttpMethod(std::string method)
+{
     static const std::unordered_map<std::string, HttpMethod> methods = {
-        {"GET", HttpMethod::GET},         {"POST", HttpMethod::POST},     {"HEAD", HttpMethod::HEAD},
-        {"PUT", HttpMethod::PUT},         {"DELETE", HttpMethod::DELETE}, {"CONNECT", HttpMethod::CONNECT},
-        {"OPTIONS", HttpMethod::OPTIONS}, {"TRACE", HttpMethod::TRACE},   {"PATCH", HttpMethod::PATCH},
+        {"GET", HttpMethod::GET},
+        {"POST", HttpMethod::POST},
+        {"HEAD", HttpMethod::HEAD},
+        {"PUT", HttpMethod::PUT},
+        {"DELETE", HttpMethod::DELETE},
+        {"CONNECT", HttpMethod::CONNECT},
+        {"OPTIONS", HttpMethod::OPTIONS},
+        {"TRACE", HttpMethod::TRACE},
+        {"PATCH", HttpMethod::PATCH},
     };
 
     auto it = methods.find(method);
@@ -118,11 +161,18 @@ WebServUtil::HttpMethod WebServUtil::stringToHttpMethod(std::string method) {
     return HttpMethod::UNKNOWN;
 }
 
-std::string WebServUtil::httpMethodToString(HttpMethod method) {
+std::string WebServUtil::httpMethodToString(HttpMethod method)
+{
     static const std::unordered_map<HttpMethod, std::string> methods = {
-        {HttpMethod::GET, "GET"},         {HttpMethod::POST, "POST"},     {HttpMethod::HEAD, "HEAD"},
-        {HttpMethod::PUT, "PUT"},         {HttpMethod::DELETE, "DELETE"}, {HttpMethod::CONNECT, "CONNECT"},
-        {HttpMethod::OPTIONS, "OPTIONS"}, {HttpMethod::TRACE, "TRACE"},   {HttpMethod::PATCH, "PATCH"},
+        {HttpMethod::GET, "GET"},
+        {HttpMethod::POST, "POST"},
+        {HttpMethod::HEAD, "HEAD"},
+        {HttpMethod::PUT, "PUT"},
+        {HttpMethod::DELETE, "DELETE"},
+        {HttpMethod::CONNECT, "CONNECT"},
+        {HttpMethod::OPTIONS, "OPTIONS"},
+        {HttpMethod::TRACE, "TRACE"},
+        {HttpMethod::PATCH, "PATCH"},
     };
     auto it = methods.find(method);
     if (it != methods.end())
@@ -130,22 +180,25 @@ std::string WebServUtil::httpMethodToString(HttpMethod method) {
     return "";
 }
 
-std::string WebServUtil::timeStamp(void) {
+std::string WebServUtil::timeStamp(void)
+{
     std::time_t currentTime = std::time(nullptr);
-    std::tm* gmtTime = std::gmtime(&currentTime);
+    std::tm *gmtTime = std::gmtime(&currentTime);
     char buffer[100];
     std::strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", gmtTime);
     return buffer;
 }
 
-bool WebServUtil::isRequestWithoutBody(HttpMethod requestType) {
+bool WebServUtil::isRequestWithoutBody(HttpMethod requestType)
+{
     if (requestType == HttpMethod::GET || requestType == HttpMethod::HEAD || requestType == HttpMethod::DELETE ||
         requestType == HttpMethod::OPTIONS || requestType == HttpMethod::TRACE || requestType == HttpMethod::CONNECT)
         return true;
     return false;
 }
 
-const std::unordered_map<std::string, std::string> WebServUtil::_getFileTypes(void) {
+const std::unordered_map<std::string, std::string> WebServUtil::_getFileTypes(void)
+{
     const std::unordered_map<std::string, std::string> mimeTypes = {
         {".html", "text/html"},
         {".htm", "text/html"},
@@ -174,7 +227,8 @@ const std::unordered_map<std::string, std::string> WebServUtil::_getFileTypes(vo
     return mimeTypes;
 }
 
-const std::map<int, std::string>& WebServUtil::_getStatusCodes() {
+const std::map<int, std::string> &WebServUtil::_getStatusCodes()
+{
     static const std::map<int, std::string> codes = {{100, "Continue"},
                                                      {101, "Switching Protocols"},
                                                      {102, "Processing"},
@@ -216,7 +270,7 @@ const std::map<int, std::string>& WebServUtil::_getStatusCodes() {
                                                      {415, "Unsupported Media Type"},
                                                      {416, "Range Not Satisfiable"},
                                                      {417, "Expectation Failed"},
-                                                     {418, "I'm a teapot"},  // This one is more of an Easter egg in the standard
+                                                     {418, "I'm a teapot"}, // This one is more of an Easter egg in the standard
                                                      {421, "Misdirected Request"},
                                                      {422, "Unprocessable Entity"},
                                                      {423, "Locked"},

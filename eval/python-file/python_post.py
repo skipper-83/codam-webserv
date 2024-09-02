@@ -18,10 +18,13 @@ print("<h1>POST Data:</h1>")
 print("<ul>")
 
 # Parse and print each key-value pair
-pairs = post_data.split("&")
-for pair in pairs:
-    key, value = pair.split("=")
-    print(f"<li>{key}: {value}</li>")
+if (post_data == ""):
+    print("<li>No data</li>")
+else:    
+    pairs = post_data.split("&")
+    for pair in pairs:
+        key, value = pair.split("=")
+        print(f"<li>{key}: {value}</li>")
 
 print("</ul>")
 print("</body></html>")

@@ -155,11 +155,12 @@ void httpRequest::_checkPermissions(const std::filesystem::path &path)
 		std::error_code errorCode;
 		std::filesystem::file_status fileStatus = std::filesystem::status(currentPath, errorCode);
 
-		if (errorCode)
+		if (errorCode && errorCode.value() != 2) // 2 is file not found, which is fine
 		{
-			warningLog << "Error checking permissions: " << errorCode.message() << CPPLog::end;
+			warningLog << "Error checking permissions: " << errorCode.message() << errorCode << CPPLog::end;
 			throw httpRequestException(403, "Permission denied");
 		}
+
 		if ((fileStatus.permissions() & std::filesystem::perms::owner_read) != std::filesystem::perms::owner_read)
 		{
 			warningLog << "No read permissions for: " << currentPath << CPPLog::end;
